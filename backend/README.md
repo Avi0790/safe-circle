@@ -215,7 +215,13 @@ project rather than just written:
   `geofence_webhook_secret` rather than minting a second one, to the
   `send-sos-push` Edge Function, which notifies everyone across every
   circle you're in. Any circle member (or you) can mark it resolved
-  (`mobile/components/SosBanner.tsx`), which is live via realtime.
+  (`mobile/components/SosBanner.tsx`), which is live via realtime. Capped
+  at 3 alerts per 10 minutes per user (migration `...000013`) — a
+  follow-up security pass caught that the first version had no limit,
+  letting a buggy or malicious client spam a family and drain the Expo
+  push quota. Enforced with a `before insert` trigger that counts
+  existing rows rather than a mutable counter, sidestepping the exact
+  rollback pitfall the invite-code rate limit hit (see below).
 - **Location history** — `mobile/app/(app)/member/[userId].tsx` (tap a
   member on the Members tab) shows their last 100 pings as a map trail
   (list-only on web — `react-native-maps` has no web renderer, see
