@@ -198,9 +198,12 @@ await supabase.from('geofence_events').select('*').eq('place_id', placeId).order
 - **SOS button** — a stretch goal that's mostly a mobile UI + a `sos_events`
   table; the location/push plumbing above already covers "notify the
   circle," so this is a small addition once the mobile team wants it.
-- **Location history UI** — the data already supports it (`locations` is
-  append-only); it's just a query on the mobile/web side that doesn't
-  collapse to `latest_locations`.
+
+**Location history** is built: `mobile/app/(app)/member/[userId].tsx`
+(tap a member on the Members tab) shows their last 100 pings as a map
+trail (list-only on web, since `react-native-maps` has no web renderer —
+see `[userId].web.tsx`). No backend changes were needed since `locations`
+was already append-only; this is purely a new read.
 
 Everything else from the MVP + stretch goals (page 3 of the proposal) that's
 backend-shaped — accounts/circles, background-location writes, the live map

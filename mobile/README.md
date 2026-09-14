@@ -49,6 +49,13 @@ throttling, offline queue) — talking to the Supabase backend in
   fails gracefully with a specific "not set up yet" message rather than
   crashing until that one-time step is done. Also guarded to no-op on web
   (`expo-notifications` doesn't support that platform).
+- **Location history** (`app/(app)/member/[userId].tsx`, tap a member on
+  the Members tab) — the other stretch goal from the proposal's page 3.
+  Shows a member's last 100 pings as a map trail (`Polyline` + oldest/most
+  -recent markers) plus a scrollable list with timestamps, coordinates,
+  and battery. `locations` was already append-only, so this needed zero
+  backend changes — purely a new read. Same web-unsupported-map pattern
+  as the Map tab: `[userId].web.tsx` is a list-only fallback.
 
 ## Running locally
 
@@ -99,16 +106,21 @@ real device or simulator:**
   appears in `locations`, then disable it and confirm the queued pings
   land in a batch.
 
-Everything else new — Places (add a place, list, activity feed) and the
-push-token upsert's happy path once EAS is configured — was verified
-end-to-end through the same `expo start --web` + real hosted backend
-approach: created a place via the REST API, triggered an arrive/leave via
-two location pings, and confirmed both the places list and the joined
-"who arrived where" activity feed rendered correctly. The in-app "Add
-place here" flow itself needs a device, since it asks for real device
-geolocation (confirmed it fails gracefully — "Location permission
-denied." — rather than crashing, when the browser sandbox has no location
-access).
+Everything else new — Places (add a place, list, activity feed), location
+history, and the push-token upsert's happy path once EAS is configured —
+was verified end-to-end through the same `expo start --web` + real hosted
+backend approach: created a place via the REST API, triggered an
+arrive/leave via two location pings, and confirmed both the places list
+and the joined "who arrived where" activity feed rendered correctly.
+Same for history: inserted an 8-point walking trail via the REST API,
+tapped into a member's history screen, and confirmed all 8 pings render
+in the correct order with the right coordinates/timestamps/battery. The
+in-app "Add place here" flow, and the history screen's actual map trail
+(`[userId].tsx`, as opposed to its list-only web fallback), need a
+device — both `react-native-maps` and real device geolocation are
+native-only (confirmed the geolocation failure path degrades gracefully —
+"Location permission denied." — rather than crashing, when the browser
+sandbox has no location access).
 
 ## Design system
 

@@ -1,5 +1,6 @@
-import { FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import { useCircles } from '@/contexts/CircleContext';
 import { useCircleMembers } from '@/hooks/useCircleMembers';
 import { timeAgo } from '@/lib/format';
@@ -7,6 +8,7 @@ import type { MemberWithLocation } from '@/lib/types';
 import { colors, spacing, typography } from '@/lib/theme';
 
 export default function MembersTab() {
+  const router = useRouter();
   const { selectedCircle } = useCircles();
   const { members, isLoading, refresh } = useCircleMembers(selectedCircle?.id ?? null);
 
@@ -24,7 +26,9 @@ export default function MembersTab() {
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
         refreshControl={<RefreshControl refreshing={isLoading} onRefresh={refresh} />}
-        renderItem={({ item }) => <MemberRow member={item} />}
+        renderItem={({ item }) => (
+          <MemberRow member={item} onPress={() => router.push(`/member/${item.id}`)} />
+        )}
         ListEmptyComponent={
           !isLoading ? <Text style={typography.body}>No one in this circle yet.</Text> : null
         }
@@ -33,9 +37,9 @@ export default function MembersTab() {
   );
 }
 
-function MemberRow({ member }: { member: MemberWithLocation }) {
+function MemberRow({ member, onPress }: { member: MemberWithLocation; onPress: () => void }) {
   return (
-    <View style={styles.row}>
+    <Pressable style={styles.row} onPress={onPress}>
       <View style={[styles.dot, { backgroundColor: member.location ? colors.online : colors.offline }]} />
       <View style={styles.rowText}>
         <Text style={styles.name}>{member.full_name}</Text>
@@ -49,7 +53,8 @@ function MemberRow({ member }: { member: MemberWithLocation }) {
             : 'No location shared yet'}
         </Text>
       </View>
-    </View>
+      <Text style={styles.chevron}>›</Text>
+    </Pressable>
   );
 }
 
@@ -71,6 +76,7 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.border,
   },
   dot: { width: 10, height: 10, borderRadius: 5 },
-  rowText: { gap: 2 },
+  rowText: { flex: 1, gap: 2 },
+  chevron: { fontSize: 20, color: colors.offline },
   name: { fontSize: 15, fontWeight: '500', color: colors.textHeading },
 });
