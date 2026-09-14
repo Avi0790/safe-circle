@@ -1,0 +1,5 @@
+-- Local dev seed data. Runs after migrations on `supabase db reset`.
+-- Empty for now: profiles are created via the auth.users trigger, so
+-- meaningful seed data needs real auth users first (create them with
+-- `supabase auth admin` or the Studio UI, then insert circles/locations
+-- referencing their ids here as you need fixtures).
