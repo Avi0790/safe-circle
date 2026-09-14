@@ -27,6 +27,7 @@ function AppNavigator() {
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Protected guard={hasCircle}>
         <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="places" options={{ headerShown: true }} />
       </Stack.Protected>
 
       <Stack.Protected guard={!hasCircle}>

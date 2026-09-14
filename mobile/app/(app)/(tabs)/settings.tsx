@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '@/components/Button';
 import { useAuth } from '@/contexts/AuthContext';
@@ -7,8 +8,10 @@ import { useCircles } from '@/contexts/CircleContext';
 import { supabase } from '@/lib/supabase';
 import { colors, radius, spacing, typography } from '@/lib/theme';
 import { isTrackingActive, startBackgroundTracking, stopBackgroundTracking } from '@/lib/locationTracking';
+import { registerForPushNotifications } from '@/lib/pushNotifications';
 
 export default function SettingsTab() {
+  const router = useRouter();
   const { session } = useAuth();
   const { circles, selectedCircle, setSelectedCircleId } = useCircles();
   const [inviteCode, setInviteCode] = useState<string | null>(null);
@@ -42,6 +45,17 @@ export default function SettingsTab() {
       setSharingEnabled(false);
     }
     setSharingBusy(false);
+  }
+
+  const [pushStatus, setPushStatus] = useState<string | null>(null);
+  const [pushBusy, setPushBusy] = useState(false);
+
+  async function handleEnablePush() {
+    setPushBusy(true);
+    setPushStatus(null);
+    const result = await registerForPushNotifications();
+    setPushStatus(result.ok ? 'Push notifications enabled.' : result.message);
+    setPushBusy(false);
   }
 
   async function handleGetInviteCode() {
@@ -92,6 +106,27 @@ export default function SettingsTab() {
             )}
           </View>
           {sharingError && <Text style={styles.error}>{sharingError}</Text>}
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>Push notifications</Text>
+          <Text style={typography.caption}>
+            Get notified when someone in your circle arrives at or leaves a place.
+          </Text>
+          {pushStatus && <Text style={typography.caption}>{pushStatus}</Text>}
+          <Button title="Enable push notifications" onPress={handleEnablePush} loading={pushBusy} />
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>Places</Text>
+          <Text style={typography.caption}>
+            Get alerted when someone arrives at or leaves somewhere, like home or school.
+          </Text>
+          <Button
+            title="Manage places"
+            variant="secondary"
+            onPress={() => router.push('/places')}
+          />
         </View>
 
         {circles.length > 1 && (

@@ -47,6 +47,7 @@ module.exports = {
           isIosBackgroundLocationEnabled: true,
         },
       ],
+      'expo-notifications',
     ],
     experiments: {
       typedRoutes: true,

@@ -35,6 +35,20 @@ throttling, offline queue) — talking to the Supabase backend in
     relaunched by the OS, even after the app is fully closed.
   - Guarded to no-op safely on web (`Platform.OS !== 'web'`) — background
     location doesn't apply there and this app doesn't target web anyway.
+- **Places** (`app/(app)/places.tsx`, reachable from Settings) — the
+  geofencing stretch goal (proposal page 3). The backend side
+  (`places`/`geofence_events` tables, the `evaluate_geofences` trigger, the
+  `send-geofence-push` Edge Function) existed already; this is the UI that
+  makes it usable: add a place at your current location, see the circle's
+  places, and a live "who arrived/left where" activity feed.
+- **Push notification registration** (`lib/pushNotifications.ts`) — gets an
+  Expo push token and upserts it into `push_tokens`, so
+  `send-geofence-push` has somewhere to deliver alerts. Requires the
+  project to be registered with EAS (`eas init`, tied to a real Expo
+  account) — Expo push tokens are scoped to an EAS project id, so this
+  fails gracefully with a specific "not set up yet" message rather than
+  crashing until that one-time step is done. Also guarded to no-op on web
+  (`expo-notifications` doesn't support that platform).
 
 ## Running locally
 
@@ -84,6 +98,17 @@ real device or simulator:**
   enable airplane mode for a few location updates, confirm nothing new
   appears in `locations`, then disable it and confirm the queued pings
   land in a batch.
+
+Everything else new — Places (add a place, list, activity feed) and the
+push-token upsert's happy path once EAS is configured — was verified
+end-to-end through the same `expo start --web` + real hosted backend
+approach: created a place via the REST API, triggered an arrive/leave via
+two location pings, and confirmed both the places list and the joined
+"who arrived where" activity feed rendered correctly. The in-app "Add
+place here" flow itself needs a device, since it asks for real device
+geolocation (confirmed it fails gracefully — "Location permission
+denied." — rather than crashing, when the browser sandbox has no location
+access).
 
 ## Design system
 
