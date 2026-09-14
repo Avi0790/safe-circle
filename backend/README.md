@@ -52,10 +52,19 @@ This mirrors the proposal's security section (page 4/5 of the proposal):
 Geofence detection itself needs no Edge Function or cron job — a trigger
 (`evaluate_geofences()`) runs after every `locations` insert, checks the
 reporting user's position against every place in their circles, and on an
-inside/outside transition writes a row to `geofence_events`. Turning that
-row into an actual push notification is a separate step (below), because
-sending an HTTP request to Expo/FCM isn't something a plain SQL trigger
-can do — that's what the `send-geofence-push` Edge Function is for.
+inside/outside transition writes a row to `geofence_events`, which a
+second trigger (`notify_geofence_event`, migration `...000007`) turns into
+an HTTP call via the `pg_net` extension to the `send-geofence-push` Edge
+Function — that's the part that actually talks to Expo/FCM.
+
+This is wired with `pg_net` directly rather than Supabase's Dashboard
+"Database Webhooks" UI, because that UI depends on an internal
+`supabase_functions` schema that isn't provisioned on every project
+(hit this as `ERROR: 3F000: schema "supabase_functions" does not exist`
+when first setting this up). The `pg_net` approach is equivalent but
+lives entirely in a migration instead of a manual dashboard step — just
+make sure the `pg_net` extension is enabled (migration `...000007` does
+this with `create extension if not exists pg_net;`).
 
 ## Environment variables
 
@@ -87,18 +96,17 @@ once `supabase start` finishes.
 
 ```bash
 supabase link --project-ref <your-project-ref>
-supabase db push         # applies migrations to the hosted project
+supabase db push         # applies migrations to the hosted project, including the pg_net trigger
 
 # Push notifications (stretch goal):
 supabase functions deploy send-geofence-push
-supabase secrets set --env-file backend/.env   # SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY
 ```
 
-Then, one-time, in the Supabase Dashboard: **Database → Webhooks → Create a
-new webhook** — table `geofence_events`, event `INSERT`, type `Supabase Edge
-Functions`, target `send-geofence-push`. (This step isn't expressible as a
-plain SQL migration without hardcoding your project's secrets into a
-git-tracked file, so it's a manual dashboard click instead.)
+`SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` don't need to be set as
+Edge Function secrets — Supabase injects both automatically for every
+project (`supabase secrets list` will show them already present). No
+manual dashboard step is needed: `supabase db push` is enough to wire the
+whole geofence → push-notification chain end to end.
 
 Give the mobile app and web dashboard the project's `SUPABASE_URL` and
 `SUPABASE_ANON_KEY` (Project Settings → API) via the root `.env.example`.
