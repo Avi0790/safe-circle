@@ -26,6 +26,12 @@ Plus the geofencing/notifications stretch goal:
 | `geofence_events`         | Log of `arrived`/`left` transitions. Written only by a trigger.     |
 | `push_tokens`             | Expo/FCM push tokens per user/device.                               |
 
+Plus the SOS button:
+
+| Table         | Purpose                                                                     |
+|---------------|-------------------------------------------------------------------------------|
+| `sos_events`  | One tap = one row with your location. Not circle-scoped (same rule as `locations`) — visible to anyone who shares a circle with you. `resolved_at`/`resolved_by` track who cleared it. |
+
 ## How access control works
 
 Row-level security is the enforcement point, not application code:
@@ -193,18 +199,32 @@ await supabase.from('place_membership_state').select('*').eq('place_id', placeId
 await supabase.from('geofence_events').select('*').eq('place_id', placeId).order('occurred_at', { ascending: false });
 ```
 
-## Not built yet (other layers, not backend)
+## Everything from the proposal is built
 
-- **SOS button** — a stretch goal that's mostly a mobile UI + a `sos_events`
-  table; the location/push plumbing above already covers "notify the
-  circle," so this is a small addition once the mobile team wants it.
+All of the MVP (page 3) and all three stretch goals — geofenced places
+with arrive/leave alerts, location history, and the SOS button — are
+implemented, backend through UI, and verified against the real hosted
+project rather than just written:
 
-**Location history** is built: `mobile/app/(app)/member/[userId].tsx`
-(tap a member on the Members tab) shows their last 100 pings as a map
-trail (list-only on web, since `react-native-maps` has no web renderer —
-see `[userId].web.tsx`). No backend changes were needed since `locations`
-was already append-only; this is purely a new read.
+- **SOS button** — `sos_events` (not circle-scoped, same pattern as
+  `locations`/`profiles`: visibility is "you, or anyone who shares a
+  circle with you," via `shares_circle_with()`). One tap
+  (`mobile/components/SosButton.tsx`) inserts a row with your current
+  location; `notify_sos_event()` (migration `...000012`) fires the same
+  pg_net + Vault-secret pattern as the geofence webhook, reusing the same
+  `geofence_webhook_secret` rather than minting a second one, to the
+  `send-sos-push` Edge Function, which notifies everyone across every
+  circle you're in. Any circle member (or you) can mark it resolved
+  (`mobile/components/SosBanner.tsx`), which is live via realtime.
+- **Location history** — `mobile/app/(app)/member/[userId].tsx` (tap a
+  member on the Members tab) shows their last 100 pings as a map trail
+  (list-only on web — `react-native-maps` has no web renderer, see
+  `[userId].web.tsx`). No backend changes needed; `locations` was already
+  append-only, so this is purely a new read.
+- **Geofencing** — see the "How access control works" section above.
 
-Everything else from the MVP + stretch goals (page 3 of the proposal) that's
-backend-shaped — accounts/circles, background-location writes, the live map
-feed, and geofenced arrive/leave push alerts — is implemented above.
+Caught one real bug building SOS: `sos_events` has two foreign keys to
+`profiles` (`user_id` and `resolved_by`), so PostgREST couldn't
+auto-resolve `profiles(full_name)` embeds (`PGRST201`, "more than one
+relationship was found") until the query specified
+`profiles!sos_events_user_id_fkey(full_name)`.

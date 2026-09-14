@@ -4,6 +4,9 @@ import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useCircles } from '@/contexts/CircleContext';
 import { useCircleMembers } from '@/hooks/useCircleMembers';
+import { useActiveSosEvents } from '@/hooks/useActiveSosEvents';
+import { SosBanner } from '@/components/SosBanner';
+import { SosButton } from '@/components/SosButton';
 import { spacing } from '@/lib/theme';
 
 const DEFAULT_REGION = {
@@ -19,6 +22,7 @@ const DEFAULT_REGION = {
 export default function MapTab() {
   const { selectedCircleId } = useCircles();
   const { members, isLoading } = useCircleMembers(selectedCircleId);
+  const { events: sosEvents, refresh: refreshSos } = useActiveSosEvents();
   const mapRef = useRef<MapView>(null);
 
   const located = members.filter((m) => m.location);
@@ -37,6 +41,10 @@ export default function MapTab() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
+      <View style={styles.sosBannerWrap}>
+        <SosBanner events={sosEvents} onChanged={refreshSos} />
+      </View>
+
       <MapView
         ref={mapRef}
         provider={PROVIDER_DEFAULT}
@@ -65,6 +73,8 @@ export default function MapTab() {
           <ActivityIndicator />
         </View>
       )}
+
+      <SosButton onSent={refreshSos} />
     </SafeAreaView>
   );
 }
@@ -72,6 +82,7 @@ export default function MapTab() {
 const styles = StyleSheet.create({
   safeArea: { flex: 1 },
   map: { flex: 1 },
+  sosBannerWrap: { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10 },
   loadingOverlay: {
     position: 'absolute',
     top: spacing.md,

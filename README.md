@@ -24,6 +24,16 @@ for the full pitch and how access control is enforced.
 
 Each package has its own README with setup and verification details.
 
+**Status: the full proposal is built** — MVP (accounts/circles, live map,
+background location) and all three stretch goals (geofenced places with
+push alerts, location history, an SOS button), backend through UI,
+verified end-to-end against the real hosted project. A security review
+also caught and fixed two real issues (an unauthenticated webhook, no
+rate limiting on invite-code guesses) — see `backend/README.md`. What's
+left isn't code: teammates joining, and two setup steps that need
+individual accounts (EAS for push notifications, Xcode/Android Studio for
+real-device testing).
+
 ## Getting started
 
 1. **Backend first** — it's the foundation everything else talks to.

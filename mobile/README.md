@@ -56,6 +56,17 @@ throttling, offline queue) — talking to the Supabase backend in
   and battery. `locations` was already append-only, so this needed zero
   backend changes — purely a new read. Same web-unsupported-map pattern
   as the Map tab: `[userId].web.tsx` is a list-only fallback.
+- **SOS button** (`components/SosButton.tsx` + `SosBanner.tsx`, on the Map
+  tab) — the proposal's last stretch goal. One tap (after a confirm
+  dialog, to avoid accidental fires) shares your current location as an
+  `sos_events` row, which alerts everyone across every circle you're in
+  via the same pg_net-triggered push pattern as geofencing
+  (`send-sos-push` Edge Function). A red banner shows any active SOS —
+  yours or a circle-mate's — with a resolve button, live via realtime.
+  `hooks/useActiveSosEvents.ts` reads it.
+
+That's the full proposal — MVP and all three stretch goals (geofencing,
+location history, SOS) — built end to end.
 
 ## Running locally
 
@@ -121,6 +132,17 @@ device — both `react-native-maps` and real device geolocation are
 native-only (confirmed the geolocation failure path degrades gracefully —
 "Location permission denied." — rather than crashing, when the browser
 sandbox has no location access).
+
+SOS was verified the same way, end-to-end on the hosted project: a real
+two-person circle, one triggers SOS via the REST API, confirmed the
+other's `SosBanner` rendered the correct name/message/time, clicked
+"Mark resolved," and confirmed via a direct query that `resolved_at`/
+`resolved_by` were actually set — the banner disappearing alone wouldn't
+have proven the write succeeded, so this checked the database, not just
+the UI. Also caught a real bug this way: the initial `profiles(full_name)`
+embed 400'd (`PGRST201`) because `sos_events` has two FKs to `profiles`
+(`user_id` and `resolved_by`); fixed with an explicit
+`profiles!sos_events_user_id_fkey(...)` hint.
 
 ## Design system
 

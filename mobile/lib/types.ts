@@ -24,3 +24,15 @@ export interface LatestLocation {
 export interface MemberWithLocation extends Profile {
   location: LatestLocation | null;
 }
+
+export interface SosEvent {
+  id: number;
+  user_id: string;
+  latitude: number;
+  longitude: number;
+  message: string | null;
+  created_at: string;
+  resolved_at: string | null;
+  resolved_by: string | null;
+  profiles: { full_name: string } | null;
+}
