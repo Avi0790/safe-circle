@@ -1,12 +1,10 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import MapView, { Marker, PROVIDER_DEFAULT } from 'react-native-maps';
-import * as Location from 'expo-location';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useCircles } from '@/contexts/CircleContext';
 import { useCircleMembers } from '@/hooks/useCircleMembers';
-import { supabase } from '@/lib/supabase';
-import { colors, radius, spacing } from '@/lib/theme';
+import { spacing } from '@/lib/theme';
 
 const DEFAULT_REGION = {
   latitude: 37.7749,
@@ -15,12 +13,13 @@ const DEFAULT_REGION = {
   longitudeDelta: 0.2,
 };
 
+// Purely a display — turning sharing on/off lives in Settings, which talks
+// to the background tracking service in lib/locationTracking.ts (AJ's
+// layer). This screen only ever reads from the backend.
 export default function MapTab() {
   const { selectedCircleId } = useCircles();
   const { members, isLoading } = useCircleMembers(selectedCircleId);
   const mapRef = useRef<MapView>(null);
-  const [sharing, setSharing] = useState(false);
-  const [shareError, setShareError] = useState<string | null>(null);
 
   const located = members.filter((m) => m.location);
 
@@ -35,33 +34,6 @@ export default function MapTab() {
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [located.length]);
-
-  // Manual, one-off location share. This stands in for the real background
-  // tracking service (permissions flow, throttling, offline queue), which
-  // is AJ's layer — see backend/README.md and the proposal's team split.
-  async function handleShareLocation() {
-    setShareError(null);
-    setSharing(true);
-    try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        setShareError('Location permission denied.');
-        return;
-      }
-      const position = await Location.getCurrentPositionAsync({});
-      const { error } = await supabase.from('locations').insert({
-        latitude: position.coords.latitude,
-        longitude: position.coords.longitude,
-        accuracy: position.coords.accuracy,
-        battery_level: null,
-      });
-      if (error) setShareError(error.message);
-    } catch {
-      setShareError('Could not get your location.');
-    } finally {
-      setSharing(false);
-    }
-  }
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
@@ -93,27 +65,12 @@ export default function MapTab() {
           <ActivityIndicator />
         </View>
       )}
-
-      <View style={styles.shareBar}>
-        {shareError && <Text style={styles.error}>{shareError}</Text>}
-        <Pressable
-          style={[styles.shareButton, sharing && styles.shareButtonDisabled]}
-          onPress={handleShareLocation}
-          disabled={sharing}
-        >
-          {sharing ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.shareButtonText}>Share my location</Text>
-          )}
-        </Pressable>
-      </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: colors.bg },
+  safeArea: { flex: 1 },
   map: { flex: 1 },
   loadingOverlay: {
     position: 'absolute',
@@ -121,34 +78,5 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     alignItems: 'center',
-  },
-  shareBar: {
-    position: 'absolute',
-    bottom: spacing.lg,
-    left: spacing.lg,
-    right: spacing.lg,
-    alignItems: 'center',
-    gap: spacing.xs,
-  },
-  shareButton: {
-    backgroundColor: colors.accent,
-    paddingVertical: spacing.sm + 4,
-    paddingHorizontal: spacing.lg,
-    borderRadius: radius.full,
-    shadowColor: '#000',
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 4,
-  },
-  shareButtonDisabled: { opacity: 0.7 },
-  shareButtonText: { color: '#fff', fontWeight: '600', fontSize: 15 },
-  error: {
-    color: colors.danger,
-    backgroundColor: colors.bg,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: radius.sm,
-    fontSize: 13,
   },
 });

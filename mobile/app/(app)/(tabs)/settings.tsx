@@ -1,11 +1,12 @@
-import { useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '@/components/Button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCircles } from '@/contexts/CircleContext';
 import { supabase } from '@/lib/supabase';
 import { colors, radius, spacing, typography } from '@/lib/theme';
+import { isTrackingActive, startBackgroundTracking, stopBackgroundTracking } from '@/lib/locationTracking';
 
 export default function SettingsTab() {
   const { session } = useAuth();
@@ -13,6 +14,35 @@ export default function SettingsTab() {
   const [inviteCode, setInviteCode] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  const [sharingEnabled, setSharingEnabled] = useState(false);
+  const [sharingBusy, setSharingBusy] = useState(true);
+  const [sharingError, setSharingError] = useState<string | null>(null);
+
+  useEffect(() => {
+    isTrackingActive().then((active) => {
+      setSharingEnabled(active);
+      setSharingBusy(false);
+    });
+  }, []);
+
+  async function handleToggleSharing(next: boolean) {
+    setSharingError(null);
+    setSharingBusy(true);
+    if (next) {
+      const result = await startBackgroundTracking();
+      if (!result.ok) {
+        setSharingError(result.reason);
+        setSharingEnabled(false);
+      } else {
+        setSharingEnabled(true);
+      }
+    } else {
+      await stopBackgroundTracking();
+      setSharingEnabled(false);
+    }
+    setSharingBusy(false);
+  }
 
   async function handleGetInviteCode() {
     if (!selectedCircle) return;
@@ -41,6 +71,27 @@ export default function SettingsTab() {
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>Signed in as</Text>
           <Text style={typography.body}>{session?.user.email}</Text>
+        </View>
+
+        <View style={styles.section}>
+          <View style={styles.row}>
+            <View style={styles.rowText}>
+              <Text style={styles.sectionLabel}>Share my location</Text>
+              <Text style={typography.caption}>
+                Runs in the background, even when the app is closed.
+              </Text>
+            </View>
+            {sharingBusy ? (
+              <ActivityIndicator />
+            ) : (
+              <Switch
+                value={sharingEnabled}
+                onValueChange={handleToggleSharing}
+                trackColor={{ true: colors.accent }}
+              />
+            )}
+          </View>
+          {sharingError && <Text style={styles.error}>{sharingError}</Text>}
         </View>
 
         {circles.length > 1 && (
@@ -89,6 +140,8 @@ const styles = StyleSheet.create({
     gap: spacing.xl,
   },
   section: { gap: spacing.sm },
+  row: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  rowText: { flex: 1, gap: 2 },
   sectionLabel: {
     ...typography.caption,
     color: colors.textHeading,

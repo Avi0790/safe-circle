@@ -41,8 +41,10 @@ module.exports = {
         {
           locationWhenInUsePermission:
             'Safe Circle uses your location to share it with the people in your circle.',
-          isAndroidBackgroundLocationEnabled: false,
-          isIosBackgroundLocationEnabled: false,
+          locationAlwaysAndWhenInUsePermission:
+            'Safe Circle shares your location with your circle in the background, even when the app is closed.',
+          isAndroidBackgroundLocationEnabled: true,
+          isIosBackgroundLocationEnabled: true,
         },
       ],
     ],

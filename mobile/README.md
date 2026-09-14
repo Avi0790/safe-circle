@@ -1,27 +1,40 @@
 # Safe Circle — Mobile App
 
 React Native + Expo (TypeScript) app for the Safe Circle capstone project.
-This is **Avi's layer** per the proposal (page 6): auth screens, onboarding,
-circle create/join flows, member list, settings, and the design system —
-talking to the Supabase backend in [`../backend`](../backend).
+Covers both **Avi's layer** (page 6: auth screens, onboarding, circle
+create/join flows, member list, settings, design system) and **AJ's
+layer** (background location: permissions flow, tracking service,
+throttling, offline queue) — talking to the Supabase backend in
+[`../backend`](../backend).
 
-## Scope: what's here vs. not here
-
-This package deliberately does **not** include background location
-tracking. Per the proposal, that's a separate, higher-risk layer owned by
-AJ ("Location engine: permissions flow, background tracking service,
-throttling, offline queue"). What's here instead:
+## What's here
 
 - Full auth flow: sign up, sign in, sign out (Supabase Auth).
 - Circle onboarding: create a circle (shows the invite code once) or join
   one with a code.
 - Live map + member list, sourced from the same `latest_locations` view
   and realtime subscription the web dashboard uses.
-- Settings: switch circles, generate/regenerate an invite code, sign out.
-- A **manual** "Share my location" button on the map screen — a single
-  foreground `expo-location` fetch, not a background service. It exists so
-  the map/circle flow is demoable end to end before AJ's real tracking
-  service lands; replace it once that's ready (`app/(app)/(tabs)/index.tsx`).
+- Settings: a **Share my location** toggle that starts/stops real
+  background tracking, switch circles, generate/regenerate an invite code,
+  sign out.
+- **Background location engine** (`lib/locationTracking.ts`,
+  `lib/locationQueue.ts`) — the proposal's highest-risk piece:
+  - Foreground *and* background permission requests
+    (`requestForegroundPermissionsAsync` → `requestBackgroundPermissionsAsync`,
+    in order — background is requested only if foreground is granted).
+  - Throttled to 50m / 60s via `expo-location`'s `startLocationUpdatesAsync`
+    + `expo-task-manager`, matching the proposal's spec (page 4).
+  - Reports real battery level (`expo-battery`) alongside each ping.
+  - Offline queue: failed inserts (no network) are persisted to
+    `AsyncStorage` and retried as a batch — both opportunistically (every
+    new location fix) and immediately when `@react-native-community/netinfo`
+    reports connectivity restored.
+  - The task is registered unconditionally at module scope
+    (`TaskManager.defineTask`) and imported once from `app/_layout.tsx`,
+    per Expo's requirement — this is what lets it keep running, and be
+    relaunched by the OS, even after the app is fully closed.
+  - Guarded to no-op safely on web (`Platform.OS !== 'web'`) — background
+    location doesn't apply there and this app doesn't target web anyway.
 
 ## Running locally
 
@@ -52,9 +65,25 @@ no iOS Simulator available here — everything above was verified instead
 by running `expo start --web` and driving the app through a browser: the
 full auth → circle-setup → tabs flow, circle creation, invite code
 generation/regeneration, member list, and sign-out all confirmed working
-against the real hosted backend. The map tab itself (`react-native-maps`)
-can only be verified on an actual iOS/Android target — do that once you're
-on a machine with Xcode or Android Studio installed.
+against the real hosted backend.
+
+**Two things specifically could not be verified this way and still need a
+real device or simulator:**
+
+- The map tab itself — `react-native-maps` has no web renderer.
+- The actual background location engine. The web target's `Platform.OS`
+  guard proves the code doesn't crash and fails gracefully there ("Background
+  location is not available on web" — confirmed in-browser), but real GPS
+  fixes, OS-level background scheduling, and permission dialogs are native
+  behavior that fundamentally cannot be exercised outside a native runtime.
+  Before trusting the 50m/60s throttling or the offline queue, test on an
+  actual iOS/Android device or simulator: toggle sharing on in Settings,
+  background the app, walk around, then check the `locations` table (or
+  the web dashboard) for new rows: `select * from locations order by
+  recorded_at desc limit 5;`. To test the offline queue specifically,
+  enable airplane mode for a few location updates, confirm nothing new
+  appears in `locations`, then disable it and confirm the queued pings
+  land in a batch.
 
 ## Design system
 
