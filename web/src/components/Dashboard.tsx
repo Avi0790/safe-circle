@@ -1,13 +1,27 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
-import type { Circle, LatestLocation, MemberWithLocation, Profile } from '../lib/types'
+import type {
+  Circle,
+  GeofenceEvent,
+  LatestLocation,
+  MemberWithLocation,
+  Place,
+  Profile,
+} from '../lib/types'
 import { MapView } from './MapView'
 import { MemberList } from './MemberList'
+import { ActivityFeed } from './ActivityFeed'
 
+// Read-only by design (proposal page 3: "no tracking happens from the
+// web"). This component only ever selects from circles/locations/places/
+// geofence_events - it never inserts or updates. Creating a place is
+// mobile-only (see mobile/app/(app)/places.tsx).
 export function Dashboard() {
   const [circles, setCircles] = useState<Circle[]>([])
   const [selectedCircleId, setSelectedCircleId] = useState<string | null>(null)
   const [members, setMembers] = useState<MemberWithLocation[]>([])
+  const [places, setPlaces] = useState<Place[]>([])
+  const [events, setEvents] = useState<GeofenceEvent[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -81,6 +95,48 @@ export function Dashboard() {
     if (!selectedCircleId) return
     loadMembers(selectedCircleId)
   }, [selectedCircleId, loadMembers])
+
+  const loadPlacesAndEvents = useCallback(async (circleId: string) => {
+    const [placesRes, eventsRes] = await Promise.all([
+      supabase.from('places').select('*').eq('circle_id', circleId).order('name'),
+      supabase
+        .from('geofence_events')
+        .select('id, event_type, occurred_at, places(name), profiles(full_name)')
+        .order('occurred_at', { ascending: false })
+        .limit(20),
+    ])
+    if (placesRes.data) setPlaces(placesRes.data as Place[])
+    if (eventsRes.data) setEvents(eventsRes.data as unknown as GeofenceEvent[])
+  }, [])
+
+  useEffect(() => {
+    if (!selectedCircleId) return
+    loadPlacesAndEvents(selectedCircleId)
+  }, [selectedCircleId, loadPlacesAndEvents])
+
+  // Live updates for the activity feed, same pattern as locations below.
+  useEffect(() => {
+    if (!selectedCircleId) return
+
+    const channel = supabase
+      .channel(`geofence-events-${selectedCircleId}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'geofence_events' },
+        () => {
+          // The insert payload doesn't include the joined place/profile
+          // names we display, so just refetch — this fires rarely enough
+          // (only on an actual arrive/leave) that it's not worth hand
+          // -rolling the join client-side.
+          loadPlacesAndEvents(selectedCircleId)
+        },
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [selectedCircleId, loadPlacesAndEvents])
 
   // Live updates: whenever a circle-mate's location is inserted, patch it
   // into state directly instead of re-fetching everything.
@@ -156,10 +212,11 @@ export function Dashboard() {
         {error && <p className="error">{error}</p>}
 
         <MemberList members={members} />
+        <ActivityFeed events={events} />
       </aside>
 
       <main className="map-pane">
-        <MapView members={members} />
+        <MapView members={members} places={places} />
       </main>
     </div>
   )

@@ -29,10 +29,16 @@ if you haven't already.
   level.
 - Subscribes to `postgres_changes` on the `locations` table so new pings
   move markers live, no polling or refresh needed.
+- Draws each circle's geofenced places (the geofencing stretch goal, page
+  3) as circle overlays on the map, and a "Recent activity" feed of
+  arrive/leave events in the sidebar — both live via realtime, matching
+  what's on the mobile app's Places screen. Read-only here too: creating a
+  place is mobile-only (`mobile/app/(app)/places.tsx`).
 
 All access control is enforced by the backend's row-level security — this
 app never sees data for anyone outside your circles, and never writes to
-`locations` (view only, by design).
+`locations` or `places` (view only, by design — see the module docstring
+in `src/components/Dashboard.tsx`).
 
 ## Deploying
 

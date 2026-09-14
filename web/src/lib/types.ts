@@ -24,3 +24,20 @@ export interface LatestLocation {
 export interface MemberWithLocation extends Profile {
   location: LatestLocation | null
 }
+
+export interface Place {
+  id: string
+  circle_id: string
+  name: string
+  latitude: number
+  longitude: number
+  radius_meters: number
+}
+
+export interface GeofenceEvent {
+  id: number
+  event_type: 'arrived' | 'left'
+  occurred_at: string
+  places: { name: string } | null
+  profiles: { full_name: string } | null
+}

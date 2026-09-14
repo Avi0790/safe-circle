@@ -1,8 +1,8 @@
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, Popup, Circle, useMap } from 'react-leaflet'
 import { useEffect } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-import type { MemberWithLocation } from '../lib/types'
+import type { MemberWithLocation, Place } from '../lib/types'
 import { timeAgo } from '../lib/format'
 
 // Vite bundles Leaflet's default marker images at hashed URLs, which breaks
@@ -32,7 +32,13 @@ function FitToMembers({ members }: { members: MemberWithLocation[] }) {
 }
 
 
-export function MapView({ members }: { members: MemberWithLocation[] }) {
+export function MapView({
+  members,
+  places = [],
+}: {
+  members: MemberWithLocation[]
+  places?: Place[]
+}) {
   const located = members.filter((m) => m.location)
 
   return (
@@ -42,6 +48,16 @@ export function MapView({ members }: { members: MemberWithLocation[] }) {
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
       <FitToMembers members={members} />
+      {places.map((place) => (
+        <Circle
+          key={place.id}
+          center={[place.latitude, place.longitude]}
+          radius={place.radius_meters}
+          pathOptions={{ color: '#7c3aed', fillColor: '#7c3aed', fillOpacity: 0.1 }}
+        >
+          <Popup>{place.name}</Popup>
+        </Circle>
+      ))}
       {located.map((member) => (
         <Marker
           key={member.id}
