@@ -41,7 +41,13 @@ jobs:
           cache: npm
           cache-dependency-path: web/package-lock.json
 
-      - run: npm ci
+      # Not `npm ci`: one of Vite 8's optional WASM fallback deps
+      # (@emnapi/*, pulled in transitively via rolldown) is declared with a
+      # loose semver range upstream, so the exact resolved version drifts
+      # between installs and trips npm ci's strict lockfile match. npm
+      # install tolerates that while still respecting the lockfile for
+      # everything pinned.
+      - run: npm install
       - run: npm test
       - run: npm run build
 
