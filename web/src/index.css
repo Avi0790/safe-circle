@@ -1,0 +1,253 @@
+:root {
+  --text: #4b5563;
+  --text-h: #0f172a;
+  --bg: #ffffff;
+  --bg-elevated: #f8fafc;
+  --border: #e2e8f0;
+  --accent: #7c3aed;
+  --accent-hover: #6d28d9;
+  --danger: #dc2626;
+  --online: #22c55e;
+  --offline: #cbd5e1;
+
+  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
+  color-scheme: light dark;
+  font: 16px/1.5 var(--sans);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --text: #cbd5e1;
+    --text-h: #f8fafc;
+    --bg: #0f1115;
+    --bg-elevated: #171a21;
+    --border: #2a2e38;
+    --accent: #a78bfa;
+    --accent-hover: #c4b5fd;
+    --danger: #f87171;
+    --online: #4ade80;
+    --offline: #3f4451;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  color: var(--text);
+  background: var(--bg);
+}
+
+#root {
+  min-height: 100vh;
+}
+
+h1 {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-h);
+  margin: 0;
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--accent);
+  color: white;
+  padding: 10px 16px;
+}
+button:hover {
+  background: var(--accent-hover);
+}
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.link-button {
+  background: none;
+  color: var(--text);
+  border: none;
+  padding: 4px 8px;
+  font-size: 14px;
+  text-decoration: underline;
+}
+.link-button:hover {
+  background: none;
+  color: var(--text-h);
+}
+
+.centered {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  text-align: center;
+  padding: 24px;
+}
+
+.error {
+  color: var(--danger);
+  font-size: 14px;
+}
+
+.hint {
+  color: var(--text);
+  font-size: 14px;
+  opacity: 0.8;
+}
+
+/* Login screen */
+.login-screen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 360px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 32px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg-elevated);
+}
+
+.login-card h1 {
+  margin-bottom: -8px;
+}
+
+.subtitle {
+  font-size: 14px;
+  opacity: 0.7;
+  margin-bottom: 8px;
+}
+
+.login-card label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+  color: var(--text-h);
+}
+
+.login-card input {
+  font: inherit;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-h);
+}
+
+/* Dashboard layout */
+.dashboard {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+}
+
+.sidebar {
+  width: 300px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--border);
+  background: var(--bg-elevated);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.circle-select,
+.circle-name {
+  margin: 12px 16px;
+  padding: 8px 10px;
+  font: inherit;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-h);
+}
+
+.circle-name {
+  font-weight: 600;
+}
+
+.map-pane {
+  flex: 1;
+  position: relative;
+}
+
+.map-container {
+  height: 100%;
+  width: 100%;
+}
+
+/* Member list */
+.member-list {
+  list-style: none;
+  margin: 0;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.member-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border-radius: 8px;
+}
+.member-row:hover {
+  background: var(--bg);
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.dot-online {
+  background: var(--online);
+}
+.dot-offline {
+  background: var(--offline);
+}
+
+.member-name {
+  color: var(--text-h);
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.member-meta {
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.member-empty {
+  padding: 12px;
+  font-size: 14px;
+  opacity: 0.7;
+}
