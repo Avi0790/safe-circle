@@ -43,12 +43,18 @@ throttling, offline queue) — talking to the Supabase backend in
   places, and a live "who arrived/left where" activity feed.
 - **Push notification registration** (`lib/pushNotifications.ts`) — gets an
   Expo push token and upserts it into `push_tokens`, so
-  `send-geofence-push` has somewhere to deliver alerts. Requires the
-  project to be registered with EAS (`eas init`, tied to a real Expo
-  account) — Expo push tokens are scoped to an EAS project id, so this
-  fails gracefully with a specific "not set up yet" message rather than
-  crashing until that one-time step is done. Also guarded to no-op on web
-  (`expo-notifications` doesn't support that platform).
+  `send-geofence-push`/`send-sos-push` have somewhere to deliver alerts.
+  Expo push tokens are scoped to an EAS project id, so this needed the
+  project registered with EAS (`eas init`) first — **done**:
+  `@suren.7a/safecircle` (`app.config.js`'s `extra.eas.projectId` /
+  `owner`). It still fails gracefully with a specific message rather than
+  crashing if that's ever missing (e.g. a fork under a different EAS
+  account). Also guarded to no-op on web (`expo-notifications` doesn't
+  support that platform). Getting a *real* token still needs a physical
+  device or simulator — `Notifications.getExpoPushTokenAsync()` is native
+  -only regardless of EAS being configured, so this is in the same "needs
+  a device to fully verify" bucket as the map and background GPS (see
+  Verification notes).
 - **Location history** (`app/(app)/member/[userId].tsx`, tap a member on
   the Members tab) — the other stretch goal from the proposal's page 3.
   Shows a member's last 100 pings as a map trail (`Polyline` + oldest/most

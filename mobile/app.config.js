@@ -10,6 +10,7 @@ module.exports = {
     name: 'Safe Circle',
     slug: 'safecircle',
     scheme: 'safecircle',
+    owner: 'suren.7a',
     version: '1.0.0',
     orientation: 'portrait',
     icon: './assets/icon.png',
@@ -56,6 +57,9 @@ module.exports = {
       supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL ?? rootEnv.EXPO_PUBLIC_SUPABASE_URL,
       supabaseAnonKey:
         process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? rootEnv.EXPO_PUBLIC_SUPABASE_ANON_KEY,
+      eas: {
+        projectId: '242bb342-021e-4f7e-a78d-d13941d9fd28',
+      },
     },
   },
 };

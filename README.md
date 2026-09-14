@@ -27,12 +27,14 @@ Each package has its own README with setup and verification details.
 **Status: the full proposal is built** — MVP (accounts/circles, live map,
 background location) and all three stretch goals (geofenced places with
 push alerts, location history, an SOS button), backend through UI,
-verified end-to-end against the real hosted project. A security review
-also caught and fixed two real issues (an unauthenticated webhook, no
-rate limiting on invite-code guesses) — see `backend/README.md`. What's
-left isn't code: teammates joining, and two setup steps that need
-individual accounts (EAS for push notifications, Xcode/Android Studio for
-real-device testing).
+verified end-to-end against the real hosted project. Two security review
+passes caught and fixed three real issues (an unauthenticated webhook, no
+rate limiting on invite-code guesses, no rate limiting on SOS alerts) —
+see `backend/README.md`. Push notifications are registered with EAS
+(`@suren.7a/safecircle`). What's left isn't code: teammates joining, and
+real-device testing (needs Xcode or Android Studio — the one remaining
+piece that genuinely can't be verified through a browser preview, since
+it's native GPS/map/push hardware behavior).
 
 ## Getting started
 
