@@ -1,11 +1,13 @@
-// Triggered by a Supabase Database Webhook on INSERT into
-// public.geofence_events (configure the webhook after deploying — see
-// backend/README.md). Looks up everyone else in the traveler's circle,
-// grabs their push tokens, and sends an Expo push notification.
+// Triggered by the notify_geofence_event() trigger (via pg_net) on INSERT
+// into public.geofence_events — see migration
+// ...000009_geofence_webhook_secret.sql. Looks up everyone else in the
+// traveler's circle, grabs their push tokens, and sends an Expo push
+// notification.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const WEBHOOK_SECRET = Deno.env.get("GEOFENCE_WEBHOOK_SECRET");
 
 interface GeofenceEvent {
   id: number;
@@ -21,6 +23,15 @@ interface WebhookPayload {
 }
 
 Deno.serve(async (req) => {
+  // `verify_jwt` alone isn't real authorization here — the public anon
+  // key satisfies it trivially, so without this check anyone holding that
+  // key could POST a fabricated payload and trigger a real notification
+  // to real circle members. Require the shared secret only our own
+  // trigger knows (see migration ...000009).
+  if (!WEBHOOK_SECRET || req.headers.get("x-webhook-secret") !== WEBHOOK_SECRET) {
+    return new Response("unauthorized", { status: 401 });
+  }
+
   const payload = (await req.json()) as WebhookPayload;
   const event = payload.record;
 

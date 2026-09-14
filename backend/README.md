@@ -44,7 +44,18 @@ Row-level security is the enforcement point, not application code:
     it's lost, regenerate a new circle or add a `regenerate_invite_code` RPC
     later).
   - `redeem_invite_code(code text)` — hashes the submitted code, looks up the
-    matching circle, and enrolls the caller.
+    matching circle, and enrolls the caller. Codes expire after 48h
+    (`invite_code_expires_at`), and each user is capped at 10 redemption
+    attempts per rolling 15-minute window (`invite_redemption_attempts`) —
+    added after a security review found the original version had neither,
+    leaving it open to brute-forcing the 6-character code. An invalid or
+    expired code returns `null` rather than throwing, deliberately: a
+    thrown exception aborts the whole call's transaction, which would also
+    undo that same call's attempt-counter update, and a wrong code is
+    exactly what a brute-force guess looks like — raising here silently
+    defeated the rate limit (caught by testing: 12 wrong guesses left the
+    counter table empty). Callers should treat a `null` return as
+    "invalid code," not rely on `error`.
 
 This mirrors the proposal's security section (page 4/5 of the proposal):
 "access is enforced in the database" and "hashed invite codes."
@@ -65,6 +76,17 @@ when first setting this up). The `pg_net` approach is equivalent but
 lives entirely in a migration instead of a manual dashboard step — just
 make sure the `pg_net` extension is enabled (migration `...000007` does
 this with `create extension if not exists pg_net;`).
+
+**The webhook call is authenticated**, not just JWT-shaped. A security
+review caught that the Edge Function originally trusted its request body
+outright: its `verify_jwt` setting only checks that *some* valid Supabase
+JWT was presented, and the public anon key (embedded in every client)
+satisfies that trivially — nothing verified the call actually came from
+our own trigger. Migration `...000009` closes this: it generates a random
+shared secret via Supabase Vault (`vault.create_secret`, value never
+written in plaintext to any git-tracked file), the trigger sends it as an
+`X-Webhook-Secret` header, and the function now rejects anything that
+doesn't match (`send-geofence-push/index.ts`).
 
 ## Environment variables
 
@@ -104,9 +126,30 @@ supabase functions deploy send-geofence-push
 
 `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` don't need to be set as
 Edge Function secrets — Supabase injects both automatically for every
-project (`supabase secrets list` will show them already present). No
-manual dashboard step is needed: `supabase db push` is enough to wire the
-whole geofence → push-notification chain end to end.
+project (`supabase secrets list` will show them already present).
+
+**One extra one-time step for `GEOFENCE_WEBHOOK_SECRET`**, needed only
+the *first* time you push these migrations to a given project (already
+done for our shared hosted project — skip this if you're just pulling
+latest and pushing more migrations to the same project):
+
+```bash
+# 1. Push migrations 000009-000010 (NOT 000011 yet — see note below),
+#    which generates the secret in Vault and creates a locked-down,
+#    service_role-only accessor for it.
+# 2. Read it out and mirror it into the Edge Function's env:
+SECRET=$(curl -s -X POST "https://<ref>.supabase.co/rest/v1/rpc/_read_geofence_webhook_secret" \
+  -H "apikey: <service-role-key>" -H "Authorization: Bearer <service-role-key>" \
+  -H "Content-Type: application/json" -d '{}' | tr -d '"')
+supabase secrets set "GEOFENCE_WEBHOOK_SECRET=$SECRET"
+supabase functions deploy send-geofence-push
+# 3. Only now push migration 000011, which drops the accessor entirely.
+```
+
+If you `supabase db push` all pending migrations at once on a brand-new
+project, 000011 drops the accessor in the same batch as 000009 creates
+it — before you get a chance to read the secret out. For a fresh project,
+apply through 000010 first, do the sync above, then apply 000011.
 
 Give the mobile app and web dashboard the project's `SUPABASE_URL` and
 `SUPABASE_ANON_KEY` (Project Settings → API) via the root `.env.example`.
@@ -119,8 +162,12 @@ Never ship the `service_role` key to a client — it bypasses RLS entirely.
 const { data, error } = await supabase.rpc('create_circle', { circle_name: 'The Smiths' });
 // data: [{ circle_id, invite_code }] — show invite_code to the user once.
 
-// Join a circle
-await supabase.rpc('redeem_invite_code', { code: 'AB12CD' });
+// Join a circle — check `data`, not just `error`: an invalid/expired
+// code returns null rather than throwing (see the RLS section above).
+const { data: joinedCircleId, error: joinError } = await supabase
+  .rpc('redeem_invite_code', { code: 'AB12CD' });
+if (joinError) { /* e.g. rate-limited */ }
+if (!joinedCircleId) { /* invalid or expired code */ }
 
 // Report a location ping
 await supabase.from('locations').insert({

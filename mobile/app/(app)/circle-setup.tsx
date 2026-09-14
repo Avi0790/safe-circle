@@ -42,9 +42,16 @@ export default function CircleSetupScreen() {
       return;
     }
     setLoading(true);
-    const { error } = await supabase.rpc('redeem_invite_code', { code: inviteCode.trim() });
+    const { data, error } = await supabase.rpc('redeem_invite_code', { code: inviteCode.trim() });
     setLoading(false);
     if (error) {
+      // e.g. rate-limited ("Too many invite code attempts...")
+      setError(error.message);
+      return;
+    }
+    if (!data) {
+      // Invalid/expired code returns null rather than throwing — see
+      // redeem_invite_code()'s docstring in the backend migration.
       setError('Invalid invite code.');
       return;
     }
