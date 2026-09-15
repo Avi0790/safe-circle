@@ -13,7 +13,23 @@ export interface QueuedPing {
   recorded_at: string;
 }
 
-export async function loadQueue(): Promise<QueuedPing[]> {
+// Serializes every read-modify-write below. Needed because the foreground
+// watch and the background task can each independently fail to send and
+// call enqueue() around the same time — without this, two concurrent
+// enqueue() calls can both read the same starting queue and the second
+// save silently overwrites (loses) the first one's ping.
+let queueLock: Promise<unknown> = Promise.resolve();
+
+function withLock<T>(fn: () => Promise<T>): Promise<T> {
+  const result = queueLock.then(fn, fn);
+  queueLock = result.then(
+    () => undefined,
+    () => undefined,
+  );
+  return result;
+}
+
+async function readQueue(): Promise<QueuedPing[]> {
   const raw = await AsyncStorage.getItem(QUEUE_KEY);
   if (!raw) return [];
   try {
@@ -23,16 +39,22 @@ export async function loadQueue(): Promise<QueuedPing[]> {
   }
 }
 
-export async function saveQueue(queue: QueuedPing[]): Promise<void> {
-  await AsyncStorage.setItem(QUEUE_KEY, JSON.stringify(queue));
+export function loadQueue(): Promise<QueuedPing[]> {
+  return withLock(readQueue);
 }
 
-export async function enqueue(ping: QueuedPing): Promise<void> {
-  const queue = await loadQueue();
-  queue.push(ping);
-  await saveQueue(queue);
+export function saveQueue(queue: QueuedPing[]): Promise<void> {
+  return withLock(() => AsyncStorage.setItem(QUEUE_KEY, JSON.stringify(queue)));
 }
 
-export async function clearQueue(): Promise<void> {
-  await AsyncStorage.removeItem(QUEUE_KEY);
+export function enqueue(ping: QueuedPing): Promise<void> {
+  return withLock(async () => {
+    const queue = await readQueue();
+    queue.push(ping);
+    await AsyncStorage.setItem(QUEUE_KEY, JSON.stringify(queue));
+  });
+}
+
+export function clearQueue(): Promise<void> {
+  return withLock(() => AsyncStorage.removeItem(QUEUE_KEY));
 }

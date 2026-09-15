@@ -51,6 +51,18 @@ async function currentBatteryLevel(): Promise<number | null> {
   }
 }
 
+// Shared by the background TaskManager callback and the foreground watch —
+// both turn a raw expo-location fix into the same locations-table row shape.
+async function buildLocationPing(loc: Location.LocationObject): Promise<QueuedPing> {
+  return {
+    latitude: loc.coords.latitude,
+    longitude: loc.coords.longitude,
+    accuracy: loc.coords.accuracy,
+    battery_level: await currentBatteryLevel(),
+    recorded_at: new Date(loc.timestamp).toISOString(),
+  };
+}
+
 // Sends every queued ping (oldest first) plus an optional new one, in a
 // single insert. If it fails (most commonly: no network) everything goes
 // back on the queue for the next attempt — this is the "offline is
@@ -92,18 +104,10 @@ if (isNative) {
     const { locations } = (data ?? {}) as { locations?: Location.LocationObject[] };
     if (!locations || locations.length === 0) return;
 
-    const batteryLevel = await currentBatteryLevel();
-
     // Normally one fix per callback given our interval settings, but handle
     // bursts (e.g. after being backgrounded a while) by sending them together.
     for (const loc of locations) {
-      await flushQueueAndSend({
-        latitude: loc.coords.latitude,
-        longitude: loc.coords.longitude,
-        accuracy: loc.coords.accuracy,
-        battery_level: batteryLevel,
-        recorded_at: new Date(loc.timestamp).toISOString(),
-      });
+      await flushQueueAndSend(await buildLocationPing(loc));
     }
   });
 }
@@ -121,7 +125,17 @@ export function startQueueFlushOnReconnect(): () => void {
 
 export async function isTrackingActive(): Promise<boolean> {
   if (!isNative) return false;
-  return getSharingPreference();
+  if (!(await getSharingPreference())) return false;
+  // The persisted preference alone isn't proof anything is actually running
+  // — permission may have been revoked externally (e.g. iOS Settings) since
+  // sharing was turned on. Self-heal the flag so the toggle doesn't show
+  // "on" forever with nothing behind it.
+  const { status } = await Location.getForegroundPermissionsAsync();
+  if (status !== 'granted') {
+    await setSharingPreference(false);
+    return false;
+  }
+  return true;
 }
 
 // Best-effort check for whether the real OS background task is the one
@@ -150,16 +164,26 @@ let foregroundLifecycleSubscription: { remove: () => void } | null = null;
 // once it resolves, whether it's still the most recent request — see
 // startForegroundLoop.
 let foregroundLoopToken = 0;
+// iOS ignores watchPositionAsync's timeInterval (Android-only per Expo's
+// docs), so a stationary user would otherwise never get a periodic update
+// there — this timer polls as a heartbeat once distanceInterval has been
+// quiet for a full TIME_INTERVAL_MS, on both platforms.
+let foregroundHeartbeatTimer: ReturnType<typeof setInterval> | null = null;
+let lastForegroundReportAt = 0;
 
 async function reportForegroundFix(loc: Location.LocationObject) {
-  const batteryLevel = await currentBatteryLevel();
-  await flushQueueAndSend({
-    latitude: loc.coords.latitude,
-    longitude: loc.coords.longitude,
-    accuracy: loc.coords.accuracy,
-    battery_level: batteryLevel,
-    recorded_at: new Date(loc.timestamp).toISOString(),
-  });
+  lastForegroundReportAt = Date.now();
+  await flushQueueAndSend(await buildLocationPing(loc));
+}
+
+async function foregroundHeartbeatTick() {
+  if (Date.now() - lastForegroundReportAt < TIME_INTERVAL_MS) return;
+  try {
+    const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+    await reportForegroundFix(loc);
+  } catch (err) {
+    console.warn('[locationTracking] foreground heartbeat failed:', err);
+  }
 }
 
 async function startForegroundLoop() {
@@ -187,6 +211,8 @@ async function startForegroundLoop() {
       return;
     }
     foregroundWatchSubscription = subscription;
+    lastForegroundReportAt = Date.now();
+    foregroundHeartbeatTimer = setInterval(foregroundHeartbeatTick, TIME_INTERVAL_MS);
   } catch (err) {
     // Mirrors the try/catch already on the background permission/task calls
     // below — a native throw here must not go uncaught from an AppState
@@ -200,6 +226,10 @@ function stopForegroundLoop() {
   foregroundLoopToken++;
   foregroundWatchSubscription?.remove();
   foregroundWatchSubscription = null;
+  if (foregroundHeartbeatTimer) {
+    clearInterval(foregroundHeartbeatTimer);
+    foregroundHeartbeatTimer = null;
+  }
 }
 
 function startForegroundWatch(): void {
