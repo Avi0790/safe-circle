@@ -7,7 +7,12 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useCircles } from '@/contexts/CircleContext';
 import { supabase } from '@/lib/supabase';
 import { colors, radius, spacing, typography } from '@/lib/theme';
-import { isTrackingActive, startBackgroundTracking, stopBackgroundTracking } from '@/lib/locationTracking';
+import {
+  isBackgroundTaskActive,
+  isTrackingActive,
+  startBackgroundTracking,
+  stopBackgroundTracking,
+} from '@/lib/locationTracking';
 import { registerForPushNotifications } from '@/lib/pushNotifications';
 
 export default function SettingsTab() {
@@ -21,12 +26,17 @@ export default function SettingsTab() {
   const [sharingEnabled, setSharingEnabled] = useState(false);
   const [sharingBusy, setSharingBusy] = useState(true);
   const [sharingError, setSharingError] = useState<string | null>(null);
+  const [sharingMode, setSharingMode] = useState<'background' | 'foreground' | null>(null);
 
   useEffect(() => {
-    isTrackingActive().then((active) => {
+    (async () => {
+      const active = await isTrackingActive();
       setSharingEnabled(active);
+      if (active) {
+        setSharingMode((await isBackgroundTaskActive()) ? 'background' : 'foreground');
+      }
       setSharingBusy(false);
-    });
+    })();
   }, []);
 
   async function handleToggleSharing(next: boolean) {
@@ -37,12 +47,15 @@ export default function SettingsTab() {
       if (!result.ok) {
         setSharingError(result.reason);
         setSharingEnabled(false);
+        setSharingMode(null);
       } else {
         setSharingEnabled(true);
+        setSharingMode(result.backgroundGranted ? 'background' : 'foreground');
       }
     } else {
       await stopBackgroundTracking();
       setSharingEnabled(false);
+      setSharingMode(null);
     }
     setSharingBusy(false);
   }
@@ -92,7 +105,9 @@ export default function SettingsTab() {
             <View style={styles.rowText}>
               <Text style={styles.sectionLabel}>Share my location</Text>
               <Text style={typography.caption}>
-                Runs in the background, even when the app is closed.
+                {sharingMode === 'foreground'
+                  ? 'Sharing while the app is open. Background sharing needs a development build (not Expo Go) — see mobile/README.md.'
+                  : 'Runs in the background, even when the app is closed.'}
               </Text>
             </View>
             {sharingBusy ? (

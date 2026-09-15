@@ -35,6 +35,19 @@ throttling, offline queue) — talking to the Supabase backend in
     relaunched by the OS, even after the app is fully closed.
   - Guarded to no-op safely on web (`Platform.OS !== 'web'`) — background
     location doesn't apply there and this app doesn't target web anyway.
+  - **Foreground fallback**: alongside the real background task, a plain
+    `watchPositionAsync` loop runs whenever the app is in the foreground
+    (paused/resumed via `AppState`). This is what actually delivers
+    updates in Expo Go, where the background task silently never fires —
+    confirmed by testing on a real device. It needs its own persisted
+    "sharing enabled" flag (`AsyncStorage`, separate from the OS-managed
+    background task state) so it resumes correctly after an app restart;
+    `resumeForegroundWatchIfActive()`, called once from `app/_layout.tsx`,
+    handles that. In a real development/production build this runs
+    alongside the true background task and hands off cleanly, since it
+    pauses the instant the app backgrounds. Settings shows which mode is
+    actually active ("Runs in the background..." vs "Sharing while the
+    app is open...").
 - **Places** (`app/(app)/places.tsx`, reachable from Settings) — the
   geofencing stretch goal (proposal page 3). The backend side
   (`places`/`geofence_events` tables, the `evaluate_geofences` trigger, the
@@ -110,22 +123,31 @@ iPhone via Expo Go (`npx expo start`, scan the QR code): sign-up,
 circle-setup, tab navigation, and the map tab (Apple Maps tiles, the SOS
 button) all render and work correctly on real hardware.
 
-**Background location does not work in Expo Go — confirmed, not just
-untested.** Enabling "Share my location" in Settings on the real device
-produced zero new rows in `locations` even after waiting. This isn't a
-bug: `Location.startLocationUpdatesAsync` requires a custom development
-build on both iOS and Android per Expo's own docs — "You must use a
-development build to use background location since it is not supported
-in the Expo Go app." This is the concrete version of the risk the
-proposal named on page 9. Getting a development build onto a physical
-iPhone via EAS additionally requires enrolling in the **paid** Apple
-Developer Program ($99/yr) — a free Apple ID fails registering the
+**True background location does not work in Expo Go — confirmed, not
+just untested.** Enabling "Share my location" in Settings on the real
+device produced zero new rows in `locations`, even after waiting. This
+isn't a bug: `Location.startLocationUpdatesAsync` requires a custom
+development build on both iOS and Android per Expo's own docs — "You
+must use a development build to use background location since it is not
+supported in the Expo Go app." This is the concrete version of the risk
+the proposal named on page 9. Getting a development build onto a
+physical iPhone via EAS additionally requires enrolling in the **paid**
+Apple Developer Program ($99/yr) — a free Apple ID fails registering the
 device with `error: "iTunes service key is empty"` (Apple's Developer
 Portal API, which EAS/fastlane use for ad-hoc provisioning, rejects
 non-Program accounts entirely). `mobile/eas.json` has a `development`
 build profile ready to go (`eas device:create` then
 `eas build --profile development --platform ios`) whenever that's set up
 — nothing else to configure.
+
+**Fixed with a foreground fallback**, added after finding this — see
+"Foreground fallback" above. It should now deliver updates on the real
+iPhone in Expo Go whenever the app is open, just not while
+backgrounded/closed — this specific fix hasn't been re-verified on the
+real device yet (only that it doesn't break anything, via the same
+`expo start --web` guard-path check as everything else). Settings
+reflects the mode ("Sharing while the app is open..." instead of "Runs
+in the background...").
 
 Once a development build (iOS with a paid account, or **Android**, which
 has no such account requirement or 7-day expiry — matches the proposal's

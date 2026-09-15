@@ -1,10 +1,31 @@
-import { Platform } from 'react-native';
+import { AppState, Platform } from 'react-native';
+import type { AppStateStatus } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as TaskManager from 'expo-task-manager';
 import * as Location from 'expo-location';
 import * as Battery from 'expo-battery';
 import NetInfo from '@react-native-community/netinfo';
 import { supabase } from './supabase';
 import { enqueue, loadQueue, clearQueue, saveQueue, type QueuedPing } from './locationQueue';
+
+// Whether the user has sharing turned on — our own source of truth,
+// separate from the OS-level background task registration. Needed
+// because the foreground-watch fallback (below) is pure JS state that
+// doesn't survive an app restart on its own the way a real background
+// task does; this is what lets it resume automatically.
+const SHARING_ENABLED_KEY = 'safecircle.sharingEnabled.v1';
+
+async function setSharingPreference(enabled: boolean): Promise<void> {
+  if (enabled) {
+    await AsyncStorage.setItem(SHARING_ENABLED_KEY, '1');
+  } else {
+    await AsyncStorage.removeItem(SHARING_ENABLED_KEY);
+  }
+}
+
+async function getSharingPreference(): Promise<boolean> {
+  return (await AsyncStorage.getItem(SHARING_ENABLED_KEY)) === '1';
+}
 
 // Background tracking is meaningless on web (this mobile app doesn't
 // target it anyway — see index.web.tsx), and expo-task-manager /
@@ -100,13 +121,89 @@ export function startQueueFlushOnReconnect(): () => void {
 
 export async function isTrackingActive(): Promise<boolean> {
   if (!isNative) return false;
-  const registered = await TaskManager.isTaskRegisteredAsync(LOCATION_TASK_NAME);
+  return getSharingPreference();
+}
+
+// Best-effort check for whether the real OS background task is the one
+// actually running (vs. just the foreground fallback) — used to show an
+// accurate "background" vs "foreground only" label after an app restart.
+export async function isBackgroundTaskActive(): Promise<boolean> {
+  if (!isNative) return false;
+  const registered = await TaskManager.isTaskRegisteredAsync(LOCATION_TASK_NAME).catch(
+    () => false,
+  );
   if (!registered) return false;
-  return Location.hasStartedLocationUpdatesAsync(LOCATION_TASK_NAME);
+  return Location.hasStartedLocationUpdatesAsync(LOCATION_TASK_NAME).catch(() => false);
+}
+
+// Foreground fallback: a plain watchPositionAsync loop, active only while
+// the app is in the foreground (paused/resumed via AppState). This is
+// what actually delivers updates in Expo Go, where
+// startLocationUpdatesAsync's background task silently never fires —
+// confirmed by testing on a real device (see mobile/README.md's
+// Verification notes). In a real development/production build it just
+// runs alongside the true background task, handing off cleanly since it
+// pauses the moment the app backgrounds.
+let foregroundWatchSubscription: Location.LocationSubscription | null = null;
+let foregroundLifecycleSubscription: { remove: () => void } | null = null;
+
+async function reportForegroundFix(loc: Location.LocationObject) {
+  const batteryLevel = await currentBatteryLevel();
+  await flushQueueAndSend({
+    latitude: loc.coords.latitude,
+    longitude: loc.coords.longitude,
+    accuracy: loc.coords.accuracy,
+    battery_level: batteryLevel,
+    recorded_at: new Date(loc.timestamp).toISOString(),
+  });
+}
+
+async function startForegroundLoop() {
+  if (foregroundWatchSubscription) return;
+  foregroundWatchSubscription = await Location.watchPositionAsync(
+    {
+      accuracy: Location.Accuracy.Balanced,
+      distanceInterval: DISTANCE_INTERVAL_METERS,
+      timeInterval: TIME_INTERVAL_MS,
+    },
+    (loc) => {
+      reportForegroundFix(loc);
+    },
+  );
+}
+
+function stopForegroundLoop() {
+  foregroundWatchSubscription?.remove();
+  foregroundWatchSubscription = null;
+}
+
+function startForegroundWatch(): void {
+  if (!isNative || foregroundLifecycleSubscription) return;
+
+  if (AppState.currentState === 'active') {
+    startForegroundLoop();
+  }
+
+  foregroundLifecycleSubscription = AppState.addEventListener(
+    'change',
+    (nextState: AppStateStatus) => {
+      if (nextState === 'active') {
+        startForegroundLoop();
+      } else {
+        stopForegroundLoop();
+      }
+    },
+  );
+}
+
+function stopForegroundWatch(): void {
+  stopForegroundLoop();
+  foregroundLifecycleSubscription?.remove();
+  foregroundLifecycleSubscription = null;
 }
 
 export async function startBackgroundTracking(): Promise<
-  { ok: true } | { ok: false; reason: string }
+  { ok: true; backgroundGranted: boolean } | { ok: false; reason: string }
 > {
   if (!isNative) {
     return { ok: false, reason: 'Background location is not available on web.' };
@@ -117,33 +214,55 @@ export async function startBackgroundTracking(): Promise<
     return { ok: false, reason: 'Location permission denied.' };
   }
 
+  // Foreground sharing works on just this permission — start it
+  // regardless of how the background request below goes.
+  startForegroundWatch();
+  await setSharingPreference(true);
+
   const background = await Location.requestBackgroundPermissionsAsync();
   if (background.status !== 'granted') {
-    return {
-      ok: false,
-      reason:
-        'Background location permission denied. Location will only share while the app is open.',
-    };
+    return { ok: true, backgroundGranted: false };
   }
 
-  await Location.startLocationUpdatesAsync(LOCATION_TASK_NAME, {
-    accuracy: Location.Accuracy.Balanced,
-    distanceInterval: DISTANCE_INTERVAL_METERS,
-    timeInterval: TIME_INTERVAL_MS,
-    pausesUpdatesAutomatically: false,
-    showsBackgroundLocationIndicator: true,
-    foregroundService: {
-      notificationTitle: 'Safe Circle',
-      notificationBody: 'Sharing your location with your circle.',
-    },
-  });
+  let backgroundTaskStarted = false;
+  try {
+    await Location.startLocationUpdatesAsync(LOCATION_TASK_NAME, {
+      accuracy: Location.Accuracy.Balanced,
+      distanceInterval: DISTANCE_INTERVAL_METERS,
+      timeInterval: TIME_INTERVAL_MS,
+      pausesUpdatesAutomatically: false,
+      showsBackgroundLocationIndicator: true,
+      foregroundService: {
+        notificationTitle: 'Safe Circle',
+        notificationBody: 'Sharing your location with your circle.',
+      },
+    });
+    backgroundTaskStarted = true;
+  } catch (err) {
+    // Expo Go throws here (background tracking needs a development
+    // build); the foreground watch above still covers us either way.
+    console.warn('[locationTracking] background task unavailable:', err);
+  }
 
-  return { ok: true };
+  return { ok: true, backgroundGranted: backgroundTaskStarted };
 }
 
 export async function stopBackgroundTracking(): Promise<void> {
   if (!isNative) return;
+  stopForegroundWatch();
+  await setSharingPreference(false);
   if (await TaskManager.isTaskRegisteredAsync(LOCATION_TASK_NAME)) {
     await Location.stopLocationUpdatesAsync(LOCATION_TASK_NAME);
   }
+}
+
+// Called once from app startup: if sharing was left on from a previous
+// session, resume the foreground watch loop. The real background task,
+// if it was actually running (a development/production build, not Expo
+// Go), is already managed by the OS and needs no action here.
+export async function resumeForegroundWatchIfActive(): Promise<void> {
+  if (!isNative) return;
+  if (!(await getSharingPreference())) return;
+  const { status } = await Location.getForegroundPermissionsAsync();
+  if (status === 'granted') startForegroundWatch();
 }

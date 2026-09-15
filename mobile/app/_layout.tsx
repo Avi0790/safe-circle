@@ -6,10 +6,13 @@ import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 // Side-effect import: registers the background location task (AJ's
 // layer) at module scope. Must happen unconditionally on every app
 // launch, not inside a component — see lib/locationTracking.ts.
-import { startQueueFlushOnReconnect } from '@/lib/locationTracking';
+import { resumeForegroundWatchIfActive, startQueueFlushOnReconnect } from '@/lib/locationTracking';
 
 export default function RootLayout() {
   useEffect(() => startQueueFlushOnReconnect(), []);
+  useEffect(() => {
+    resumeForegroundWatchIfActive();
+  }, []);
 
   return (
     <AuthProvider>
