@@ -146,6 +146,10 @@ export async function isBackgroundTaskActive(): Promise<boolean> {
 // pauses the moment the app backgrounds.
 let foregroundWatchSubscription: Location.LocationSubscription | null = null;
 let foregroundLifecycleSubscription: { remove: () => void } | null = null;
+// Bumped by every start/stop so a pending watchPositionAsync call can tell,
+// once it resolves, whether it's still the most recent request — see
+// startForegroundLoop.
+let foregroundLoopToken = 0;
 
 async function reportForegroundFix(loc: Location.LocationObject) {
   const batteryLevel = await currentBatteryLevel();
@@ -160,19 +164,40 @@ async function reportForegroundFix(loc: Location.LocationObject) {
 
 async function startForegroundLoop() {
   if (foregroundWatchSubscription) return;
-  foregroundWatchSubscription = await Location.watchPositionAsync(
-    {
-      accuracy: Location.Accuracy.Balanced,
-      distanceInterval: DISTANCE_INTERVAL_METERS,
-      timeInterval: TIME_INTERVAL_MS,
-    },
-    (loc) => {
-      reportForegroundFix(loc);
-    },
-  );
+  // Claim this request synchronously, before the await below — otherwise a
+  // second call (e.g. AppState flapping active/inactive/active while the
+  // permission dialog is up) would also see a null subscription and start a
+  // second one. Whichever call's token is still current when it resolves
+  // wins; a superseded one tears itself down instead of leaking.
+  const token = ++foregroundLoopToken;
+  try {
+    const subscription = await Location.watchPositionAsync(
+      {
+        accuracy: Location.Accuracy.Balanced,
+        distanceInterval: DISTANCE_INTERVAL_METERS,
+        timeInterval: TIME_INTERVAL_MS,
+      },
+      (loc) => {
+        reportForegroundFix(loc);
+      },
+    );
+    if (token !== foregroundLoopToken) {
+      // Stopped (or restarted) while we were awaiting — don't leak this one.
+      subscription.remove();
+      return;
+    }
+    foregroundWatchSubscription = subscription;
+  } catch (err) {
+    // Mirrors the try/catch already on the background permission/task calls
+    // below — a native throw here must not go uncaught from an AppState
+    // listener, or it silently kills the only mechanism that delivers
+    // updates in Expo Go.
+    console.warn('[locationTracking] foreground watch unavailable:', err);
+  }
 }
 
 function stopForegroundLoop() {
+  foregroundLoopToken++;
   foregroundWatchSubscription?.remove();
   foregroundWatchSubscription = null;
 }
