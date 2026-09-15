@@ -105,23 +105,37 @@ full auth → circle-setup → tabs flow, circle creation, invite code
 generation/regeneration, member list, and sign-out all confirmed working
 against the real hosted backend.
 
-**Two things specifically could not be verified this way and still need a
-real device or simulator:**
+**Update — since verified on a real device.** Ran the app on a physical
+iPhone via Expo Go (`npx expo start`, scan the QR code): sign-up,
+circle-setup, tab navigation, and the map tab (Apple Maps tiles, the SOS
+button) all render and work correctly on real hardware.
 
-- The map tab itself — `react-native-maps` has no web renderer.
-- The actual background location engine. The web target's `Platform.OS`
-  guard proves the code doesn't crash and fails gracefully there ("Background
-  location is not available on web" — confirmed in-browser), but real GPS
-  fixes, OS-level background scheduling, and permission dialogs are native
-  behavior that fundamentally cannot be exercised outside a native runtime.
-  Before trusting the 50m/60s throttling or the offline queue, test on an
-  actual iOS/Android device or simulator: toggle sharing on in Settings,
-  background the app, walk around, then check the `locations` table (or
-  the web dashboard) for new rows: `select * from locations order by
-  recorded_at desc limit 5;`. To test the offline queue specifically,
-  enable airplane mode for a few location updates, confirm nothing new
-  appears in `locations`, then disable it and confirm the queued pings
-  land in a batch.
+**Background location does not work in Expo Go — confirmed, not just
+untested.** Enabling "Share my location" in Settings on the real device
+produced zero new rows in `locations` even after waiting. This isn't a
+bug: `Location.startLocationUpdatesAsync` requires a custom development
+build on both iOS and Android per Expo's own docs — "You must use a
+development build to use background location since it is not supported
+in the Expo Go app." This is the concrete version of the risk the
+proposal named on page 9. Getting a development build onto a physical
+iPhone via EAS additionally requires enrolling in the **paid** Apple
+Developer Program ($99/yr) — a free Apple ID fails registering the
+device with `error: "iTunes service key is empty"` (Apple's Developer
+Portal API, which EAS/fastlane use for ad-hoc provisioning, rejects
+non-Program accounts entirely). `mobile/eas.json` has a `development`
+build profile ready to go (`eas device:create` then
+`eas build --profile development --platform ios`) whenever that's set up
+— nothing else to configure.
+
+Once a development build (iOS with a paid account, or **Android**, which
+has no such account requirement or 7-day expiry — matches the proposal's
+own "build Android-first" call) is running: toggle sharing on in
+Settings, background the app, walk around, then check `locations` for
+new rows (`select * from locations order by recorded_at desc limit 5;`
+in the SQL editor, or the web dashboard). To test the offline queue
+specifically: enable airplane mode for a few location updates, confirm
+nothing new appears, then disable it and confirm the queued pings land
+in a batch.
 
 Everything else new — Places (add a place, list, activity feed), location
 history, and the push-token upsert's happy path once EAS is configured —
