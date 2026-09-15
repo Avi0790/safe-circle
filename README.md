@@ -33,19 +33,22 @@ rate limiting on invite-code guesses, no rate limiting on SOS alerts) —
 see `backend/README.md`. Push notifications are registered with EAS
 (`@suren.7a/safecircle`).
 
-Tested on a real iPhone via Expo Go: auth, circles, the map, and SOS all
-confirmed working on real hardware. One real, documented limitation came
-out of that: **background location doesn't run in Expo Go at all** (on
-either platform, per Expo's own docs) — it needs a custom development
-build, and getting one onto a physical iPhone needs the paid Apple
-Developer Program ($99/yr), which this project hasn't enrolled in. An
-Android development build has no such requirement and would need testing
-whenever an Android device is available — see `mobile/README.md` for the
-exact steps and the concrete error that surfaces without a paid account.
+Tested on a real iPhone via Expo Go: auth, circles, the map, SOS, and
+live location sharing all confirmed working on real hardware — including
+two real bugs caught only by that testing (a crash in the background
+permission request, and background location doing nothing at all in
+Expo Go) and fixed on the spot; see `mobile/README.md`'s Verification
+notes for both. The remaining gap: **true background tracking** (app
+closed or screen off) still needs a custom development build — a
+foreground fallback now covers sharing while the app is open, but not
+backgrounded/closed. Getting a development build onto a physical iPhone
+needs the paid Apple Developer Program ($99/yr), which this project
+hasn't enrolled in; an Android development build has no such requirement
+and would need testing whenever an Android device is available.
 
 What's left isn't ordinary code: teammates joining, and (optionally) that
-Apple Developer enrollment or an Android device to fully verify the
-background location engine on real hardware.
+Apple Developer enrollment or an Android device to verify true background
+tracking on real hardware.
 
 ## Getting started
 

@@ -140,14 +140,23 @@ build profile ready to go (`eas device:create` then
 `eas build --profile development --platform ios`) whenever that's set up
 — nothing else to configure.
 
-**Fixed with a foreground fallback**, added after finding this — see
-"Foreground fallback" above. It should now deliver updates on the real
-iPhone in Expo Go whenever the app is open, just not while
-backgrounded/closed — this specific fix hasn't been re-verified on the
-real device yet (only that it doesn't break anything, via the same
-`expo start --web` guard-path check as everything else). Settings
-reflects the mode ("Sharing while the app is open..." instead of "Runs
-in the background...").
+**Fixed with a foreground fallback** — see "Foreground fallback" above.
+**Confirmed working on the real iPhone**: toggling sharing on delivered a
+steady stream of location rows to the backend while the app was open
+(multiple rows a few seconds apart, coordinates matching the device's
+real location), and the marker appeared correctly on the Map tab. Only
+works while the app is open, not backgrounded/closed, as expected.
+
+Along the way, real-device testing also caught a second bug:
+`Location.requestBackgroundPermissionsAsync()` itself throws
+`ERR_LOCATION_INFO_PLIST` in Expo Go (no `NSLocationAlwaysAndWhenInUse
+UsageDescription` in its compiled binary for arbitrary apps) — that call
+wasn't wrapped in try/catch, so it crashed the whole toggle with an
+uncaught promise rejection and left it stuck spinning. Fixed by wrapping
+it the same way as the already-guarded `startLocationUpdatesAsync` call,
+plus a `try/finally` around the whole toggle handler in `settings.tsx` so
+no future native throw can do the same. Also confirmed fixed on-device —
+the toggle no longer crashes.
 
 Once a development build (iOS with a paid account, or **Android**, which
 has no such account requirement or 7-day expiry — matches the proposal's
