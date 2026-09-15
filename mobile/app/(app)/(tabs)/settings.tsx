@@ -42,22 +42,32 @@ export default function SettingsTab() {
   async function handleToggleSharing(next: boolean) {
     setSharingError(null);
     setSharingBusy(true);
-    if (next) {
-      const result = await startBackgroundTracking();
-      if (!result.ok) {
-        setSharingError(result.reason);
+    // try/finally so an unexpected native throw (we've already hit one —
+    // see startBackgroundTracking's comment on requestBackgroundPermissionsAsync)
+    // can't leave the toggle stuck spinning forever.
+    try {
+      if (next) {
+        const result = await startBackgroundTracking();
+        if (!result.ok) {
+          setSharingError(result.reason);
+          setSharingEnabled(false);
+          setSharingMode(null);
+        } else {
+          setSharingEnabled(true);
+          setSharingMode(result.backgroundGranted ? 'background' : 'foreground');
+        }
+      } else {
+        await stopBackgroundTracking();
         setSharingEnabled(false);
         setSharingMode(null);
-      } else {
-        setSharingEnabled(true);
-        setSharingMode(result.backgroundGranted ? 'background' : 'foreground');
       }
-    } else {
-      await stopBackgroundTracking();
+    } catch (err) {
+      setSharingError(err instanceof Error ? err.message : 'Something went wrong.');
       setSharingEnabled(false);
       setSharingMode(null);
+    } finally {
+      setSharingBusy(false);
     }
-    setSharingBusy(false);
   }
 
   const [pushStatus, setPushStatus] = useState<string | null>(null);

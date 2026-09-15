@@ -219,8 +219,18 @@ export async function startBackgroundTracking(): Promise<
   startForegroundWatch();
   await setSharingPreference(true);
 
-  const background = await Location.requestBackgroundPermissionsAsync();
-  if (background.status !== 'granted') {
+  let background: Location.LocationPermissionResponse | null = null;
+  try {
+    background = await Location.requestBackgroundPermissionsAsync();
+  } catch (err) {
+    // Expo Go throws ERR_LOCATION_INFO_PLIST here — its compiled binary
+    // has no "Always" location usage string for arbitrary apps, so it
+    // can't even ask. Caught on a real device: this crashed the whole
+    // function uncaught before the fix, leaving the Settings toggle
+    // stuck mid-request. The foreground watch above already covers us.
+    console.warn('[locationTracking] background permission request unavailable:', err);
+  }
+  if (!background || background.status !== 'granted') {
     return { ok: true, backgroundGranted: false };
   }
 
@@ -263,6 +273,14 @@ export async function stopBackgroundTracking(): Promise<void> {
 export async function resumeForegroundWatchIfActive(): Promise<void> {
   if (!isNative) return;
   if (!(await getSharingPreference())) return;
-  const { status } = await Location.getForegroundPermissionsAsync();
-  if (status === 'granted') startForegroundWatch();
+  // Defensive: this runs unconditionally at app boot, so a native throw
+  // here (we've already hit one from a sibling permissions call — see
+  // startBackgroundTracking) must never break startup for every user who
+  // previously enabled sharing.
+  try {
+    const { status } = await Location.getForegroundPermissionsAsync();
+    if (status === 'granted') startForegroundWatch();
+  } catch (err) {
+    console.warn('[locationTracking] resumeForegroundWatchIfActive failed:', err);
+  }
 }
