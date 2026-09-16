@@ -43,6 +43,10 @@ export default function PlacesScreen() {
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState('');
+  const [renameError, setRenameError] = useState<string | null>(null);
+  const [renameSaving, setRenameSaving] = useState(false);
 
   const load = useCallback(async () => {
     if (!selectedCircle) return;
@@ -119,6 +123,32 @@ export default function PlacesScreen() {
     await load();
   }
 
+  function startRenamePlace(place: Place) {
+    setRenamingId(place.id);
+    setRenameValue(place.name);
+    setRenameError(null);
+  }
+
+  async function handleSaveRename() {
+    if (!renamingId) return;
+    const trimmed = renameValue.trim();
+    if (!trimmed) {
+      setRenameError('Give this place a name.');
+      return;
+    }
+    setRenameSaving(true);
+    // RLS (places_update_creator) already restricts this to places you
+    // created; the Rename link only appears there in the first place.
+    const { error } = await supabase.from('places').update({ name: trimmed }).eq('id', renamingId);
+    setRenameSaving(false);
+    if (error) {
+      setRenameError(error.message);
+      return;
+    }
+    setRenamingId(null);
+    await load();
+  }
+
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
       <Stack.Screen options={{ title: 'Places', headerBackTitle: 'Settings' }} />
@@ -148,25 +178,55 @@ export default function PlacesScreen() {
         }
         data={places}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <View style={[styles.row, styles.placeRow]}>
-            <View style={styles.placeInfo}>
-              <Text style={styles.rowTitle}>{item.name}</Text>
-              <Text style={typography.caption}>{item.radius_meters}m radius</Text>
+        renderItem={({ item }) =>
+          renamingId === item.id ? (
+            <View style={[styles.row, styles.renameForm]}>
+              <TextField
+                label="Name"
+                value={renameValue}
+                onChangeText={setRenameValue}
+                autoCapitalize="words"
+              />
+              {renameError && <Text style={styles.error}>{renameError}</Text>}
+              <View style={styles.renameButtons}>
+                <View style={styles.renameButton}>
+                  <Button title="Save" onPress={handleSaveRename} loading={renameSaving} />
+                </View>
+                <View style={styles.renameButton}>
+                  <Button
+                    title="Cancel"
+                    variant="secondary"
+                    onPress={() => setRenamingId(null)}
+                    disabled={renameSaving}
+                  />
+                </View>
+              </View>
             </View>
-            {item.created_by === session?.user.id && (
-              <Pressable
-                onPress={() => confirmDeletePlace(item)}
-                disabled={deletingId === item.id}
-                hitSlop={8}
-              >
-                <Text style={styles.removeLink}>
-                  {deletingId === item.id ? 'Removing…' : 'Remove'}
-                </Text>
-              </Pressable>
-            )}
-          </View>
-        )}
+          ) : (
+            <View style={[styles.row, styles.placeRow]}>
+              <View style={styles.placeInfo}>
+                <Text style={styles.rowTitle}>{item.name}</Text>
+                <Text style={typography.caption}>{item.radius_meters}m radius</Text>
+              </View>
+              {item.created_by === session?.user.id && (
+                <View style={styles.placeActions}>
+                  <Pressable onPress={() => startRenamePlace(item)} hitSlop={8}>
+                    <Text style={styles.renameLink}>Rename</Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={() => confirmDeletePlace(item)}
+                    disabled={deletingId === item.id}
+                    hitSlop={8}
+                  >
+                    <Text style={styles.removeLink}>
+                      {deletingId === item.id ? 'Removing…' : 'Remove'}
+                    </Text>
+                  </Pressable>
+                </View>
+              )}
+            </View>
+          )
+        }
         ListEmptyComponent={
           !loading ? <Text style={typography.caption}>No places yet.</Text> : null
         }
@@ -213,5 +273,10 @@ const styles = StyleSheet.create({
   error: { color: colors.danger, fontSize: 14 },
   placeRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   placeInfo: { gap: 2 },
+  placeActions: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   removeLink: { color: colors.danger, fontSize: 14, fontWeight: '600' },
+  renameLink: { color: colors.accent, fontSize: 14, fontWeight: '600' },
+  renameForm: { gap: spacing.sm },
+  renameButtons: { flexDirection: 'row', gap: spacing.sm },
+  renameButton: { flex: 1 },
 });
