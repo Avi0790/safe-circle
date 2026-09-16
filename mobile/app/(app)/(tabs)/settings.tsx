@@ -38,6 +38,24 @@ export default function SettingsTab() {
   const [renameError, setRenameError] = useState<string | null>(null);
   const [renameSaving, setRenameSaving] = useState(false);
 
+  const [fullName, setFullName] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState(false);
+  const [nameValue, setNameValue] = useState('');
+  const [nameError, setNameError] = useState<string | null>(null);
+  const [nameSaving, setNameSaving] = useState(false);
+
+  useEffect(() => {
+    if (!session) return;
+    (async () => {
+      const { data } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('id', session.user.id)
+        .single();
+      setFullName(data?.full_name ?? null);
+    })();
+  }, [session]);
+
   const [sharingEnabled, setSharingEnabled] = useState(false);
   const [sharingBusy, setSharingBusy] = useState(true);
   const [sharingError, setSharingError] = useState<string | null>(null);
@@ -178,6 +196,34 @@ export default function SettingsTab() {
     await refreshCircles();
   }
 
+  function startEditName() {
+    setNameValue(fullName ?? '');
+    setNameError(null);
+    setEditingName(true);
+  }
+
+  async function handleSaveName() {
+    if (!session) return;
+    const name = nameValue.trim();
+    if (!name) {
+      setNameError('Enter your name.');
+      return;
+    }
+    setNameSaving(true);
+    // RLS (profiles_update_self) already restricts this to your own row.
+    const { error } = await supabase
+      .from('profiles')
+      .update({ full_name: name })
+      .eq('id', session.user.id);
+    setNameSaving(false);
+    if (error) {
+      setNameError(error.message);
+      return;
+    }
+    setFullName(name);
+    setEditingName(false);
+  }
+
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       <ScrollView contentContainerStyle={styles.content}>
@@ -186,6 +232,37 @@ export default function SettingsTab() {
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>Signed in as</Text>
           <Text style={typography.body}>{session?.user.email}</Text>
+          {editingName ? (
+            <View style={styles.renameForm}>
+              <TextField
+                label="Your name"
+                value={nameValue}
+                onChangeText={setNameValue}
+                autoCapitalize="words"
+              />
+              {nameError && <Text style={styles.error}>{nameError}</Text>}
+              <View style={styles.circleRow}>
+                <View style={styles.circleButton}>
+                  <Button title="Save" onPress={handleSaveName} loading={nameSaving} />
+                </View>
+                <View style={styles.circleButton}>
+                  <Button
+                    title="Cancel"
+                    variant="secondary"
+                    onPress={() => setEditingName(false)}
+                    disabled={nameSaving}
+                  />
+                </View>
+              </View>
+            </View>
+          ) : (
+            <View style={styles.row}>
+              <Text style={[typography.body, styles.rowText]}>{fullName ?? '…'}</Text>
+              <Pressable onPress={startEditName} hitSlop={8}>
+                <Text style={styles.renameLinkText}>Edit</Text>
+              </Pressable>
+            </View>
+          )}
         </View>
 
         <View style={styles.section}>
