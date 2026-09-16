@@ -3,7 +3,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useCircles } from '@/contexts/CircleContext';
 import { useCircleMembers } from '@/hooks/useCircleMembers';
-import { timeAgo } from '@/lib/format';
+import { isStale, timeAgo } from '@/lib/format';
 import type { MemberWithLocation } from '@/lib/types';
 import { colors, spacing, typography } from '@/lib/theme';
 
@@ -38,14 +38,18 @@ export default function MembersTab() {
 }
 
 function MemberRow({ member, onPress }: { member: MemberWithLocation; onPress: () => void }) {
+  const stale = member.location != null && isStale(member.location.recorded_at);
+  const dotColor = !member.location ? colors.offline : stale ? colors.stale : colors.online;
   return (
     <Pressable style={styles.row} onPress={onPress}>
-      <View style={[styles.dot, { backgroundColor: member.location ? colors.online : colors.offline }]} />
+      <View style={[styles.dot, { backgroundColor: dotColor }]} />
       <View style={styles.rowText}>
         <Text style={styles.name}>{member.full_name}</Text>
         <Text style={typography.caption}>
           {member.location
-            ? `Updated ${timeAgo(member.location.recorded_at)}${
+            ? `${stale ? 'Last seen' : 'Updated'} ${timeAgo(member.location.recorded_at)}${
+                stale ? ' — may not be current' : ''
+              }${
                 member.location.battery_level != null
                   ? ` · ${Math.round(member.location.battery_level * 100)}% battery`
                   : ''

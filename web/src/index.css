@@ -8,6 +8,7 @@
   --accent-hover: #6d28d9;
   --danger: #dc2626;
   --online: #22c55e;
+  --stale: #f59e0b;
   --offline: #cbd5e1;
 
   --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
@@ -26,6 +27,7 @@
     --accent-hover: #c4b5fd;
     --danger: #f87171;
     --online: #4ade80;
+    --stale: #fbbf24;
     --offline: #3f4451;
   }
 }
@@ -263,6 +265,9 @@ button:disabled {
 }
 .dot-online {
   background: var(--online);
+}
+.dot-stale {
+  background: var(--stale);
 }
 .dot-offline {
   background: var(--offline);

@@ -10,6 +10,7 @@ export const colors = {
   accentPressed: '#6d28d9',
   danger: '#dc2626',
   online: '#22c55e',
+  stale: '#f59e0b',
   offline: '#cbd5e1',
 };
 
