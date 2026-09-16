@@ -12,6 +12,7 @@ import {
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '@/components/Button';
+import { TextField } from '@/components/TextField';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCircles } from '@/contexts/CircleContext';
 import { supabase } from '@/lib/supabase';
@@ -32,6 +33,10 @@ export default function SettingsTab() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [leavingCircleId, setLeavingCircleId] = useState<string | null>(null);
+  const [renamingCircleId, setRenamingCircleId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState('');
+  const [renameError, setRenameError] = useState<string | null>(null);
+  const [renameSaving, setRenameSaving] = useState(false);
 
   const [sharingEnabled, setSharingEnabled] = useState(false);
   const [sharingBusy, setSharingBusy] = useState(true);
@@ -147,6 +152,32 @@ export default function SettingsTab() {
     await refreshCircles();
   }
 
+  function startRenameCircle(circle: { id: string; name: string }) {
+    setRenamingCircleId(circle.id);
+    setRenameValue(circle.name);
+    setRenameError(null);
+  }
+
+  async function handleSaveRename() {
+    if (!renamingCircleId) return;
+    const name = renameValue.trim();
+    if (!name) {
+      setRenameError('Give your circle a name.');
+      return;
+    }
+    setRenameSaving(true);
+    // RLS (circles_update_creator) already restricts this to circles you
+    // created; the Rename link below only appears there in the first place.
+    const { error } = await supabase.from('circles').update({ name }).eq('id', renamingCircleId);
+    setRenameSaving(false);
+    if (error) {
+      setRenameError(error.message);
+      return;
+    }
+    setRenamingCircleId(null);
+    await refreshCircles();
+  }
+
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       <ScrollView contentContainerStyle={styles.content}>
@@ -204,29 +235,63 @@ export default function SettingsTab() {
         {circles.length > 0 && (
           <View style={styles.section}>
             <Text style={styles.sectionLabel}>Circles</Text>
-            {circles.map((circle) => (
-              <View key={circle.id} style={styles.circleRow}>
-                <View style={styles.circleButton}>
-                  <Button
-                    title={circle.id === selectedCircle?.id ? `✓ ${circle.name}` : circle.name}
-                    variant={circle.id === selectedCircle?.id ? 'primary' : 'secondary'}
-                    onPress={() => setSelectedCircleId(circle.id)}
+            {circles.map((circle) =>
+              renamingCircleId === circle.id ? (
+                <View key={circle.id} style={styles.renameForm}>
+                  <TextField
+                    label="Circle name"
+                    value={renameValue}
+                    onChangeText={setRenameValue}
+                    autoCapitalize="words"
                   />
+                  {renameError && <Text style={styles.error}>{renameError}</Text>}
+                  <View style={styles.circleRow}>
+                    <View style={styles.circleButton}>
+                      <Button title="Save" onPress={handleSaveRename} loading={renameSaving} />
+                    </View>
+                    <View style={styles.circleButton}>
+                      <Button
+                        title="Cancel"
+                        variant="secondary"
+                        onPress={() => setRenamingCircleId(null)}
+                        disabled={renameSaving}
+                      />
+                    </View>
+                  </View>
                 </View>
-                <Pressable
-                  onPress={() => confirmLeaveCircle(circle)}
-                  disabled={leavingCircleId === circle.id}
-                  style={styles.leaveLink}
-                  hitSlop={8}
-                >
-                  {leavingCircleId === circle.id ? (
-                    <ActivityIndicator size="small" color={colors.danger} />
-                  ) : (
-                    <Text style={styles.leaveLinkText}>Leave</Text>
+              ) : (
+                <View key={circle.id} style={styles.circleRow}>
+                  <View style={styles.circleButton}>
+                    <Button
+                      title={circle.id === selectedCircle?.id ? `✓ ${circle.name}` : circle.name}
+                      variant={circle.id === selectedCircle?.id ? 'primary' : 'secondary'}
+                      onPress={() => setSelectedCircleId(circle.id)}
+                    />
+                  </View>
+                  {circle.created_by === session?.user.id && (
+                    <Pressable
+                      onPress={() => startRenameCircle(circle)}
+                      style={styles.leaveLink}
+                      hitSlop={8}
+                    >
+                      <Text style={styles.renameLinkText}>Rename</Text>
+                    </Pressable>
                   )}
-                </Pressable>
-              </View>
-            ))}
+                  <Pressable
+                    onPress={() => confirmLeaveCircle(circle)}
+                    disabled={leavingCircleId === circle.id}
+                    style={styles.leaveLink}
+                    hitSlop={8}
+                  >
+                    {leavingCircleId === circle.id ? (
+                      <ActivityIndicator size="small" color={colors.danger} />
+                    ) : (
+                      <Text style={styles.leaveLinkText}>Leave</Text>
+                    )}
+                  </Pressable>
+                </View>
+              ),
+            )}
           </View>
         )}
 
@@ -268,6 +333,8 @@ const styles = StyleSheet.create({
   circleButton: { flex: 1 },
   leaveLink: { paddingHorizontal: spacing.xs },
   leaveLinkText: { color: colors.danger, fontSize: 14, fontWeight: '600' },
+  renameLinkText: { color: colors.accent, fontSize: 14, fontWeight: '600' },
+  renameForm: { gap: spacing.sm },
   sectionLabel: {
     ...typography.caption,
     color: colors.textHeading,
