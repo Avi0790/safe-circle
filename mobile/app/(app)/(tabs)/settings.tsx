@@ -33,6 +33,7 @@ export default function SettingsTab() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [leavingCircleId, setLeavingCircleId] = useState<string | null>(null);
+  const [deletingCircleId, setDeletingCircleId] = useState<string | null>(null);
   const [renamingCircleId, setRenamingCircleId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
   const [renameError, setRenameError] = useState<string | null>(null);
@@ -167,6 +168,36 @@ export default function SettingsTab() {
     // If this was the selected circle, refresh() picks another remaining
     // one (or routes back to circle-setup if that was the last one) — see
     // CircleContext's fallback logic.
+    await refreshCircles();
+  }
+
+  function confirmDeleteCircle(circle: { id: string; name: string }) {
+    Alert.alert(
+      `Delete ${circle.name}?`,
+      "This removes it for everyone in it, along with its places. This can't be undone.",
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Delete', style: 'destructive', onPress: () => handleDeleteCircle(circle.id) },
+      ],
+    );
+  }
+
+  async function handleDeleteCircle(circleId: string) {
+    setDeletingCircleId(circleId);
+    // RLS (circles_delete_creator) already restricts this to circles you
+    // created; the Delete link below only appears there in the first place.
+    // (Creators don't get a "Leave" option — see the render logic below —
+    // because leaving your own circle would orphan it: is_member_of()
+    // requires a circle_members row, so circles_select_members would stop
+    // returning it and you'd lose the ability to ever see or manage it
+    // again, even though circles_delete_creator would still technically
+    // allow deleting it by id.)
+    const { error } = await supabase.from('circles').delete().eq('id', circleId);
+    setDeletingCircleId(null);
+    if (error) {
+      setError(error.message);
+      return;
+    }
     await refreshCircles();
   }
 
@@ -345,27 +376,44 @@ export default function SettingsTab() {
                       onPress={() => setSelectedCircleId(circle.id)}
                     />
                   </View>
-                  {circle.created_by === session?.user.id && (
+                  {circle.created_by === session?.user.id ? (
+                    <>
+                      <Pressable
+                        onPress={() => startRenameCircle(circle)}
+                        style={styles.leaveLink}
+                        hitSlop={8}
+                      >
+                        <Text style={styles.renameLinkText}>Rename</Text>
+                      </Pressable>
+                      {/* Creators delete instead of leave — leaving your own
+                          circle would orphan it, see handleDeleteCircle. */}
+                      <Pressable
+                        onPress={() => confirmDeleteCircle(circle)}
+                        disabled={deletingCircleId === circle.id}
+                        style={styles.leaveLink}
+                        hitSlop={8}
+                      >
+                        {deletingCircleId === circle.id ? (
+                          <ActivityIndicator size="small" color={colors.danger} />
+                        ) : (
+                          <Text style={styles.leaveLinkText}>Delete</Text>
+                        )}
+                      </Pressable>
+                    </>
+                  ) : (
                     <Pressable
-                      onPress={() => startRenameCircle(circle)}
+                      onPress={() => confirmLeaveCircle(circle)}
+                      disabled={leavingCircleId === circle.id}
                       style={styles.leaveLink}
                       hitSlop={8}
                     >
-                      <Text style={styles.renameLinkText}>Rename</Text>
+                      {leavingCircleId === circle.id ? (
+                        <ActivityIndicator size="small" color={colors.danger} />
+                      ) : (
+                        <Text style={styles.leaveLinkText}>Leave</Text>
+                      )}
                     </Pressable>
                   )}
-                  <Pressable
-                    onPress={() => confirmLeaveCircle(circle)}
-                    disabled={leavingCircleId === circle.id}
-                    style={styles.leaveLink}
-                    hitSlop={8}
-                  >
-                    {leavingCircleId === circle.id ? (
-                      <ActivityIndicator size="small" color={colors.danger} />
-                    ) : (
-                      <Text style={styles.leaveLinkText}>Leave</Text>
-                    )}
-                  </Pressable>
                 </View>
               ),
             )}
