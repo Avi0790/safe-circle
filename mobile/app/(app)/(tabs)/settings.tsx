@@ -22,7 +22,7 @@ import {
   startBackgroundTracking,
   stopBackgroundTracking,
 } from '@/lib/locationTracking';
-import { registerForPushNotifications } from '@/lib/pushNotifications';
+import { deregisterPushNotifications, registerForPushNotifications } from '@/lib/pushNotifications';
 
 export default function SettingsTab() {
   const router = useRouter();
@@ -107,6 +107,10 @@ export default function SettingsTab() {
   }
 
   async function handleSignOut() {
+    // Best-effort: a network hiccup here should never block signing out.
+    if (session) {
+      await deregisterPushNotifications(session.user.id).catch(() => {});
+    }
     await supabase.auth.signOut();
   }
 

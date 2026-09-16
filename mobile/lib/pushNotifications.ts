@@ -76,3 +76,15 @@ export async function registerForPushNotifications(): Promise<PushRegistrationRe
     };
   }
 }
+
+// Called on sign out. push_tokens has no device identifier, only
+// (user_id, token) — and on a shared device (a family tablet, or two
+// teammates testing on one simulator) a second account signing in can
+// otherwise keep receiving the first account's geofence/SOS pushes,
+// since the physical push token doesn't change with who's logged in.
+// Clearing every token row for this account on sign-out means an old
+// session can never receive alerts meant for whoever's using the device
+// now; re-enabling push after signing back in is one tap in Settings.
+export async function deregisterPushNotifications(userId: string): Promise<void> {
+  await supabase.from('push_tokens').delete().eq('user_id', userId);
+}
