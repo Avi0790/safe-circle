@@ -94,5 +94,28 @@ export function useCircleMembers(circleId: string | null) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [circleId, members.length]);
 
+  // circle_members is already in the realtime publication (see
+  // ...000005_realtime.sql) but nothing was subscribed to it — the roster
+  // itself (someone joining, or using the leave/delete-circle actions in
+  // Settings) never updated live, only individual members' locations did.
+  // A full refetch is simplest here: membership changes are rare, and this
+  // join needs the same profiles/latest_locations lookups load() already
+  // does, so there's nothing worth patching in incrementally.
+  useEffect(() => {
+    if (!circleId) return;
+    const channel = supabase
+      .channel(`circle-members-${circleId}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'circle_members', filter: `circle_id=eq.${circleId}` },
+        () => load(),
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [circleId, load]);
+
   return { members, isLoading, error, refresh: load };
 }

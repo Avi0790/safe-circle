@@ -108,6 +108,34 @@ export function Dashboard() {
     setHistory([])
   }, [selectedCircleId, loadMembers])
 
+  // circle_members is already in the realtime publication but nothing
+  // subscribed to it — the roster itself (someone joining, or using the
+  // mobile app's leave/delete-circle actions) never updated live here,
+  // only individual members' locations did. Full refetch: membership
+  // changes are rare, and loadMembers already does the profiles +
+  // latest_locations join this would need anyway.
+  useEffect(() => {
+    if (!selectedCircleId) return
+
+    const channel = supabase
+      .channel(`circle-members-${selectedCircleId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'circle_members',
+          filter: `circle_id=eq.${selectedCircleId}`,
+        },
+        () => loadMembers(selectedCircleId),
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [selectedCircleId, loadMembers])
+
   // Location history (parity with the mobile app's member/[userId] screen —
   // `locations` is already append-only, so this is purely a new read, no
   // backend changes). Drawn as a trail on the same map rather than a
