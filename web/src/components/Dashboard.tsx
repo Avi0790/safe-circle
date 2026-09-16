@@ -14,6 +14,8 @@ import { MemberList } from './MemberList'
 import { ActivityFeed } from './ActivityFeed'
 import { SosBanner } from './SosBanner'
 
+const HISTORY_LIMIT = 100
+
 // Read-only by design (proposal page 3: "no tracking happens from the
 // web"). This component only ever selects from circles/locations/places/
 // geofence_events - it never inserts or updates. Creating a place is
@@ -27,6 +29,9 @@ export function Dashboard() {
   const [sosEvents, setSosEvents] = useState<SosEvent[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [historyMemberId, setHistoryMemberId] = useState<string | null>(null)
+  const [history, setHistory] = useState<LatestLocation[]>([])
+  const [historyLoading, setHistoryLoading] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -97,7 +102,37 @@ export function Dashboard() {
   useEffect(() => {
     if (!selectedCircleId) return
     loadMembers(selectedCircleId)
+    // Switching circles can change who's even visible; drop any history
+    // trail from the previous one rather than leave a stale selection.
+    setHistoryMemberId(null)
+    setHistory([])
   }, [selectedCircleId, loadMembers])
+
+  // Location history (parity with the mobile app's member/[userId] screen —
+  // `locations` is already append-only, so this is purely a new read, no
+  // backend changes). Drawn as a trail on the same map rather than a
+  // separate screen, since this dashboard is built around one shared map.
+  const loadHistory = useCallback(async (userId: string) => {
+    setHistoryLoading(true)
+    const { data } = await supabase
+      .from('locations')
+      .select('id, user_id, latitude, longitude, accuracy, battery_level, recorded_at')
+      .eq('user_id', userId)
+      .order('recorded_at', { ascending: false })
+      .limit(HISTORY_LIMIT)
+    setHistory(((data as LatestLocation[] | null) ?? []).reverse())
+    setHistoryLoading(false)
+  }, [])
+
+  function toggleMemberHistory(userId: string) {
+    if (historyMemberId === userId) {
+      setHistoryMemberId(null)
+      setHistory([])
+      return
+    }
+    setHistoryMemberId(userId)
+    loadHistory(userId)
+  }
 
   // Not circle-scoped (see backend/supabase/migrations/...000012_sos.sql):
   // RLS already limits this to "yourself, or anyone you share a circle
@@ -243,12 +278,17 @@ export function Dashboard() {
         {error && <p className="error">{error}</p>}
 
         <SosBanner events={sosEvents} />
-        <MemberList members={members} />
+        <MemberList
+          members={members}
+          selectedId={historyMemberId}
+          historyLoading={historyLoading}
+          onSelect={toggleMemberHistory}
+        />
         <ActivityFeed events={events} />
       </aside>
 
       <main className="map-pane">
-        <MapView members={members} places={places} />
+        <MapView members={members} places={places} history={history} />
       </main>
     </div>
   )

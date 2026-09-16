@@ -42,6 +42,10 @@ if you haven't already.
   Read-only: marking one resolved is mobile-only
   (`mobile/components/SosBanner.tsx`), matching this dashboard's
   view-only design.
+- Click a member with a location to draw their last 100 pings as a trail on
+  the same map (location history, parity with the mobile app's
+  `member/[userId]` screen) — click again to hide it. `locations` is
+  already append-only, so this is purely a new read, no backend changes.
 
 All access control is enforced by the backend's row-level security — this
 app never sees data for anyone outside your circles, and never writes to

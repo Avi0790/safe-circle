@@ -1,8 +1,8 @@
-import { MapContainer, TileLayer, Marker, Popup, Circle, useMap } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, Popup, Circle, Polyline, useMap } from 'react-leaflet'
 import { useEffect } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-import type { MemberWithLocation, Place } from '../lib/types'
+import type { LatestLocation, MemberWithLocation, Place } from '../lib/types'
 import { timeAgo } from '../lib/format'
 
 // Vite bundles Leaflet's default marker images at hashed URLs, which breaks
@@ -31,13 +31,30 @@ function FitToMembers({ members }: { members: MemberWithLocation[] }) {
   return null
 }
 
+// Rendered after FitToMembers, so its effect runs after and wins whenever a
+// trail is showing — same "mount order = effect order" trick, deliberately
+// relied on rather than adding a separate priority flag for one screen.
+function FitToHistory({ history }: { history: LatestLocation[] }) {
+  const map = useMap()
+
+  useEffect(() => {
+    if (history.length === 0) return
+    const bounds = L.latLngBounds(history.map((p) => [p.latitude, p.longitude] as [number, number]))
+    map.fitBounds(bounds, { padding: [60, 60], maxZoom: 16 })
+  }, [history, map])
+
+  return null
+}
+
 
 export function MapView({
   members,
   places = [],
+  history = [],
 }: {
   members: MemberWithLocation[]
   places?: Place[]
+  history?: LatestLocation[]
 }) {
   const located = members.filter((m) => m.location)
 
@@ -48,6 +65,23 @@ export function MapView({
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
       <FitToMembers members={members} />
+      <FitToHistory history={history} />
+      {history.length > 1 && (
+        <Polyline
+          positions={history.map((p) => [p.latitude, p.longitude] as [number, number])}
+          pathOptions={{ color: '#7c3aed', weight: 3 }}
+        />
+      )}
+      {history.length > 0 && (
+        <Marker position={[history[0].latitude, history[0].longitude]}>
+          <Popup>Oldest · {timeAgo(history[0].recorded_at)}</Popup>
+        </Marker>
+      )}
+      {history.length > 1 && (
+        <Marker position={[history[history.length - 1].latitude, history[history.length - 1].longitude]}>
+          <Popup>Most recent · {timeAgo(history[history.length - 1].recorded_at)}</Popup>
+        </Marker>
+      )}
       {places.map((place) => (
         <Circle
           key={place.id}
