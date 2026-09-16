@@ -41,3 +41,13 @@ export interface GeofenceEvent {
   places: { name: string } | null
   profiles: { full_name: string } | null
 }
+
+export interface SosEvent {
+  id: number
+  user_id: string
+  latitude: number
+  longitude: number
+  message: string | null
+  created_at: string
+  profiles: { full_name: string } | null
+}

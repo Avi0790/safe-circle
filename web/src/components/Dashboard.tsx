@@ -7,10 +7,12 @@ import type {
   MemberWithLocation,
   Place,
   Profile,
+  SosEvent,
 } from '../lib/types'
 import { MapView } from './MapView'
 import { MemberList } from './MemberList'
 import { ActivityFeed } from './ActivityFeed'
+import { SosBanner } from './SosBanner'
 
 // Read-only by design (proposal page 3: "no tracking happens from the
 // web"). This component only ever selects from circles/locations/places/
@@ -22,6 +24,7 @@ export function Dashboard() {
   const [members, setMembers] = useState<MemberWithLocation[]>([])
   const [places, setPlaces] = useState<Place[]>([])
   const [events, setEvents] = useState<GeofenceEvent[]>([])
+  const [sosEvents, setSosEvents] = useState<SosEvent[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -95,6 +98,34 @@ export function Dashboard() {
     if (!selectedCircleId) return
     loadMembers(selectedCircleId)
   }, [selectedCircleId, loadMembers])
+
+  // Not circle-scoped (see backend/supabase/migrations/...000012_sos.sql):
+  // RLS already limits this to "yourself, or anyone you share a circle
+  // with" — same rule as locations — so it loads once, independent of
+  // which circle is selected in the sidebar.
+  const loadSosEvents = useCallback(async () => {
+    const { data } = await supabase
+      .from('sos_events')
+      .select('*, profiles!sos_events_user_id_fkey(full_name)')
+      .is('resolved_at', null)
+      .order('created_at', { ascending: false })
+    setSosEvents((data as unknown as SosEvent[]) ?? [])
+  }, [])
+
+  useEffect(() => {
+    loadSosEvents()
+
+    const channel = supabase
+      .channel('sos-events')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'sos_events' }, () =>
+        loadSosEvents(),
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [loadSosEvents])
 
   const loadPlacesAndEvents = useCallback(async (circleId: string) => {
     const [placesRes, eventsRes] = await Promise.all([
@@ -211,6 +242,7 @@ export function Dashboard() {
 
         {error && <p className="error">{error}</p>}
 
+        <SosBanner events={sosEvents} />
         <MemberList members={members} />
         <ActivityFeed events={events} />
       </aside>

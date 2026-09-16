@@ -201,6 +201,39 @@ button:disabled {
   width: 100%;
 }
 
+/* SOS banner */
+.sos-banner {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px;
+}
+
+.sos-alert {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--danger);
+  color: white;
+}
+
+.sos-alert-title {
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.sos-alert-message {
+  font-size: 13px;
+  opacity: 0.9;
+}
+
+.sos-alert-time {
+  font-size: 11px;
+  opacity: 0.85;
+}
+
 /* Member list */
 .member-list {
   list-style: none;

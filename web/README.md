@@ -34,6 +34,14 @@ if you haven't already.
   arrive/leave events in the sidebar — both live via realtime, matching
   what's on the mobile app's Places screen. Read-only here too: creating a
   place is mobile-only (`mobile/app/(app)/places.tsx`).
+- Shows a red SOS banner (`src/components/SosBanner.tsx`) for any active
+  emergency alert — yours or a circle-mate's — live via the same realtime
+  pattern, so a parent watching this dashboard sees it even if they're not
+  on the phone. Not circle-scoped (RLS already limits `sos_events` to
+  "yourself, or anyone you share a circle with," same rule as locations).
+  Read-only: marking one resolved is mobile-only
+  (`mobile/components/SosBanner.tsx`), matching this dashboard's
+  view-only design.
 
 All access control is enforced by the backend's row-level security — this
 app never sees data for anyone outside your circles, and never writes to
