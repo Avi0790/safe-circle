@@ -45,4 +45,22 @@ describe('locationQueue', () => {
     await saveQueue(replacement);
     expect(await loadQueue()).toEqual(replacement);
   });
+
+  it('does not drop a ping when two enqueue calls race (regression: unlocked read-modify-write)', async () => {
+    // The foreground watch and the background task can each independently
+    // fail to send and call enqueue() around the same time. Before the
+    // locationQueue mutex, two concurrent calls could both read the same
+    // starting queue and the later save would silently overwrite the
+    // earlier one's ping.
+    const pings = Array.from({ length: 20 }, (_, i) => ({
+      ...samplePing,
+      latitude: i,
+    }));
+    await Promise.all(pings.map((ping) => enqueue(ping)));
+    const queue = await loadQueue();
+    expect(queue).toHaveLength(pings.length);
+    expect(queue.map((p) => p.latitude).sort((a, b) => a - b)).toEqual(
+      pings.map((p) => p.latitude).sort((a, b) => a - b),
+    );
+  });
 });
