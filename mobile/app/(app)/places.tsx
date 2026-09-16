@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
-import { FlatList, StyleSheet, Text, View } from 'react-native';
+import { Alert, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Stack } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Location from 'expo-location';
 import { Button } from '@/components/Button';
 import { TextField } from '@/components/TextField';
+import { useAuth } from '@/contexts/AuthContext';
 import { useCircles } from '@/contexts/CircleContext';
 import { supabase } from '@/lib/supabase';
 import { timeAgo } from '@/lib/format';
@@ -16,6 +17,7 @@ interface Place {
   latitude: number;
   longitude: number;
   radius_meters: number;
+  created_by: string;
 }
 
 interface GeofenceEvent {
@@ -32,6 +34,7 @@ interface GeofenceEvent {
 // existed since the backend layer was built - this is the UI that
 // actually makes it usable.
 export default function PlacesScreen() {
+  const { session } = useAuth();
   const { selectedCircle } = useCircles();
   const [places, setPlaces] = useState<Place[]>([]);
   const [events, setEvents] = useState<GeofenceEvent[]>([]);
@@ -39,6 +42,7 @@ export default function PlacesScreen() {
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     if (!selectedCircle) return;
@@ -94,6 +98,27 @@ export default function PlacesScreen() {
     }
   }
 
+  function confirmDeletePlace(place: Place) {
+    Alert.alert(`Remove ${place.name}?`, "You'll stop getting arrive/leave alerts for it.", [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Remove', style: 'destructive', onPress: () => handleDeletePlace(place.id) },
+    ]);
+  }
+
+  async function handleDeletePlace(placeId: string) {
+    setDeletingId(placeId);
+    // RLS (places_delete_creator) already restricts this to places you
+    // created; the local created_by check below just decides whether to
+    // show the button at all.
+    const { error } = await supabase.from('places').delete().eq('id', placeId);
+    setDeletingId(null);
+    if (error) {
+      setError(error.message);
+      return;
+    }
+    await load();
+  }
+
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
       <Stack.Screen options={{ title: 'Places', headerBackTitle: 'Settings' }} />
@@ -124,9 +149,22 @@ export default function PlacesScreen() {
         data={places}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <View style={styles.row}>
-            <Text style={styles.rowTitle}>{item.name}</Text>
-            <Text style={typography.caption}>{item.radius_meters}m radius</Text>
+          <View style={[styles.row, styles.placeRow]}>
+            <View style={styles.placeInfo}>
+              <Text style={styles.rowTitle}>{item.name}</Text>
+              <Text style={typography.caption}>{item.radius_meters}m radius</Text>
+            </View>
+            {item.created_by === session?.user.id && (
+              <Pressable
+                onPress={() => confirmDeletePlace(item)}
+                disabled={deletingId === item.id}
+                hitSlop={8}
+              >
+                <Text style={styles.removeLink}>
+                  {deletingId === item.id ? 'Removing…' : 'Remove'}
+                </Text>
+              </Pressable>
+            )}
           </View>
         )}
         ListEmptyComponent={
@@ -173,4 +211,7 @@ const styles = StyleSheet.create({
   },
   rowTitle: { fontSize: 15, fontWeight: '500', color: colors.textHeading },
   error: { color: colors.danger, fontSize: 14 },
+  placeRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  placeInfo: { gap: 2 },
+  removeLink: { color: colors.danger, fontSize: 14, fontWeight: '600' },
 });
