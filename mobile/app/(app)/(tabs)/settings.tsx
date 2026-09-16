@@ -1,5 +1,14 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Alert,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  Text,
+  View,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '@/components/Button';
@@ -18,10 +27,11 @@ import { registerForPushNotifications } from '@/lib/pushNotifications';
 export default function SettingsTab() {
   const router = useRouter();
   const { session } = useAuth();
-  const { circles, selectedCircle, setSelectedCircleId } = useCircles();
+  const { circles, selectedCircle, setSelectedCircleId, refresh: refreshCircles } = useCircles();
   const [inviteCode, setInviteCode] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [leavingCircleId, setLeavingCircleId] = useState<string | null>(null);
 
   const [sharingEnabled, setSharingEnabled] = useState(false);
   const [sharingBusy, setSharingBusy] = useState(true);
@@ -100,6 +110,39 @@ export default function SettingsTab() {
     await supabase.auth.signOut();
   }
 
+  function confirmLeaveCircle(circle: { id: string; name: string }) {
+    Alert.alert(
+      `Leave ${circle.name}?`,
+      "You'll stop seeing this circle's members and they'll stop seeing your location.",
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Leave', style: 'destructive', onPress: () => handleLeaveCircle(circle.id) },
+      ],
+    );
+  }
+
+  async function handleLeaveCircle(circleId: string) {
+    if (!session) return;
+    setLeavingCircleId(circleId);
+    // RLS (circle_members_delete_self) already restricts this to the
+    // caller's own membership row; the explicit user_id filter here is just
+    // documentation of that, not what makes it safe.
+    const { error } = await supabase
+      .from('circle_members')
+      .delete()
+      .eq('circle_id', circleId)
+      .eq('user_id', session.user.id);
+    setLeavingCircleId(null);
+    if (error) {
+      setError(error.message);
+      return;
+    }
+    // If this was the selected circle, refresh() picks another remaining
+    // one (or routes back to circle-setup if that was the last one) — see
+    // CircleContext's fallback logic.
+    await refreshCircles();
+  }
+
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       <ScrollView contentContainerStyle={styles.content}>
@@ -154,16 +197,31 @@ export default function SettingsTab() {
           />
         </View>
 
-        {circles.length > 1 && (
+        {circles.length > 0 && (
           <View style={styles.section}>
             <Text style={styles.sectionLabel}>Circles</Text>
             {circles.map((circle) => (
-              <Button
-                key={circle.id}
-                title={circle.id === selectedCircle?.id ? `✓ ${circle.name}` : circle.name}
-                variant={circle.id === selectedCircle?.id ? 'primary' : 'secondary'}
-                onPress={() => setSelectedCircleId(circle.id)}
-              />
+              <View key={circle.id} style={styles.circleRow}>
+                <View style={styles.circleButton}>
+                  <Button
+                    title={circle.id === selectedCircle?.id ? `✓ ${circle.name}` : circle.name}
+                    variant={circle.id === selectedCircle?.id ? 'primary' : 'secondary'}
+                    onPress={() => setSelectedCircleId(circle.id)}
+                  />
+                </View>
+                <Pressable
+                  onPress={() => confirmLeaveCircle(circle)}
+                  disabled={leavingCircleId === circle.id}
+                  style={styles.leaveLink}
+                  hitSlop={8}
+                >
+                  {leavingCircleId === circle.id ? (
+                    <ActivityIndicator size="small" color={colors.danger} />
+                  ) : (
+                    <Text style={styles.leaveLinkText}>Leave</Text>
+                  )}
+                </Pressable>
+              </View>
             ))}
           </View>
         )}
@@ -202,6 +260,10 @@ const styles = StyleSheet.create({
   section: { gap: spacing.sm },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   rowText: { flex: 1, gap: 2 },
+  circleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  circleButton: { flex: 1 },
+  leaveLink: { paddingHorizontal: spacing.xs },
+  leaveLinkText: { color: colors.danger, fontSize: 14, fontWeight: '600' },
   sectionLabel: {
     ...typography.caption,
     color: colors.textHeading,

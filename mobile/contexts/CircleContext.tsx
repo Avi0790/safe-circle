@@ -29,8 +29,16 @@ export function CircleProvider({ children }: { children: ReactNode }) {
   const refresh = useCallback(async () => {
     const { data, error } = await supabase.from('circles').select('*').order('created_at');
     if (!error) {
-      setCircles(data ?? []);
-      setSelectedCircleId((current) => current ?? data?.[0]?.id ?? null);
+      const next = data ?? [];
+      setCircles(next);
+      // Keep the current selection if it's still valid; otherwise fall back
+      // to the first remaining circle. Without this, leaving your currently
+      // -selected circle would leave selectedCircleId pointing at a circle
+      // that no longer exists, and every screen reading selectedCircle
+      // would silently go blank instead of switching to another one.
+      setSelectedCircleId((current) =>
+        current && next.some((c) => c.id === current) ? current : (next[0]?.id ?? null),
+      );
     }
     setIsLoading(false);
   }, []);
