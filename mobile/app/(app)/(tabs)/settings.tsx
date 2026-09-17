@@ -4,6 +4,7 @@ import {
   Alert,
   Pressable,
   ScrollView,
+  Share,
   StyleSheet,
   Switch,
   Text,
@@ -128,6 +129,21 @@ export default function SettingsTab() {
       return;
     }
     setInviteCode(data as string);
+  }
+
+  async function handleShareInvite() {
+    if (!inviteCode || !selectedCircle) return;
+    try {
+      // React Native's built-in Share module — no extra dependency needed.
+      // Message-only (no url), so it works the same on iOS and Android
+      // instead of Android silently dropping a second param iOS supports.
+      await Share.share({
+        message: `Join my Safe Circle "${selectedCircle.name}"! Use invite code ${inviteCode} in the app.`,
+      });
+    } catch {
+      // The share sheet itself failing (rare) isn't worth surfacing as an
+      // app error — the code is still right there on screen to copy.
+    }
   }
 
   async function handleSignOut() {
@@ -433,6 +449,9 @@ export default function SettingsTab() {
           )}
           {error && <Text style={styles.error}>{error}</Text>}
           <Button title="Get invite code" onPress={handleGetInviteCode} loading={loading} />
+          {inviteCode && (
+            <Button title="Share invite" variant="secondary" onPress={handleShareInvite} />
+          )}
         </View>
 
         <View style={styles.section}>
