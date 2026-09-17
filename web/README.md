@@ -45,6 +45,9 @@ if you haven't already.
   arrive/leave events in the sidebar — both live via realtime, matching
   what's on the mobile app's Places screen. Read-only here too: creating a
   place is mobile-only (`mobile/app/(app)/places.tsx`).
+- Click a place circle for a **"Here now"** popup — who's actually inside
+  it at this moment (`place_membership_state`, live via realtime), not
+  just the historical feed. Same feature on mobile's Places screen.
 - Shows a red SOS banner (`src/components/SosBanner.tsx`) for any active
   emergency alert — yours or a circle-mate's — live via the same realtime
   pattern, so a parent watching this dashboard sees it even if they're not

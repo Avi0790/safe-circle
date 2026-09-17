@@ -26,6 +26,7 @@ export function Dashboard() {
   const [members, setMembers] = useState<MemberWithLocation[]>([])
   const [places, setPlaces] = useState<Place[]>([])
   const [events, setEvents] = useState<GeofenceEvent[]>([])
+  const [presenceByPlace, setPresenceByPlace] = useState<Record<string, string[]>>({})
   const [sosEvents, setSosEvents] = useState<SosEvent[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -199,13 +200,57 @@ export function Dashboard() {
         .order('occurred_at', { ascending: false })
         .limit(20),
     ])
-    if (placesRes.data) setPlaces(placesRes.data as Place[])
+    const loadedPlaces = (placesRes.data as Place[]) ?? []
+    if (placesRes.data) setPlaces(loadedPlaces)
     if (eventsRes.data) setEvents(eventsRes.data as unknown as GeofenceEvent[])
+
+    // "Here now" — place_membership_state (...000006_push_and_geofencing.sql)
+    // is kept live-accurate by evaluate_geofences() on every location
+    // insert but wasn't read by any client until now, on either app; only
+    // the historical arrive/leave feed above existed.
+    if (loadedPlaces.length === 0) {
+      setPresenceByPlace({})
+      return
+    }
+    const { data: presence } = await supabase
+      .from('place_membership_state')
+      .select('place_id, profiles(full_name)')
+      .eq('is_inside', true)
+      .in(
+        'place_id',
+        loadedPlaces.map((p) => p.id),
+      )
+    const byPlace: Record<string, string[]> = {}
+    for (const row of (presence ?? []) as unknown as {
+      place_id: string
+      profiles: { full_name: string } | null
+    }[]) {
+      const name = row.profiles?.full_name
+      if (!name) continue
+      ;(byPlace[row.place_id] ??= []).push(name)
+    }
+    setPresenceByPlace(byPlace)
   }, [])
 
   useEffect(() => {
     if (!selectedCircleId) return
     loadPlacesAndEvents(selectedCircleId)
+  }, [selectedCircleId, loadPlacesAndEvents])
+
+  // Live: refetch on any is_inside transition for places in view.
+  useEffect(() => {
+    if (!selectedCircleId) return
+    const channel = supabase
+      .channel(`place-membership-${selectedCircleId}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'place_membership_state' },
+        () => loadPlacesAndEvents(selectedCircleId),
+      )
+      .subscribe()
+    return () => {
+      supabase.removeChannel(channel)
+    }
   }, [selectedCircleId, loadPlacesAndEvents])
 
   // Live updates for the activity feed, same pattern as locations below.
@@ -316,7 +361,12 @@ export function Dashboard() {
       </aside>
 
       <main className="map-pane">
-        <MapView members={members} places={places} history={history} />
+        <MapView
+          members={members}
+          places={places}
+          history={history}
+          presenceByPlace={presenceByPlace}
+        />
       </main>
     </div>
   )

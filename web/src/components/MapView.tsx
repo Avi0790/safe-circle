@@ -51,10 +51,12 @@ export function MapView({
   members,
   places = [],
   history = [],
+  presenceByPlace = {},
 }: {
   members: MemberWithLocation[]
   places?: Place[]
   history?: LatestLocation[]
+  presenceByPlace?: Record<string, string[]>
 }) {
   const located = members.filter((m) => m.location)
 
@@ -89,7 +91,15 @@ export function MapView({
           radius={place.radius_meters}
           pathOptions={{ color: '#7c3aed', fillColor: '#7c3aed', fillOpacity: 0.1 }}
         >
-          <Popup>{place.name}</Popup>
+          <Popup>
+            <strong>{place.name}</strong>
+            {(presenceByPlace[place.id]?.length ?? 0) > 0 && (
+              <>
+                <br />
+                Here now: {presenceByPlace[place.id].join(', ')}
+              </>
+            )}
+          </Popup>
         </Circle>
       ))}
       {located.map((member) => (

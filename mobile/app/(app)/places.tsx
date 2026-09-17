@@ -48,6 +48,7 @@ export default function PlacesScreen() {
   const [renameRadiusValue, setRenameRadiusValue] = useState('');
   const [renameError, setRenameError] = useState<string | null>(null);
   const [renameSaving, setRenameSaving] = useState(false);
+  const [presenceByPlace, setPresenceByPlace] = useState<Record<string, string[]>>({});
 
   const load = useCallback(async () => {
     if (!selectedCircle) return;
@@ -59,14 +60,60 @@ export default function PlacesScreen() {
         .order('occurred_at', { ascending: false })
         .limit(20),
     ]);
-    if (placesRes.data) setPlaces(placesRes.data as Place[]);
+    const loadedPlaces = (placesRes.data as Place[]) ?? [];
+    if (placesRes.data) setPlaces(loadedPlaces);
     if (eventsRes.data) setEvents(eventsRes.data as unknown as GeofenceEvent[]);
+
+    // "Here now" — place_membership_state (...000006) is kept live-accurate
+    // by the evaluate_geofences trigger on every location insert, but
+    // wasn't read by any client until now; only the historical arrive/leave
+    // feed below existed. A quick "who's actually here right now" beats
+    // scrolling that feed for the current state.
+    if (loadedPlaces.length > 0) {
+      const { data: presence } = await supabase
+        .from('place_membership_state')
+        .select('place_id, profiles(full_name)')
+        .eq('is_inside', true)
+        .in(
+          'place_id',
+          loadedPlaces.map((p) => p.id),
+        );
+      const byPlace: Record<string, string[]> = {};
+      for (const row of (presence ?? []) as unknown as {
+        place_id: string;
+        profiles: { full_name: string } | null;
+      }[]) {
+        const name = row.profiles?.full_name;
+        if (!name) continue;
+        (byPlace[row.place_id] ??= []).push(name);
+      }
+      setPresenceByPlace(byPlace);
+    } else {
+      setPresenceByPlace({});
+    }
+
     setLoading(false);
   }, [selectedCircle]);
 
   useEffect(() => {
     load();
   }, [load]);
+
+  // Live: refetch on any is_inside transition for places in this circle.
+  useEffect(() => {
+    if (!selectedCircle) return;
+    const channel = supabase
+      .channel(`place-membership-${selectedCircle.id}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'place_membership_state' },
+        () => load(),
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [selectedCircle, load]);
 
   async function handleAddPlace() {
     if (!selectedCircle) return;
@@ -223,6 +270,11 @@ export default function PlacesScreen() {
               <View style={styles.placeInfo}>
                 <Text style={styles.rowTitle}>{item.name}</Text>
                 <Text style={typography.caption}>{item.radius_meters}m radius</Text>
+                {presenceByPlace[item.id]?.length > 0 && (
+                  <Text style={styles.hereNow}>
+                    Here now: {presenceByPlace[item.id].join(', ')}
+                  </Text>
+                )}
               </View>
               {item.created_by === session?.user.id && (
                 <View style={styles.placeActions}>
@@ -291,6 +343,7 @@ const styles = StyleSheet.create({
   placeInfo: { gap: 2 },
   placeActions: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   removeLink: { color: colors.danger, fontSize: 14, fontWeight: '600' },
+  hereNow: { color: colors.online, fontSize: 12, fontWeight: '600' },
   renameLink: { color: colors.accent, fontSize: 14, fontWeight: '600' },
   renameForm: { gap: spacing.sm },
   renameButtons: { flexDirection: 'row', gap: spacing.sm },

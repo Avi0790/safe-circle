@@ -70,8 +70,14 @@ throttling, offline queue) — talking to the Supabase backend in
   geofencing stretch goal (proposal page 3). The backend side
   (`places`/`geofence_events` tables, the `evaluate_geofences` trigger, the
   `send-geofence-push` Edge Function) existed already; this is the UI that
-  makes it usable: add a place at your current location, see the circle's
-  places, and a live "who arrived/left where" activity feed.
+  makes it usable: add, rename, resize, or remove a place (creator-only for
+  the last three), and a live "who arrived/left where" activity feed. Each
+  place also shows **"Here now"** — who's actually inside it at this
+  moment, not just the history feed — sourced from
+  `place_membership_state`, a table the trigger already kept accurate but
+  that no client had ever read; also added to the realtime publication
+  (`...000015_place_membership_realtime.sql`) so it updates live. Same
+  feature on the web dashboard's place popups.
 - **Push notifications** (`lib/pushNotifications.ts`) — a real on/off
   Switch in Settings, not enable-only: it checks `push_tokens` on load to
   reflect whether this account already has one registered, and off calls
