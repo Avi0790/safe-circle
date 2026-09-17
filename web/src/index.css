@@ -291,6 +291,12 @@ button:disabled {
   opacity: 0.7;
 }
 
+.low-battery {
+  color: var(--danger);
+  font-weight: 600;
+  opacity: 1;
+}
+
 .member-empty {
   padding: 12px;
   font-size: 14px;

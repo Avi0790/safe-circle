@@ -1,4 +1,4 @@
-import { isStale, STALE_AFTER_MS, timeAgo } from '../format'
+import { isLowBattery, isStale, LOW_BATTERY_THRESHOLD, STALE_AFTER_MS, timeAgo } from '../format'
 
 function isoAgo(ms: number): string {
   return new Date(Date.now() - ms).toISOString()
@@ -35,5 +35,22 @@ describe('isStale', () => {
   it('is true once a ping is older than the threshold', () => {
     expect(isStale(isoAgo(STALE_AFTER_MS + 1000))).toBe(true)
     expect(isStale(isoAgo(24 * 60 * 60_000))).toBe(true)
+  })
+})
+
+describe('isLowBattery', () => {
+  it('is false for null (unknown battery level)', () => {
+    expect(isLowBattery(null)).toBe(false)
+  })
+
+  it('is false above the threshold', () => {
+    expect(isLowBattery(1)).toBe(false)
+    expect(isLowBattery(LOW_BATTERY_THRESHOLD + 0.01)).toBe(false)
+  })
+
+  it('is true at or below the threshold', () => {
+    expect(isLowBattery(LOW_BATTERY_THRESHOLD)).toBe(true)
+    expect(isLowBattery(0.05)).toBe(true)
+    expect(isLowBattery(0)).toBe(true)
   })
 })

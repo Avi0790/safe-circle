@@ -17,3 +17,12 @@ export const STALE_AFTER_MS = 15 * 60 * 1000;
 export function isStale(iso: string): boolean {
   return Date.now() - new Date(iso).getTime() > STALE_AFTER_MS;
 }
+
+// Matches iOS/Android's own "Low Power Mode" prompt threshold — a
+// reasonable point to warn a circle-mate that someone's sharing is about
+// to stop on its own, not just from a permission/connectivity issue.
+export const LOW_BATTERY_THRESHOLD = 0.2;
+
+export function isLowBattery(level: number | null): boolean {
+  return level != null && level <= LOW_BATTERY_THRESHOLD;
+}

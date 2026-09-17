@@ -3,7 +3,7 @@ import { useEffect } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import type { LatestLocation, MemberWithLocation, Place } from '../lib/types'
-import { timeAgo } from '../lib/format'
+import { isLowBattery, timeAgo } from '../lib/format'
 
 // Vite bundles Leaflet's default marker images at hashed URLs, which breaks
 // the library's hardcoded relative paths. Point at the CDN copies instead.
@@ -104,7 +104,10 @@ export function MapView({
             {member.location!.battery_level != null && (
               <>
                 <br />
-                Battery {Math.round(member.location!.battery_level * 100)}%
+                <span className={isLowBattery(member.location!.battery_level) ? 'low-battery' : undefined}>
+                  Battery {Math.round(member.location!.battery_level * 100)}%
+                  {isLowBattery(member.location!.battery_level) ? ' ⚠️' : ''}
+                </span>
               </>
             )}
           </Popup>

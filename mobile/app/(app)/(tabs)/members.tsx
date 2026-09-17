@@ -6,7 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useCircles } from '@/contexts/CircleContext';
 import { useCircleMembers } from '@/hooks/useCircleMembers';
 import { supabase } from '@/lib/supabase';
-import { isStale, timeAgo } from '@/lib/format';
+import { isLowBattery, isStale, timeAgo } from '@/lib/format';
 import type { MemberWithLocation } from '@/lib/types';
 import { colors, spacing, typography } from '@/lib/theme';
 
@@ -98,6 +98,7 @@ function MemberRow({
   onRemove: () => void;
 }) {
   const stale = member.location != null && isStale(member.location.recorded_at);
+  const lowBattery = isLowBattery(member.location?.battery_level ?? null);
   const dotColor = !member.location ? colors.offline : stale ? colors.stale : colors.online;
   return (
     <View style={styles.row}>
@@ -106,15 +107,21 @@ function MemberRow({
         <View style={styles.rowText}>
           <Text style={styles.name}>{member.full_name}</Text>
           <Text style={typography.caption}>
-            {member.location
-              ? `${stale ? 'Last seen' : 'Updated'} ${timeAgo(member.location.recorded_at)}${
-                  stale ? ' — may not be current' : ''
-                }${
-                  member.location.battery_level != null
-                    ? ` · ${Math.round(member.location.battery_level * 100)}% battery`
-                    : ''
-                }`
-              : 'No location shared yet'}
+            {member.location ? (
+              <>
+                {stale ? 'Last seen' : 'Updated'} {timeAgo(member.location.recorded_at)}
+                {stale ? ' — may not be current' : ''}
+                {member.location.battery_level != null && (
+                  <Text style={lowBattery && styles.lowBattery}>
+                    {' · '}
+                    {Math.round(member.location.battery_level * 100)}% battery
+                    {lowBattery ? ' ⚠️' : ''}
+                  </Text>
+                )}
+              </>
+            ) : (
+              'No location shared yet'
+            )}
           </Text>
         </View>
         <Text style={styles.chevron}>›</Text>
@@ -153,6 +160,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xs,
   },
   removeLinkText: { color: colors.danger, fontSize: 13, fontWeight: '600' },
+  lowBattery: { color: colors.danger, fontWeight: '600' },
   dot: { width: 10, height: 10, borderRadius: 5 },
   rowText: { flex: 1, gap: 2 },
   chevron: { fontSize: 20, color: colors.offline },
