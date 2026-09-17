@@ -54,6 +54,10 @@ export default function LoginScreen() {
             {error && <Text style={styles.error}>{error}</Text>}
 
             <Button title="Sign in" onPress={handleSignIn} loading={loading} />
+
+            <Link href="/(auth)/forgot-password" style={[styles.link, styles.forgotLink]}>
+              Forgot password?
+            </Link>
           </View>
 
           <View style={styles.footer}>
@@ -86,4 +90,5 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   link: { color: colors.accent, fontWeight: '600' },
+  forgotLink: { textAlign: 'center' },
 });

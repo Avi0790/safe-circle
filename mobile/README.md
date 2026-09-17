@@ -9,7 +9,20 @@ throttling, offline queue) — talking to the Supabase backend in
 
 ## What's here
 
-- Full auth flow: sign up, sign in, sign out (Supabase Auth).
+- Full auth flow: sign up, sign in, sign out, **forgot password**
+  (Supabase Auth). The reset link deep-links back into the app via
+  `safecircle://reset-password` (`app/reset-password.tsx`, registered
+  unguarded in the root layout so it works whether or not you're
+  currently signed in) — `lib/passwordReset.ts` pulls the recovery
+  tokens out of the URL fragment by hand, since the mobile Supabase
+  client has `detectSessionInUrl: false` (that only auto-parses on web).
+  **Needs a one-time manual step, not in git:** add
+  `safecircle://reset-password` to this Supabase project's
+  **Auth → URL Configuration → Redirect URLs** in the dashboard, or the
+  reset email's link gets rejected. Verified the request path works
+  end-to-end (see web's README for the confirmed run); the actual deep
+  -link-back-into-the-app half needs a real device + a real inbox to
+  fully verify, which wasn't available this session.
 - Circle onboarding: create a circle (shows the invite code once) or join
   one with a code.
 - Live map + member list, sourced from the same `latest_locations` view

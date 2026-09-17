@@ -42,6 +42,11 @@ function RootNavigator() {
       <Stack.Protected guard={!session}>
         <Stack.Screen name="(auth)" />
       </Stack.Protected>
+
+      {/* Unguarded: reachable via the safecircle://reset-password deep
+          link regardless of whether the tapper is currently signed in —
+          see reset-password.tsx. */}
+      <Stack.Screen name="reset-password" />
     </Stack>
   );
 }
