@@ -1,6 +1,8 @@
 import { Tabs } from 'expo-router';
 import { Text } from 'react-native';
 import type { ColorValue } from 'react-native';
+import { useCircles } from '@/contexts/CircleContext';
+import { ChatReadProvider, useChatRead } from '@/contexts/ChatReadContext';
 import { colors } from '@/lib/theme';
 
 function TabIcon({ symbol, color }: { symbol: string; color: ColorValue }) {
@@ -8,6 +10,20 @@ function TabIcon({ symbol, color }: { symbol: string; color: ColorValue }) {
 }
 
 export default function TabsLayout() {
+  const { selectedCircleId } = useCircles();
+  return (
+    <ChatReadProvider circleId={selectedCircleId}>
+      <TabsWithChatBadge />
+    </ChatReadProvider>
+  );
+}
+
+// Split from TabsLayout because the badge count comes from
+// ChatReadProvider's context, which a component can only read from
+// *inside* the provider, not the component establishing it.
+function TabsWithChatBadge() {
+  const { unreadCount } = useChatRead();
+
   return (
     <Tabs
       screenOptions={{
@@ -35,6 +51,7 @@ export default function TabsLayout() {
         options={{
           title: 'Chat',
           tabBarIcon: ({ color }) => <TabIcon symbol="💬" color={color} />,
+          tabBarBadge: unreadCount > 0 ? unreadCount : undefined,
         }}
       />
       <Tabs.Screen

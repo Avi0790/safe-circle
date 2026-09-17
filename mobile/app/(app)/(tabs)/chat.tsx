@@ -1,4 +1,5 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useIsFocused } from 'expo-router';
 import {
   ActivityIndicator,
   FlatList,
@@ -13,6 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCircles } from '@/contexts/CircleContext';
+import { useChatRead } from '@/contexts/ChatReadContext';
 import { useCircleMembers } from '@/hooks/useCircleMembers';
 import { useCircleMessages } from '@/hooks/useCircleMessages';
 import { Avatar } from '@/components/Avatar';
@@ -29,6 +31,8 @@ export default function ChatTab() {
   const { selectedCircle } = useCircles();
   const { members } = useCircleMembers(selectedCircle?.id ?? null);
   const { messages, isLoading, error, send } = useCircleMessages(selectedCircle?.id ?? null);
+  const { markRead } = useChatRead();
+  const isFocused = useIsFocused();
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
@@ -37,6 +41,15 @@ export default function ChatTab() {
   // naive "always scroll on content change" would yank someone back down
   // mid-scroll while they're reading older history.
   const isNearBottomRef = useRef(true);
+
+  // Tabs stay mounted in the background, so this screen keeps receiving
+  // new messages via realtime even while another tab is in front — only
+  // mark as read while this screen is the one actually on screen, on
+  // first arriving here and on every new message after that.
+  useEffect(() => {
+    if (!isFocused) return;
+    markRead();
+  }, [isFocused, messages.length, markRead]);
 
   const nameById = new Map(members.map((m) => [m.id, m.full_name]));
 

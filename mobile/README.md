@@ -126,7 +126,16 @@ location history, SOS) — built end to end.
   circle when sent (`...000017_message_push.sql`, `send-message-push`
   Edge Function) — same pattern as geofence/SOS, so a message sent while
   you're not looking at the Chat tab isn't silent like it would've been
-  otherwise. Read-only on the web dashboard (`ChatFeed.tsx`) — sending
+  otherwise. An unread-count badge on the tab (`contexts/ChatReadContext.tsx`)
+  tracks a per-circle "last read" watermark in `AsyncStorage`
+  (`lib/chatReadState.ts`, device-local, not synced) — lives in a context
+  wrapping the tab navigator, not a plain hook, specifically so the Chat
+  screen's `markRead()` (called on focus and on every new message while
+  focused — tabs stay mounted in the background, so this screen keeps
+  receiving messages via realtime even when another tab is in front)
+  clears the same count the tab bar itself reads, instead of two
+  independent hook instances drifting out of sync. Read-only on the web
+  dashboard (`ChatFeed.tsx`) — sending
   stays mobile-only, matching that dashboard's view-only design.
 - **Avatars** (`lib/avatar.ts`, `components/Avatar.tsx`) — also beyond the
   proposal: colored initials (deterministic per-person color hashed from
