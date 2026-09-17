@@ -122,9 +122,12 @@ location history, SOS) — built end to end.
   ...000016_messages.sql`): no edit, no delete, no read receipts. Live via
   realtime; relies entirely on the realtime INSERT event to append a sent
   message (including your own), rather than also appending it locally, so
-  a message can never show up twice. Read-only on the web dashboard
-  (`ChatFeed.tsx`) — sending stays mobile-only, matching that dashboard's
-  view-only design.
+  a message can never show up twice. Also pushes to the rest of the
+  circle when sent (`...000017_message_push.sql`, `send-message-push`
+  Edge Function) — same pattern as geofence/SOS, so a message sent while
+  you're not looking at the Chat tab isn't silent like it would've been
+  otherwise. Read-only on the web dashboard (`ChatFeed.tsx`) — sending
+  stays mobile-only, matching that dashboard's view-only design.
 - **Avatars** (`lib/avatar.ts`, `components/Avatar.tsx`) — also beyond the
   proposal: colored initials (deterministic per-person color hashed from
   user id) everywhere a member shows up, including as custom map markers

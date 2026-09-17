@@ -38,6 +38,13 @@ Plus in-circle chat (beyond the proposal — see the top-level README):
 |------------|---------------------------------------------------------------------------------|
 | `messages` | One row per chat message, scoped to a circle. Deliberately append-only, same philosophy as `locations`/`sos_events` — no edit, no delete. `...000016_messages.sql`. |
 
+A new message also pushes to the rest of the circle (`...000017_message_push.sql` /
+`send-message-push` Edge Function) — same pg_net + Vault-shared-secret
+pattern as geofence/SOS, reusing `geofence_webhook_secret` rather than a
+fourth one. Deployed via `supabase functions deploy send-message-push`;
+verified live by confirming it 401s without the shared secret, same bar
+used for the original webhook security fix above.
+
 ## How access control works
 
 Row-level security is the enforcement point, not application code:
