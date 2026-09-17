@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCircles } from '@/contexts/CircleContext';
 import { useCircleMembers } from '@/hooks/useCircleMembers';
+import { Avatar } from '@/components/Avatar';
 import { supabase } from '@/lib/supabase';
 import { isLowBattery, isStale, timeAgo } from '@/lib/format';
 import type { MemberWithLocation } from '@/lib/types';
@@ -103,7 +104,10 @@ function MemberRow({
   return (
     <View style={styles.row}>
       <Pressable style={styles.rowMain} onPress={onPress}>
-        <View style={[styles.dot, { backgroundColor: dotColor }]} />
+        <View style={styles.avatarWrap}>
+          <Avatar id={member.id} name={member.full_name} size={40} />
+          <View style={[styles.dot, { backgroundColor: dotColor }]} />
+        </View>
         <View style={styles.rowText}>
           <Text style={styles.name}>{member.full_name}</Text>
           <Text style={typography.caption}>
@@ -161,7 +165,17 @@ const styles = StyleSheet.create({
   },
   removeLinkText: { color: colors.danger, fontSize: 13, fontWeight: '600' },
   lowBattery: { color: colors.danger, fontWeight: '600' },
-  dot: { width: 10, height: 10, borderRadius: 5 },
+  avatarWrap: { position: 'relative' },
+  dot: {
+    position: 'absolute',
+    bottom: -1,
+    right: -1,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: colors.bg,
+  },
   rowText: { flex: 1, gap: 2 },
   chevron: { fontSize: 20, color: colors.offline },
   name: { fontSize: 15, fontWeight: '500', color: colors.textHeading },

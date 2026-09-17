@@ -7,7 +7,8 @@ import { useCircleMembers } from '@/hooks/useCircleMembers';
 import { useActiveSosEvents } from '@/hooks/useActiveSosEvents';
 import { SosBanner } from '@/components/SosBanner';
 import { SosButton } from '@/components/SosButton';
-import { spacing } from '@/lib/theme';
+import { Avatar } from '@/components/Avatar';
+import { colors, radius, spacing } from '@/lib/theme';
 
 const DEFAULT_REGION = {
   latitude: 37.7749,
@@ -64,7 +65,16 @@ export default function MapTab() {
                 ? `${Math.round(member.location!.battery_level * 100)}% battery`
                 : undefined
             }
-          />
+            // The avatar (initials + color) never changes after mount, so
+            // there's nothing to re-snapshot — avoids react-native-maps
+            // re-rendering the marker bitmap on every frame.
+            tracksViewChanges={false}
+            anchor={{ x: 0.5, y: 0.5 }}
+          >
+            <View style={styles.markerAvatar}>
+              <Avatar id={member.id} name={member.full_name} size={36} />
+            </View>
+          </Marker>
         ))}
       </MapView>
 
@@ -82,6 +92,16 @@ export default function MapTab() {
 const styles = StyleSheet.create({
   safeArea: { flex: 1 },
   map: { flex: 1 },
+  markerAvatar: {
+    padding: 2,
+    backgroundColor: colors.bg,
+    borderRadius: radius.full,
+    shadowColor: '#000',
+    shadowOpacity: 0.25,
+    shadowRadius: 3,
+    shadowOffset: { width: 0, height: 1 },
+    elevation: 3,
+  },
   sosBannerWrap: { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10 },
   loadingOverlay: {
     position: 'absolute',

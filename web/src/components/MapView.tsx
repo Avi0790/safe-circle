@@ -4,6 +4,7 @@ import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import type { LatestLocation, MemberWithLocation, Place } from '../lib/types'
 import { isLowBattery, timeAgo } from '../lib/format'
+import { getAvatarColor, getInitials } from '../lib/avatar'
 
 // Vite bundles Leaflet's default marker images at hashed URLs, which breaks
 // the library's hardcoded relative paths. Point at the CDN copies instead.
@@ -15,6 +16,29 @@ L.Icon.Default.mergeOptions({
 })
 
 const DEFAULT_CENTER: [number, number] = [37.7749, -122.4194]
+
+// L.divIcon's `html` is injected as raw innerHTML, not escaped by Leaflet —
+// and full_name is fully user-controlled (editable in Settings), so this
+// guards against a stored-XSS marker via a name like "<img src=x onerror=...>".
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
+function avatarIcon(id: string, name: string): L.DivIcon {
+  const color = getAvatarColor(id)
+  const initials = escapeHtml(getInitials(name))
+  return L.divIcon({
+    className: 'map-avatar-marker',
+    html: `<div class="map-avatar-ring"><div class="avatar" style="width:32px;height:32px;font-size:13px;background-color:${color}">${initials}</div></div>`,
+    iconSize: [40, 40],
+    iconAnchor: [20, 20],
+  })
+}
 
 function FitToMembers({ members }: { members: MemberWithLocation[] }) {
   const map = useMap()
@@ -106,6 +130,7 @@ export function MapView({
         <Marker
           key={member.id}
           position={[member.location!.latitude, member.location!.longitude]}
+          icon={avatarIcon(member.id, member.full_name)}
         >
           <Popup>
             <strong>{member.full_name}</strong>

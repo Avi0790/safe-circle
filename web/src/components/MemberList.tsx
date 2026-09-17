@@ -1,5 +1,6 @@
 import type { MemberWithLocation } from '../lib/types'
 import { isLowBattery, isStale, timeAgo } from '../lib/format'
+import { Avatar } from './Avatar'
 
 export function MemberList({
   members,
@@ -27,7 +28,10 @@ export function MemberList({
             role={member.location ? 'button' : undefined}
             tabIndex={member.location ? 0 : undefined}
           >
-            <span className={`dot dot-${status}`} />
+            <div className="avatar-wrap">
+              <Avatar id={member.id} name={member.full_name} />
+              <span className={`dot dot-${status} dot-badge`} />
+            </div>
             <div className="member-info">
               <div className="member-name">{member.full_name}</div>
               <div className="member-meta">
