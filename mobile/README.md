@@ -26,10 +26,15 @@ throttling, offline queue) — talking to the Supabase backend in
 - Circle onboarding: create a circle (shows the invite code once) or join
   one with a code.
 - Live map + member list, sourced from the same `latest_locations` view
-  and realtime subscription the web dashboard uses.
+  and realtime subscription the web dashboard uses (roster changes —
+  someone joining, leaving, or being removed — are live too, via a
+  `circle_members` subscription). Circle creators see a **Remove** action
+  on other members in the Members tab, backed by the
+  `circle_members_delete_by_creator` RLS policy.
 - Settings: a **Share my location** toggle that starts/stops real
-  background tracking, switch circles, generate/regenerate an invite code,
-  sign out.
+  background tracking, an editable display name, per-circle **Rename**/
+  **Delete** (creator) or **Leave** (everyone else), generate/regenerate an
+  invite code, sign out.
 - **Background location engine** (`lib/locationTracking.ts`,
   `lib/locationQueue.ts`) — the proposal's highest-risk piece:
   - Foreground *and* background permission requests

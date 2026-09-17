@@ -40,7 +40,14 @@ Row-level security is the enforcement point, not application code:
   someone else's position if `circle_members` shows you share a circle with
   them (checked via the `shares_circle_with()` helper function).
 - **Circles / circle_members**: visible only to members of that circle
-  (`is_member_of()` helper).
+  (`is_member_of()` helper). Leaving is a normal delete of your own
+  membership row (`circle_members_delete_self`); a circle's creator can
+  additionally remove *someone else's* row (`circle_members_delete_by_creator`,
+  `...000014_circle_members_creator_removal.sql`) but not their own through
+  that path — self-removal for a creator goes through Leave/Delete-circle
+  instead, since dropping their own membership would make `is_member_of()`
+  (and so `circles_select_members`) stop returning the circle to them at
+  all, permanently orphaning it from their own view.
 - **Joining a circle never happens via a raw INSERT.** It goes through two
   `security definer` RPCs so a client can never forge membership or brute-force
   invite codes against the table directly:
