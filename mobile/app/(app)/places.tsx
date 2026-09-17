@@ -45,6 +45,7 @@ export default function PlacesScreen() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
+  const [renameRadiusValue, setRenameRadiusValue] = useState('');
   const [renameError, setRenameError] = useState<string | null>(null);
   const [renameSaving, setRenameSaving] = useState(false);
 
@@ -126,6 +127,7 @@ export default function PlacesScreen() {
   function startRenamePlace(place: Place) {
     setRenamingId(place.id);
     setRenameValue(place.name);
+    setRenameRadiusValue(String(place.radius_meters));
     setRenameError(null);
   }
 
@@ -136,10 +138,18 @@ export default function PlacesScreen() {
       setRenameError('Give this place a name.');
       return;
     }
+    const radius = Number(renameRadiusValue);
+    if (!Number.isFinite(radius) || radius < 20 || radius > 2000) {
+      setRenameError('Radius must be between 20 and 2000 meters.');
+      return;
+    }
     setRenameSaving(true);
     // RLS (places_update_creator) already restricts this to places you
     // created; the Rename link only appears there in the first place.
-    const { error } = await supabase.from('places').update({ name: trimmed }).eq('id', renamingId);
+    const { error } = await supabase
+      .from('places')
+      .update({ name: trimmed, radius_meters: radius })
+      .eq('id', renamingId);
     setRenameSaving(false);
     if (error) {
       setRenameError(error.message);
@@ -187,6 +197,12 @@ export default function PlacesScreen() {
                 onChangeText={setRenameValue}
                 autoCapitalize="words"
               />
+              <TextField
+                label="Radius (meters)"
+                value={renameRadiusValue}
+                onChangeText={setRenameRadiusValue}
+                keyboardType="numeric"
+              />
               {renameError && <Text style={styles.error}>{renameError}</Text>}
               <View style={styles.renameButtons}>
                 <View style={styles.renameButton}>
@@ -211,7 +227,7 @@ export default function PlacesScreen() {
               {item.created_by === session?.user.id && (
                 <View style={styles.placeActions}>
                   <Pressable onPress={() => startRenamePlace(item)} hitSlop={8}>
-                    <Text style={styles.renameLink}>Rename</Text>
+                    <Text style={styles.renameLink}>Edit</Text>
                   </Pressable>
                   <Pressable
                     onPress={() => confirmDeletePlace(item)}
