@@ -72,8 +72,11 @@ throttling, offline queue) — talking to the Supabase backend in
   `send-geofence-push` Edge Function) existed already; this is the UI that
   makes it usable: add a place at your current location, see the circle's
   places, and a live "who arrived/left where" activity feed.
-- **Push notification registration** (`lib/pushNotifications.ts`) — gets an
-  Expo push token and upserts it into `push_tokens`, so
+- **Push notifications** (`lib/pushNotifications.ts`) — a real on/off
+  Switch in Settings, not enable-only: it checks `push_tokens` on load to
+  reflect whether this account already has one registered, and off calls
+  `deregisterPushNotifications()` (the same cleanup sign-out uses).
+  Registering gets an Expo push token and upserts it into `push_tokens`, so
   `send-geofence-push`/`send-sos-push` have somewhere to deliver alerts.
   Expo push tokens are scoped to an EAS project id, so this needed the
   project registered with EAS (`eas init`) first — **done**:
