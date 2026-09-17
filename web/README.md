@@ -21,7 +21,18 @@ if you haven't already.
 ## What it does
 
 - Sign in with the same account created in the mobile app (Supabase Auth,
-  email + password).
+  email + password), including **"Forgot password?"**
+  (`src/components/LoginScreen.tsx` → `ResetPasswordScreen.tsx`). Simpler
+  here than on mobile: the browser Supabase client's `detectSessionInUrl`
+  is on by default, so it parses the reset link's tokens out of the URL
+  itself — `App.tsx` just listens for the `PASSWORD_RECOVERY` auth event
+  and swaps in the new-password form. Confirmed working end-to-end against
+  the real hosted project (request sent, no errors, UI transitioned to
+  "Check your email"). **Needs a one-time manual step, not in git:** add
+  this dashboard's URL (`http://localhost:5173` for local dev, plus
+  wherever it's deployed) to this Supabase project's
+  **Auth → URL Configuration → Redirect URLs**, or the email link redirects
+  to the project's default Site URL instead of back here.
 - Lists the circles you belong to; if you're in more than one, a dropdown
   switches between them.
 - Shows every circle member on a Leaflet map, using the `latest_locations`
