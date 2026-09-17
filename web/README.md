@@ -60,6 +60,15 @@ if you haven't already.
   the same map (location history, parity with the mobile app's
   `member/[userId]` screen) — click again to hide it. `locations` is
   already append-only, so this is purely a new read, no backend changes.
+- Shows a read-only **Chat** feed (`ChatFeed.tsx`) of the circle's
+  messages — beyond the proposal, matching mobile's new Chat tab. Sending
+  stays mobile-only, same view-only design as everything else here.
+- **Colored-initial avatars** everywhere a member shows up, including as
+  custom Leaflet marker icons on the map — same reasoning as mobile's:
+  `avatar_url` exists but nothing sets it. Note: Leaflet's `divIcon` html
+  is raw, unescaped innerHTML, and `full_name` is fully user-controlled
+  (editable in Settings on mobile), so the marker icon HTML-escapes the
+  initials before interpolating to avoid a stored-XSS vector.
 
 All access control is enforced by the backend's row-level security — this
 app never sees data for anyone outside your circles, and never writes to

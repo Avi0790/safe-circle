@@ -32,6 +32,12 @@ Plus the SOS button:
 |---------------|-------------------------------------------------------------------------------|
 | `sos_events`  | One tap = one row with your location. Not circle-scoped (same rule as `locations`) — visible to anyone who shares a circle with you. `resolved_at`/`resolved_by` track who cleared it. |
 
+Plus in-circle chat (beyond the proposal — see the top-level README):
+
+| Table      | Purpose                                                                        |
+|------------|---------------------------------------------------------------------------------|
+| `messages` | One row per chat message, scoped to a circle. Deliberately append-only, same philosophy as `locations`/`sos_events` — no edit, no delete. `...000016_messages.sql`. |
+
 ## How access control works
 
 Row-level security is the enforcement point, not application code:

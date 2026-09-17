@@ -380,3 +380,54 @@ button:disabled {
   font-size: 13px;
   opacity: 0.7;
 }
+
+/* Chat feed */
+.chat-feed {
+  margin-top: 16px;
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+}
+
+.chat-list {
+  list-style: none;
+  margin: 0;
+  padding: 0 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.chat-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.chat-body {
+  min-width: 0;
+  flex: 1;
+}
+
+.chat-meta {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.chat-sender {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+.chat-time {
+  font-size: 11px;
+  opacity: 0.6;
+}
+
+.chat-text {
+  font-size: 13px;
+  word-break: break-word;
+}

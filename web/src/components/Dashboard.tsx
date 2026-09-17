@@ -5,6 +5,7 @@ import type {
   GeofenceEvent,
   LatestLocation,
   MemberWithLocation,
+  Message,
   Place,
   Profile,
   SosEvent,
@@ -12,7 +13,10 @@ import type {
 import { MapView } from './MapView'
 import { MemberList } from './MemberList'
 import { ActivityFeed } from './ActivityFeed'
+import { ChatFeed } from './ChatFeed'
 import { SosBanner } from './SosBanner'
+
+const MESSAGE_LIMIT = 50
 
 const HISTORY_LIMIT = 100
 
@@ -33,6 +37,7 @@ export function Dashboard() {
   const [historyMemberId, setHistoryMemberId] = useState<string | null>(null)
   const [history, setHistory] = useState<LatestLocation[]>([])
   const [historyLoading, setHistoryLoading] = useState(false)
+  const [messages, setMessages] = useState<Message[]>([])
 
   useEffect(() => {
     let cancelled = false
@@ -190,6 +195,42 @@ export function Dashboard() {
       supabase.removeChannel(channel)
     }
   }, [loadSosEvents])
+
+  // In-circle chat (...000016_messages.sql) — read-only here, matching this
+  // dashboard's design; sending is mobile-only
+  // (mobile/app/(app)/(tabs)/chat.tsx). Circle-scoped, unlike SOS.
+  const loadMessages = useCallback(async (circleId: string) => {
+    const { data } = await supabase
+      .from('messages')
+      .select('id, circle_id, user_id, body, created_at, profiles(full_name)')
+      .eq('circle_id', circleId)
+      .order('created_at', { ascending: true })
+      .limit(MESSAGE_LIMIT)
+    setMessages((data as unknown as Message[]) ?? [])
+  }, [])
+
+  useEffect(() => {
+    if (!selectedCircleId) return
+    loadMessages(selectedCircleId)
+
+    const channel = supabase
+      .channel(`messages-${selectedCircleId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `circle_id=eq.${selectedCircleId}`,
+        },
+        () => loadMessages(selectedCircleId),
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [selectedCircleId, loadMessages])
 
   const loadPlacesAndEvents = useCallback(async (circleId: string) => {
     const [placesRes, eventsRes] = await Promise.all([
@@ -358,6 +399,7 @@ export function Dashboard() {
           onSelect={toggleMemberHistory}
         />
         <ActivityFeed events={events} />
+        <ChatFeed messages={messages} />
       </aside>
 
       <main className="map-pane">

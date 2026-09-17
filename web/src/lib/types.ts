@@ -42,6 +42,15 @@ export interface GeofenceEvent {
   profiles: { full_name: string } | null
 }
 
+export interface Message {
+  id: number
+  circle_id: string
+  user_id: string
+  body: string
+  created_at: string
+  profiles: { full_name: string } | null
+}
+
 export interface SosEvent {
   id: number
   user_id: string

@@ -114,6 +114,25 @@ throttling, offline queue) — talking to the Supabase backend in
 That's the full proposal — MVP and all three stretch goals (geofencing,
 location history, SOS) — built end to end.
 
+- **Chat** (`app/(app)/(tabs)/chat.tsx`, `hooks/useCircleMessages.ts`) —
+  beyond the proposal: a Life360-style in-circle group chat, since sharing
+  location and alerts but having no way to actually talk was a real gap.
+  Deliberately simple and append-only, same philosophy as
+  `locations`/`sos_events` (see `backend/supabase/migrations/
+  ...000016_messages.sql`): no edit, no delete, no read receipts. Live via
+  realtime; relies entirely on the realtime INSERT event to append a sent
+  message (including your own), rather than also appending it locally, so
+  a message can never show up twice. Read-only on the web dashboard
+  (`ChatFeed.tsx`) — sending stays mobile-only, matching that dashboard's
+  view-only design.
+- **Avatars** (`lib/avatar.ts`, `components/Avatar.tsx`) — also beyond the
+  proposal: colored initials (deterministic per-person color hashed from
+  user id) everywhere a member shows up, including as custom map markers
+  replacing the default pin — the Life360 "who's who at a glance" look,
+  without needing photo upload (`avatar_url` exists on `profiles` but
+  nothing sets it — no upload UI, and no device this session to test an
+  image-picker flow against).
+
 ## Running locally
 
 ```bash

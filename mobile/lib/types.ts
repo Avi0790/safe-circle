@@ -25,6 +25,14 @@ export interface MemberWithLocation extends Profile {
   location: LatestLocation | null;
 }
 
+export interface Message {
+  id: number;
+  circle_id: string;
+  user_id: string;
+  body: string;
+  created_at: string;
+}
+
 export interface SosEvent {
   id: number;
   user_id: string;

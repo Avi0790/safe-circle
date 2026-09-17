@@ -1,0 +1,30 @@
+import type { Message } from '../lib/types'
+import { timeAgo } from '../lib/format'
+import { Avatar } from './Avatar'
+
+// Read-only, matching this dashboard's design (Dashboard.tsx never inserts
+// or updates): sending a message is mobile-only
+// (mobile/app/(app)/(tabs)/chat.tsx). A parent watching the web dashboard
+// still sees what the family's saying, same reasoning as the SOS banner.
+export function ChatFeed({ messages }: { messages: Message[] }) {
+  return (
+    <div className="chat-feed">
+      <h2 className="sidebar-section-title">Chat</h2>
+      <ul className="chat-list">
+        {messages.map((message) => (
+          <li key={message.id} className="chat-row">
+            <Avatar id={message.user_id} name={message.profiles?.full_name ?? '?'} size={24} />
+            <div className="chat-body">
+              <div className="chat-meta">
+                <span className="chat-sender">{message.profiles?.full_name ?? 'Someone'}</span>
+                <span className="chat-time">{timeAgo(message.created_at)}</span>
+              </div>
+              <div className="chat-text">{message.body}</div>
+            </div>
+          </li>
+        ))}
+        {messages.length === 0 && <li className="activity-empty">No messages yet.</li>}
+      </ul>
+    </div>
+  )
+}

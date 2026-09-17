@@ -33,6 +33,14 @@ rate limiting on invite-code guesses, no rate limiting on SOS alerts) —
 see `backend/README.md`. Push notifications are registered with EAS
 (`@suren.7a/safecircle`).
 
+Beyond the proposal: a full audit of the backend's own RLS policies found
+several the UI never wired up (rename/delete a circle, rename/delete a
+place, edit your name, remove a member) — all closed. Also added
+forgot-password on both clients, a live "who's actually here right now"
+indicator per place, and two Life360-style additions: in-circle chat
+(mobile sends, web reads) and colored-initial avatars everywhere,
+including as map markers.
+
 Tested on a real iPhone via Expo Go: auth, circles, the map, SOS, and
 live location sharing all confirmed working on real hardware — including
 two real bugs caught only by that testing (a crash in the background
