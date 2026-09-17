@@ -87,7 +87,12 @@ export default function ResetPasswordScreen() {
             This password reset link is invalid or has expired. Request a new one from the
             sign-in screen.
           </Text>
-          <Button title="Back to sign in" onPress={() => router.replace('/(auth)/login')} />
+          {/* router.replace('/'), not '/(auth)/login' directly: if the
+              tapper is already signed in elsewhere, (auth) is guarded
+              closed for them (Stack.Protected guard={!session} in the root
+              layout) and that route would silently fail to navigate. '/'
+              lets the root layout route to wherever they actually belong. */}
+          <Button title="Back to sign in" onPress={() => router.replace('/')} />
         </View>
       </SafeAreaView>
     );

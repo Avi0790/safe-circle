@@ -4,11 +4,11 @@ import { supabase } from '../lib/supabase'
 
 type Mode = 'signin' | 'forgot' | 'sent'
 
-export function LoginScreen() {
+export function LoginScreen({ initialError = null }: { initialError?: string | null }) {
   const [mode, setMode] = useState<Mode>('signin')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(initialError)
   const [loading, setLoading] = useState(false)
 
   async function handleSignIn(e: FormEvent) {
