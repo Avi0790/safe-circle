@@ -105,14 +105,41 @@ export default function SettingsTab() {
     }
   }
 
+  const [pushEnabled, setPushEnabled] = useState(false);
+  const [pushChecking, setPushChecking] = useState(true);
   const [pushStatus, setPushStatus] = useState<string | null>(null);
   const [pushBusy, setPushBusy] = useState(false);
 
-  async function handleEnablePush() {
+  useEffect(() => {
+    if (!session) return;
+    (async () => {
+      // Reflects real state instead of always showing "Enable" — a token
+      // row here means some device already registered for this account.
+      const { data } = await supabase
+        .from('push_tokens')
+        .select('token')
+        .eq('user_id', session.user.id)
+        .limit(1);
+      setPushEnabled((data?.length ?? 0) > 0);
+      setPushChecking(false);
+    })();
+  }, [session]);
+
+  async function handleTogglePush(next: boolean) {
+    if (!session) return;
     setPushBusy(true);
     setPushStatus(null);
-    const result = await registerForPushNotifications();
-    setPushStatus(result.ok ? 'Push notifications enabled.' : result.message);
+    if (next) {
+      const result = await registerForPushNotifications();
+      setPushEnabled(result.ok);
+      setPushStatus(result.ok ? null : result.message);
+    } else {
+      // Same as sign-out's cleanup — no per-device token id to scope to,
+      // so this clears every token row for the account (see
+      // deregisterPushNotifications's docstring in lib/pushNotifications.ts).
+      await deregisterPushNotifications(session.user.id);
+      setPushEnabled(false);
+    }
     setPushBusy(false);
   }
 
@@ -336,12 +363,25 @@ export default function SettingsTab() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Push notifications</Text>
-          <Text style={typography.caption}>
-            Get notified when someone in your circle arrives at or leaves a place.
-          </Text>
-          {pushStatus && <Text style={typography.caption}>{pushStatus}</Text>}
-          <Button title="Enable push notifications" onPress={handleEnablePush} loading={pushBusy} />
+          <View style={styles.row}>
+            <View style={styles.rowText}>
+              <Text style={styles.sectionLabel}>Push notifications</Text>
+              <Text style={typography.caption}>
+                Get notified when someone in your circle arrives at or leaves a place, or sends
+                an SOS.
+              </Text>
+            </View>
+            {pushChecking || pushBusy ? (
+              <ActivityIndicator />
+            ) : (
+              <Switch
+                value={pushEnabled}
+                onValueChange={handleTogglePush}
+                trackColor={{ true: colors.accent }}
+              />
+            )}
+          </View>
+          {pushStatus && <Text style={styles.error}>{pushStatus}</Text>}
         </View>
 
         <View style={styles.section}>
