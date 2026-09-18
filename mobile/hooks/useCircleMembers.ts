@@ -1,14 +1,23 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import type { LatestLocation, MemberWithLocation, Profile } from '@/lib/types';
 
 // Fetches every member of a circle plus their latest known location, and
-// keeps it live via a postgres_changes subscription on `locations`. Shared
-// by the map tab and the member-list tab so both stay in sync.
+// keeps it live via a postgres_changes subscription on `locations`. Called
+// from the Map, Members, and Chat tabs — all mounted simultaneously, since
+// React Navigation keeps tab screens alive in the background.
 export function useCircleMembers(circleId: string | null) {
   const [members, setMembers] = useState<MemberWithLocation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  // supabase.channel(topic) returns the SAME channel object for a repeated
+  // topic string instead of a fresh one — with three tabs calling this hook
+  // for the same circle at once, two instances racing to .channel() the
+  // identical topic means the second's .on() call lands on a channel the
+  // first has already .subscribe()'d, which throws ("cannot add
+  // postgres_changes callbacks... after subscribe()"). A random per-instance
+  // suffix keeps each mounted instance's channels independent.
+  const instanceId = useRef(Math.random().toString(36).slice(2, 10)).current;
 
   const load = useCallback(async () => {
     if (!circleId) {
@@ -74,7 +83,7 @@ export function useCircleMembers(circleId: string | null) {
     const memberIds = new Set(members.map((m) => m.id));
 
     const channel = supabase
-      .channel(`locations-${circleId}`)
+      .channel(`locations-${circleId}-${instanceId}`)
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'locations' },
@@ -104,7 +113,7 @@ export function useCircleMembers(circleId: string | null) {
   useEffect(() => {
     if (!circleId) return;
     const channel = supabase
-      .channel(`circle-members-${circleId}`)
+      .channel(`circle-members-${circleId}-${instanceId}`)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'circle_members', filter: `circle_id=eq.${circleId}` },
