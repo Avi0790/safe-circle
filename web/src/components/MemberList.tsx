@@ -1,5 +1,6 @@
 import type { MemberWithLocation } from '../lib/types'
-import { isLowBattery, isStale, timeAgo } from '../lib/format'
+import { isDriving, isLowBattery, isStale, speedToMph, timeAgo } from '../lib/format'
+import { formatDistanceMiles, haversineMeters } from '../lib/geo'
 import { Avatar } from './Avatar'
 
 export function MemberList({
@@ -7,12 +8,16 @@ export function MemberList({
   selectedId,
   historyLoading,
   onSelect,
+  myUserId,
 }: {
   members: MemberWithLocation[]
   selectedId?: string | null
   historyLoading?: boolean
   onSelect?: (userId: string) => void
+  myUserId?: string | null
 }) {
+  const myLocation = members.find((m) => m.id === myUserId)?.location ?? null
+
   return (
     <ul className="member-list">
       {members.map((member) => {
@@ -20,6 +25,19 @@ export function MemberList({
         const status = !member.location ? 'offline' : stale ? 'stale' : 'online'
         const selected = member.id === selectedId
         const lowBattery = isLowBattery(member.location?.battery_level ?? null)
+        const driving = member.location != null && isDriving(member.location.speed)
+        const mph = member.location ? speedToMph(member.location.speed) : null
+        const distanceMiles =
+          myLocation && member.location && member.id !== myUserId
+            ? formatDistanceMiles(
+                haversineMeters(
+                  myLocation.latitude,
+                  myLocation.longitude,
+                  member.location.latitude,
+                  member.location.longitude,
+                ),
+              )
+            : null
         return (
           <li
             key={member.id}
@@ -45,8 +63,11 @@ export function MemberList({
                   )
                 ) : (
                   <>
-                    {stale ? 'Last seen' : 'Updated'} {timeAgo(member.location.recorded_at)}
-                    {stale ? ' — may not be current' : ''}
+                    {driving
+                      ? `🚗 Driving${mph != null ? ` ${Math.round(mph)} mph` : ''}`
+                      : `${stale ? 'Last seen' : 'Updated'} ${timeAgo(member.location.recorded_at)}`}
+                    {stale && !driving ? ' — may not be current' : ''}
+                    {distanceMiles && ` · ${distanceMiles} away`}
                     {member.location.battery_level != null && (
                       <span className={lowBattery ? 'low-battery' : undefined}>
                         {' · '}

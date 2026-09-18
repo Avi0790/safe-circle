@@ -37,9 +37,11 @@ Beyond the proposal: a full audit of the backend's own RLS policies found
 several the UI never wired up (rename/delete a circle, rename/delete a
 place, edit your name, remove a member) — all closed. Also added
 forgot-password on both clients, a live "who's actually here right now"
-indicator per place, and two Life360-style additions: in-circle chat
-(mobile sends, web reads) and colored-initial avatars everywhere,
-including as map markers.
+indicator per place, and several Life360-style additions: in-circle chat
+with push notifications and an unread badge (mobile sends, web reads),
+colored-initial avatars everywhere including as map markers, and a
+"driving" status + distance-to-member readout from GPS speed data that
+was already being collected but never captured.
 
 Tested on a real iPhone via Expo Go: auth, circles, the map, SOS, and
 live location sharing all confirmed working on real hardware — including

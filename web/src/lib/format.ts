@@ -26,3 +26,21 @@ export const LOW_BATTERY_THRESHOLD = 0.2
 export function isLowBattery(level: number | null): boolean {
   return level != null && level <= LOW_BATTERY_THRESHOLD
 }
+
+const MPS_TO_MPH = 2.23694
+
+export function speedToMph(speedMetersPerSecond: number | null): number | null {
+  if (speedMetersPerSecond == null || speedMetersPerSecond < 0) return null
+  return speedMetersPerSecond * MPS_TO_MPH
+}
+
+// Speed classification off a single GPS fix is inherently fuzzy — this is
+// a rough "probably in a vehicle" signal, not real trip/crash detection.
+// 15mph comfortably clears brisk jogging/cycling speeds (~10-12mph) to
+// avoid mislabeling those as "driving".
+export const DRIVING_SPEED_THRESHOLD_MPH = 15
+
+export function isDriving(speedMetersPerSecond: number | null): boolean {
+  const mph = speedToMph(speedMetersPerSecond)
+  return mph != null && mph >= DRIVING_SPEED_THRESHOLD_MPH
+}

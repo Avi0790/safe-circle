@@ -18,6 +18,7 @@ export interface LatestLocation {
   longitude: number;
   accuracy: number | null;
   battery_level: number | null;
+  speed: number | null;
   recorded_at: string;
 }
 

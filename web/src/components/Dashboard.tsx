@@ -24,7 +24,7 @@ const HISTORY_LIMIT = 100
 // web"). This component only ever selects from circles/locations/places/
 // geofence_events - it never inserts or updates. Creating a place is
 // mobile-only (see mobile/app/(app)/places.tsx).
-export function Dashboard() {
+export function Dashboard({ myUserId }: { myUserId: string }) {
   const [circles, setCircles] = useState<Circle[]>([])
   const [selectedCircleId, setSelectedCircleId] = useState<string | null>(null)
   const [members, setMembers] = useState<MemberWithLocation[]>([])
@@ -397,6 +397,7 @@ export function Dashboard() {
           selectedId={historyMemberId}
           historyLoading={historyLoading}
           onSelect={toggleMemberHistory}
+          myUserId={myUserId}
         />
         <ActivityFeed events={events} />
         <ChatFeed messages={messages} />

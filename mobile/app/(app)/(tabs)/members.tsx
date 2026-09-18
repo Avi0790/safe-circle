@@ -7,7 +7,8 @@ import { useCircles } from '@/contexts/CircleContext';
 import { useCircleMembers } from '@/hooks/useCircleMembers';
 import { Avatar } from '@/components/Avatar';
 import { supabase } from '@/lib/supabase';
-import { isLowBattery, isStale, timeAgo } from '@/lib/format';
+import { isDriving, isLowBattery, isStale, speedToMph, timeAgo } from '@/lib/format';
+import { formatDistanceMiles, haversineMeters } from '@/lib/geo';
 import type { MemberWithLocation } from '@/lib/types';
 import { colors, spacing, typography } from '@/lib/theme';
 
@@ -19,6 +20,7 @@ export default function MembersTab() {
   const [removingId, setRemovingId] = useState<string | null>(null);
 
   const isCreator = selectedCircle?.created_by === session?.user.id;
+  const myLocation = members.find((m) => m.id === session?.user.id)?.location ?? null;
 
   function confirmRemoveMember(member: MemberWithLocation) {
     if (!selectedCircle) return;
@@ -75,6 +77,7 @@ export default function MembersTab() {
             canRemove={isCreator && item.id !== session?.user.id}
             removing={removingId === item.id}
             onRemove={() => confirmRemoveMember(item)}
+            distanceFrom={item.id === session?.user.id ? null : myLocation}
           />
         )}
         ListEmptyComponent={
@@ -91,16 +94,33 @@ function MemberRow({
   canRemove,
   removing,
   onRemove,
+  distanceFrom,
 }: {
   member: MemberWithLocation;
   onPress: () => void;
   canRemove: boolean;
   removing: boolean;
   onRemove: () => void;
+  // Your own current location, to show "X mi away" — null for your own
+  // row (nothing to measure) or when your own location isn't known.
+  distanceFrom: MemberWithLocation['location'];
 }) {
   const stale = member.location != null && isStale(member.location.recorded_at);
   const lowBattery = isLowBattery(member.location?.battery_level ?? null);
+  const driving = member.location != null && isDriving(member.location.speed);
+  const mph = member.location ? speedToMph(member.location.speed) : null;
   const dotColor = !member.location ? colors.offline : stale ? colors.stale : colors.online;
+  const distanceMiles =
+    distanceFrom && member.location
+      ? formatDistanceMiles(
+          haversineMeters(
+            distanceFrom.latitude,
+            distanceFrom.longitude,
+            member.location.latitude,
+            member.location.longitude,
+          ),
+        )
+      : null;
   return (
     <View style={styles.row}>
       <Pressable style={styles.rowMain} onPress={onPress}>
@@ -113,8 +133,11 @@ function MemberRow({
           <Text style={typography.caption}>
             {member.location ? (
               <>
-                {stale ? 'Last seen' : 'Updated'} {timeAgo(member.location.recorded_at)}
-                {stale ? ' — may not be current' : ''}
+                {driving
+                  ? `🚗 Driving${mph != null ? ` ${Math.round(mph)} mph` : ''}`
+                  : `${stale ? 'Last seen' : 'Updated'} ${timeAgo(member.location.recorded_at)}`}
+                {stale && !driving ? ' — may not be current' : ''}
+                {distanceMiles && ` · ${distanceMiles} away`}
                 {member.location.battery_level != null && (
                   <Text style={lowBattery && styles.lowBattery}>
                     {' · '}

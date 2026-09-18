@@ -13,9 +13,11 @@ Four tables, per the proposal:
 | `profiles`        | One row per user, mirrors `auth.users`. Created automatically on sign-up. |
 | `circles`         | A private group. Stores only a **hash** of its invite code, never the plaintext. |
 | `circle_members`  | Join table: who belongs to which circle.                          |
-| `locations`       | Append-only location pings (lat/lng/accuracy/battery/timestamp). One row per update. |
+| `locations`       | Append-only location pings (lat/lng/accuracy/battery/speed/timestamp). One row per update. |
 
 `latest_locations` is a view over `locations` (distinct-on latest row per user) for the live map to query instead of re-deriving "most recent" client-side.
+
+`speed` (ground speed, m/s, nullable) was added later (`...000018_location_speed.sql`) — expo-location reports it on every fix but the column didn't exist yet. Powers the "driving" status on both clients (beyond the proposal — see the top-level README).
 
 Plus the geofencing/notifications stretch goal:
 

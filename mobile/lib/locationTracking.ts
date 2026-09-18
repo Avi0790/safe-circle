@@ -59,6 +59,10 @@ async function buildLocationPing(loc: Location.LocationObject): Promise<QueuedPi
     longitude: loc.coords.longitude,
     accuracy: loc.coords.accuracy,
     battery_level: await currentBatteryLevel(),
+    // Ground speed in m/s, straight from the GPS fix — powers the
+    // "driving" status (see lib/format.ts's isDriving). Some platforms
+    // report a negative sentinel when unavailable rather than null.
+    speed: loc.coords.speed != null && loc.coords.speed >= 0 ? loc.coords.speed : null,
     recorded_at: new Date(loc.timestamp).toISOString(),
   };
 }

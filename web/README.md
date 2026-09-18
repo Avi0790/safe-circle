@@ -69,6 +69,11 @@ if you haven't already.
   is raw, unescaped innerHTML, and `full_name` is fully user-controlled
   (editable in Settings on mobile), so the marker icon HTML-escapes the
   initials before interpolating to avoid a stored-XSS vector.
+- **Driving status and distance** — same as mobile's: shows
+  "🚗 Driving NN mph" once a member's reported GPS speed clears a 15mph
+  threshold (a rough vehicle signal, not real trip detection — see
+  mobile's README for the reasoning), and "N.N mi away" for each other
+  member on the member list, measured from your own latest location.
 
 All access control is enforced by the backend's row-level security — this
 app never sees data for anyone outside your circles, and never writes to

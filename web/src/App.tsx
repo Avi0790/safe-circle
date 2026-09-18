@@ -51,7 +51,7 @@ function App() {
     return <ResetPasswordScreen onDone={() => setRecoveryMode(false)} />
   }
 
-  return session ? <Dashboard /> : <LoginScreen initialError={linkError} />
+  return session ? <Dashboard myUserId={session.user.id} /> : <LoginScreen initialError={linkError} />
 }
 
 export default App

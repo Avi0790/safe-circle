@@ -3,7 +3,7 @@ import { useEffect } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import type { LatestLocation, MemberWithLocation, Place } from '../lib/types'
-import { isLowBattery, timeAgo } from '../lib/format'
+import { isDriving, isLowBattery, speedToMph, timeAgo } from '../lib/format'
 import { getAvatarColor, getInitials } from '../lib/avatar'
 
 // Vite bundles Leaflet's default marker images at hashed URLs, which breaks
@@ -135,7 +135,16 @@ export function MapView({
           <Popup>
             <strong>{member.full_name}</strong>
             <br />
-            Updated {timeAgo(member.location!.recorded_at)}
+            {isDriving(member.location!.speed) ? (
+              <>
+                🚗 Driving
+                {speedToMph(member.location!.speed) != null
+                  ? ` ${Math.round(speedToMph(member.location!.speed)!)} mph`
+                  : ''}
+              </>
+            ) : (
+              `Updated ${timeAgo(member.location!.recorded_at)}`
+            )}
             {member.location!.battery_level != null && (
               <>
                 <br />

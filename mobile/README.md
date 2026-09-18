@@ -144,6 +144,18 @@ location history, SOS) — built end to end.
   without needing photo upload (`avatar_url` exists on `profiles` but
   nothing sets it — no upload UI, and no device this session to test an
   image-picker flow against).
+- **Driving status and distance** (`lib/format.ts`'s `isDriving`/
+  `speedToMph`, `lib/geo.ts`'s `haversineMeters`) — also beyond the
+  proposal. expo-location's `LocationObject.coords.speed` (ground speed,
+  m/s) was already available on every fix but never captured; now stored
+  (`locations.speed`, `...000018_location_speed.sql`) and shown as
+  "🚗 Driving NN mph" in place of the usual "Updated Xm ago" once it
+  clears a 15mph threshold — a rough "probably in a vehicle" signal from
+  a single GPS fix, not real trip/crash detection, so it's deliberately
+  conservative to avoid mislabeling a jog or bike ride. The Members tab
+  also shows "N.N mi away" for each other member, measured from your own
+  latest location — a client-side mirror of the backend's own
+  `haversine_meters()` formula.
 
 ## Running locally
 

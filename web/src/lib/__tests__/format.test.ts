@@ -1,4 +1,13 @@
-import { isLowBattery, isStale, LOW_BATTERY_THRESHOLD, STALE_AFTER_MS, timeAgo } from '../format'
+import {
+  DRIVING_SPEED_THRESHOLD_MPH,
+  isDriving,
+  isLowBattery,
+  isStale,
+  LOW_BATTERY_THRESHOLD,
+  speedToMph,
+  STALE_AFTER_MS,
+  timeAgo,
+} from '../format'
 
 function isoAgo(ms: number): string {
   return new Date(Date.now() - ms).toISOString()
@@ -52,5 +61,37 @@ describe('isLowBattery', () => {
     expect(isLowBattery(LOW_BATTERY_THRESHOLD)).toBe(true)
     expect(isLowBattery(0.05)).toBe(true)
     expect(isLowBattery(0)).toBe(true)
+  })
+})
+
+describe('speedToMph', () => {
+  it('converts meters/second to mph', () => {
+    expect(speedToMph(10)).toBeCloseTo(22.3694, 3)
+  })
+
+  it('returns null for null or a negative sentinel', () => {
+    expect(speedToMph(null)).toBeNull()
+    expect(speedToMph(-1)).toBeNull()
+  })
+
+  it('treats 0 as a real (stationary) speed, not unknown', () => {
+    expect(speedToMph(0)).toBe(0)
+  })
+})
+
+describe('isDriving', () => {
+  it('is false when stationary or unknown', () => {
+    expect(isDriving(0)).toBe(false)
+    expect(isDriving(null)).toBe(false)
+  })
+
+  it('is false below the driving threshold (e.g. jogging/cycling pace)', () => {
+    const belowThresholdMps = (DRIVING_SPEED_THRESHOLD_MPH - 2) / 2.23694
+    expect(isDriving(belowThresholdMps)).toBe(false)
+  })
+
+  it('is true at or above the driving threshold', () => {
+    const atThresholdMps = DRIVING_SPEED_THRESHOLD_MPH / 2.23694
+    expect(isDriving(atThresholdMps)).toBe(true)
   })
 })

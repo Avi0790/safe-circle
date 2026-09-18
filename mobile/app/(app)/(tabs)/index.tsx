@@ -8,6 +8,8 @@ import { useActiveSosEvents } from '@/hooks/useActiveSosEvents';
 import { SosBanner } from '@/components/SosBanner';
 import { SosButton } from '@/components/SosButton';
 import { Avatar } from '@/components/Avatar';
+import { isDriving, speedToMph } from '@/lib/format';
+import type { LatestLocation } from '@/lib/types';
 import { colors, radius, spacing } from '@/lib/theme';
 
 const DEFAULT_REGION = {
@@ -16,6 +18,18 @@ const DEFAULT_REGION = {
   latitudeDelta: 0.2,
   longitudeDelta: 0.2,
 };
+
+function markerDescription(location: LatestLocation): string | undefined {
+  const parts: string[] = [];
+  if (isDriving(location.speed)) {
+    const mph = speedToMph(location.speed);
+    parts.push(`🚗 Driving${mph != null ? ` ${Math.round(mph)} mph` : ''}`);
+  }
+  if (location.battery_level != null) {
+    parts.push(`${Math.round(location.battery_level * 100)}% battery`);
+  }
+  return parts.length > 0 ? parts.join(' · ') : undefined;
+}
 
 // Purely a display — turning sharing on/off lives in Settings, which talks
 // to the background tracking service in lib/locationTracking.ts (AJ's
@@ -60,11 +74,7 @@ export default function MapTab() {
               longitude: member.location!.longitude,
             }}
             title={member.full_name}
-            description={
-              member.location!.battery_level != null
-                ? `${Math.round(member.location!.battery_level * 100)}% battery`
-                : undefined
-            }
+            description={markerDescription(member.location!)}
             // The avatar (initials + color) never changes after mount, so
             // there's nothing to re-snapshot — avoids react-native-maps
             // re-rendering the marker bitmap on every frame.
