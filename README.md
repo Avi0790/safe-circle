@@ -41,7 +41,9 @@ indicator per place, and several Life360-style additions: in-circle chat
 with push notifications and an unread badge (mobile sends, web reads),
 colored-initial avatars everywhere including as map markers, and a
 "driving" status + distance-to-member readout from GPS speed data that
-was already being collected but never captured.
+was already being collected but never captured. Also a "Call 911"
+option on the SOS confirm dialog, and Life360-style place icons
+(🏠/🏫/💼) inferred from each place's name.
 
 Tested on a real iPhone via Expo Go: auth, circles, the map, SOS, and
 live location sharing all confirmed working on real hardware — including

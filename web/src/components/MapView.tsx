@@ -5,6 +5,7 @@ import 'leaflet/dist/leaflet.css'
 import type { LatestLocation, MemberWithLocation, Place } from '../lib/types'
 import { isDriving, isLowBattery, speedToMph, timeAgo } from '../lib/format'
 import { getAvatarColor, getInitials } from '../lib/avatar'
+import { placeIcon } from '../lib/places'
 
 // Vite bundles Leaflet's default marker images at hashed URLs, which breaks
 // the library's hardcoded relative paths. Point at the CDN copies instead.
@@ -116,7 +117,9 @@ export function MapView({
           pathOptions={{ color: '#7c3aed', fillColor: '#7c3aed', fillOpacity: 0.1 }}
         >
           <Popup>
-            <strong>{place.name}</strong>
+            <strong>
+              {placeIcon(place.name)} {place.name}
+            </strong>
             {(presenceByPlace[place.id]?.length ?? 0) > 0 && (
               <>
                 <br />

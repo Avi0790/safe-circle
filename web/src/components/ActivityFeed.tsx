@@ -1,5 +1,6 @@
 import type { GeofenceEvent } from '../lib/types'
 import { timeAgo } from '../lib/format'
+import { placeIcon } from '../lib/places'
 
 export function ActivityFeed({ events }: { events: GeofenceEvent[] }) {
   return (
@@ -11,7 +12,9 @@ export function ActivityFeed({ events }: { events: GeofenceEvent[] }) {
             <span>
               {event.profiles?.full_name ?? 'Someone'}{' '}
               {event.event_type === 'arrived' ? 'arrived at' : 'left'}{' '}
-              <strong>{event.places?.name ?? 'a place'}</strong>
+              <strong>
+                {placeIcon(event.places?.name ?? '')} {event.places?.name ?? 'a place'}
+              </strong>
             </span>
             <span className="activity-time">{timeAgo(event.occurred_at)}</span>
           </li>

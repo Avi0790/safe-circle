@@ -9,6 +9,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useCircles } from '@/contexts/CircleContext';
 import { supabase } from '@/lib/supabase';
 import { timeAgo } from '@/lib/format';
+import { placeIcon } from '@/lib/places';
 import { colors, spacing, typography } from '@/lib/theme';
 
 interface Place {
@@ -268,7 +269,9 @@ export default function PlacesScreen() {
           ) : (
             <View style={[styles.row, styles.placeRow]}>
               <View style={styles.placeInfo}>
-                <Text style={styles.rowTitle}>{item.name}</Text>
+                <Text style={styles.rowTitle}>
+                  {placeIcon(item.name)} {item.name}
+                </Text>
                 <Text style={typography.caption}>{item.radius_meters}m radius</Text>
                 {presenceByPlace[item.id]?.length > 0 && (
                   <Text style={styles.hereNow}>
@@ -307,7 +310,7 @@ export default function PlacesScreen() {
                 <Text style={typography.body}>
                   {event.profiles?.full_name ?? 'Someone'}{' '}
                   {event.event_type === 'arrived' ? 'arrived at' : 'left'}{' '}
-                  {event.places?.name ?? 'a place'}
+                  {placeIcon(event.places?.name ?? '')} {event.places?.name ?? 'a place'}
                 </Text>
                 <Text style={typography.caption}>{timeAgo(event.occurred_at)}</Text>
               </View>

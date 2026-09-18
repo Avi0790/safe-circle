@@ -44,7 +44,9 @@ if you haven't already.
   3) as circle overlays on the map, and a "Recent activity" feed of
   arrive/leave events in the sidebar — both live via realtime, matching
   what's on the mobile app's Places screen. Read-only here too: creating a
-  place is mobile-only (`mobile/app/(app)/places.tsx`).
+  place is mobile-only (`mobile/app/(app)/places.tsx`). Each place gets a
+  Life360-style icon (`lib/places.ts`) inferred from its name — same
+  logic as mobile, kept in sync between the two packages.
 - Click a place circle for a **"Here now"** popup — who's actually inside
   it at this moment (`place_membership_state`, live via realtime), not
   just the historical feed. Same feature on mobile's Places screen.

@@ -4,7 +4,7 @@ import { Stack, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import MapView, { Marker, Polyline, PROVIDER_DEFAULT } from 'react-native-maps';
 import { supabase } from '@/lib/supabase';
-import { timeAgo } from '@/lib/format';
+import { isDriving, speedToMph, timeAgo } from '@/lib/format';
 import { colors, spacing, typography } from '@/lib/theme';
 
 interface HistoryPing {
@@ -12,6 +12,7 @@ interface HistoryPing {
   latitude: number;
   longitude: number;
   battery_level: number | null;
+  speed: number | null;
   recorded_at: string;
 }
 
@@ -34,7 +35,7 @@ export default function MemberHistoryScreen() {
         supabase.from('profiles').select('full_name').eq('id', userId).single(),
         supabase
           .from('locations')
-          .select('id, latitude, longitude, battery_level, recorded_at')
+          .select('id, latitude, longitude, battery_level, speed, recorded_at')
           .eq('user_id', userId)
           .order('recorded_at', { ascending: false })
           .limit(HISTORY_LIMIT),
@@ -52,6 +53,11 @@ export default function MemberHistoryScreen() {
   }, [userId]);
 
   const chronological = [...pings].reverse();
+  const maxSpeedMph = pings.reduce<number | null>((max, p) => {
+    const mph = speedToMph(p.speed);
+    if (mph == null) return max;
+    return max == null || mph > max ? mph : max;
+  }, null);
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['bottom']}>
@@ -91,9 +97,16 @@ export default function MemberHistoryScreen() {
         data={pings}
         keyExtractor={(item) => String(item.id)}
         ListHeaderComponent={
-          <Text style={styles.sectionLabel}>
-            Last {pings.length} location{pings.length === 1 ? '' : 's'}
-          </Text>
+          <View style={styles.header}>
+            <Text style={styles.sectionLabel}>
+              Last {pings.length} location{pings.length === 1 ? '' : 's'}
+            </Text>
+            {maxSpeedMph != null && (
+              <Text style={typography.caption}>
+                🚗 Max speed: {Math.round(maxSpeedMph)} mph
+              </Text>
+            )}
+          </View>
         }
         renderItem={({ item }) => (
           <View style={styles.row}>
@@ -101,6 +114,9 @@ export default function MemberHistoryScreen() {
             <Text style={typography.caption}>
               {item.latitude.toFixed(4)}, {item.longitude.toFixed(4)}
               {item.battery_level != null ? ` · ${Math.round(item.battery_level * 100)}%` : ''}
+              {isDriving(item.speed)
+                ? ` · 🚗 ${Math.round(speedToMph(item.speed)!)} mph`
+                : ''}
             </Text>
           </View>
         )}
@@ -117,6 +133,7 @@ const styles = StyleSheet.create({
   map: { height: '40%' },
   list: { flex: 1 },
   listContent: { padding: spacing.lg, gap: spacing.xs },
+  header: { gap: 2, marginBottom: spacing.xs },
   sectionLabel: {
     ...typography.caption,
     color: colors.textHeading,
