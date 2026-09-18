@@ -253,6 +253,20 @@ embed 400'd (`PGRST201`) because `sos_events` has two FKs to `profiles`
 (`user_id` and `resolved_by`); fixed with an explicit
 `profiles!sos_events_user_id_fkey(...)` hint.
 
+**Re-verified on the real iPhone after a large batch of additions**
+(avatars, chat, "Here now," the RLS-gap fixes): the colored-initial map
+marker rendered correctly in place of the default pin — confirmed the
+avatar feature actually works on-device, not just in the web fallback.
+That same session also caught a real crash: tapping the Members or Chat
+tab threw `cannot add 'postgres_changes' callbacks... after
+subscribe()`. Root cause — `useCircleMembers` is now called by three
+simultaneously-mounted tabs (Map, Members, Chat) for the same circle, and
+`supabase.channel(topic)` returns the *same* channel object for a
+repeated topic string rather than a fresh one, so the second and third
+callers' `.on()` calls landed on a channel the first had already
+`.subscribe()`'d. Fixed with a random per-instance suffix on both of that
+hook's channel names; confirmed fixed on the same device.
+
 ## Design system
 
 Shared tokens live in `lib/theme.ts` (colors, spacing, radius, type scale)
