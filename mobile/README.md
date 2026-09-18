@@ -77,7 +77,10 @@ throttling, offline queue) — talking to the Supabase backend in
   `place_membership_state`, a table the trigger already kept accurate but
   that no client had ever read; also added to the realtime publication
   (`...000015_place_membership_realtime.sql`) so it updates live. Same
-  feature on the web dashboard's place popups.
+  feature on the web dashboard's place popups. Each place also gets a
+  Life360-style icon (`lib/places.ts`'s `placeIcon`) inferred from its
+  name (🏠 Home, 🏫 School, 💼 Work, else 📍) — no category column or
+  extra input step needed, since the name's already typed.
 - **Push notifications** (`lib/pushNotifications.ts`) — a real on/off
   Switch in Settings, not enable-only: it checks `push_tokens` on load to
   reflect whether this account already has one registered, and off calls
@@ -100,7 +103,10 @@ throttling, offline queue) — talking to the Supabase backend in
   Shows a member's last 100 pings as a map trail (`Polyline` + oldest/most
   -recent markers) plus a scrollable list with timestamps, coordinates,
   and battery. `locations` was already append-only, so this needed zero
-  backend changes — purely a new read. Same web-unsupported-map pattern
+  backend changes — purely a new read. Also shows a "🚗 Max speed" stat
+  (beyond the proposal) now that `locations.speed` is captured, plus
+  per-ping speed on any point where it clears the driving threshold.
+  Same web-unsupported-map pattern
   as the Map tab: `[userId].web.tsx` is a list-only fallback.
 - **SOS button** (`components/SosButton.tsx` + `SosBanner.tsx`, on the Map
   tab) — the proposal's last stretch goal. One tap (after a confirm
@@ -109,7 +115,15 @@ throttling, offline queue) — talking to the Supabase backend in
   via the same pg_net-triggered push pattern as geofencing
   (`send-sos-push` Edge Function). A red banner shows any active SOS —
   yours or a circle-mate's — with a resolve button, live via realtime.
-  `hooks/useActiveSosEvents.ts` reads it.
+  `hooks/useActiveSosEvents.ts` reads it. The confirm dialog also offers
+  **"Call 911"** alongside Cancel/Send SOS — beyond the proposal, and
+  deliberately placed on the same dialog the one-tap design already
+  required rather than a separate button, so it adds zero extra taps to
+  the existing flow. (Deliberately *not* added: a message field on SOS —
+  `sos_events.message` exists but nothing sets it, and adding a text
+  -entry step before an emergency alert would work against the "one-tap,
+  confirms first" design this button's own comment documents as
+  intentional.)
 
 That's the full proposal — MVP and all three stretch goals (geofencing,
 location history, SOS) — built end to end.

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, StyleSheet, Text } from 'react-native';
+import { ActivityIndicator, Alert, Linking, Pressable, StyleSheet, Text } from 'react-native';
 import * as Location from 'expo-location';
 import { supabase } from '@/lib/supabase';
 import { colors, spacing } from '@/lib/theme';
@@ -12,14 +12,26 @@ export function SosButton({ onSent }: { onSent?: () => void }) {
   const [sending, setSending] = useState(false);
 
   function handlePress() {
+    // "Call 911" rides along on the same confirm dialog the one-tap design
+    // already required (see the comment above) — a genuine emergency
+    // safety-app should offer real emergency services right here, and this
+    // adds zero extra taps to the existing SOS flow rather than a separate
+    // button/screen that would.
     Alert.alert(
       'Send SOS?',
       'This alerts everyone in your circle with your current location.',
       [
         { text: 'Cancel', style: 'cancel' },
+        { text: 'Call 911', onPress: callEmergencyServices },
         { text: 'Send SOS', style: 'destructive', onPress: sendSos },
       ],
     );
+  }
+
+  function callEmergencyServices() {
+    Linking.openURL('tel:911').catch(() => {
+      Alert.alert('Could not open the phone dialer.');
+    });
   }
 
   async function sendSos() {
