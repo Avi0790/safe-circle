@@ -20,6 +20,16 @@ export function ChatFeed({ messages }: { messages: Message[] }) {
                 <span className="chat-time">{timeAgo(message.created_at)}</span>
               </div>
               <div className="chat-text">{message.body}</div>
+              {message.latitude != null && message.longitude != null && (
+                <a
+                  className="chat-map-link"
+                  href={`https://www.google.com/maps/search/?api=1&query=${message.latitude},${message.longitude}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  View on map ›
+                </a>
+              )}
             </div>
           </li>
         ))}

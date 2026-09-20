@@ -4,6 +4,7 @@ import {
   ActivityIndicator,
   FlatList,
   KeyboardAvoidingView,
+  Linking,
   Platform,
   Pressable,
   StyleSheet,
@@ -30,12 +31,13 @@ export default function ChatTab() {
   const { session } = useAuth();
   const { selectedCircle } = useCircles();
   const { members } = useCircleMembers(selectedCircle?.id ?? null);
-  const { messages, isLoading, error, send } = useCircleMessages(selectedCircle?.id ?? null);
+  const { messages, isLoading, error, send, checkIn } = useCircleMessages(selectedCircle?.id ?? null);
   const { markRead } = useChatRead();
   const isFocused = useIsFocused();
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
+  const [checkingIn, setCheckingIn] = useState(false);
   const listRef = useRef<FlatList>(null);
   // Only auto-scroll to new messages when already near the bottom — a
   // naive "always scroll on content change" would yank someone back down
@@ -64,6 +66,15 @@ export default function ChatTab() {
       return;
     }
     setDraft('');
+  }
+
+  async function handleCheckIn() {
+    if (checkingIn) return;
+    setCheckingIn(true);
+    setSendError(null);
+    const result = await checkIn();
+    setCheckingIn(false);
+    if (!result.ok) setSendError(result.error);
   }
 
   return (
@@ -113,6 +124,18 @@ export default function ChatTab() {
         />
 
         <View style={styles.composer}>
+          <Pressable
+            style={[styles.checkInButton, checkingIn && styles.sendButtonDisabled]}
+            onPress={handleCheckIn}
+            disabled={checkingIn}
+            accessibilityLabel="Check in — share where you are with your circle"
+          >
+            {checkingIn ? (
+              <ActivityIndicator size="small" color={colors.accent} />
+            ) : (
+              <Text style={styles.checkInText}>📍</Text>
+            )}
+          </Pressable>
           <TextInput
             style={styles.input}
             value={draft}
@@ -157,6 +180,17 @@ function MessageRow({
         <Text style={isMine ? styles.bubbleTextMine : styles.bubbleTextTheirs}>
           {message.body}
         </Text>
+        {message.latitude != null && message.longitude != null && (
+          <Pressable
+            onPress={() =>
+              Linking.openURL(
+                `https://www.google.com/maps/search/?api=1&query=${message.latitude},${message.longitude}`,
+              ).catch(() => {})
+            }
+          >
+            <Text style={isMine ? styles.mapLinkMine : styles.mapLinkTheirs}>View on map ›</Text>
+          </Pressable>
+        )}
         <Text style={isMine ? styles.timeMine : styles.timeTheirs}>
           {timeAgo(message.created_at)}
         </Text>
@@ -208,6 +242,16 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm + 2,
   },
   sendButtonDisabled: { opacity: 0.5 },
+  checkInButton: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.sm + 2,
+    paddingVertical: spacing.sm + 2,
+  },
+  checkInText: { fontSize: 16 },
+  mapLinkTheirs: { fontSize: 13, fontWeight: '600', color: colors.accent },
+  mapLinkMine: { fontSize: 13, fontWeight: '600', color: '#fff', textDecorationLine: 'underline' },
   sendButtonText: { color: '#fff', fontWeight: '600', fontSize: 15 },
   error: { color: colors.danger, fontSize: 13, paddingHorizontal: spacing.lg, paddingBottom: spacing.xs },
 });

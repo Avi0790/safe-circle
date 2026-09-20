@@ -31,6 +31,8 @@ export interface Message {
   circle_id: string;
   user_id: string;
   body: string;
+  latitude: number | null;
+  longitude: number | null;
   created_at: string;
 }
 

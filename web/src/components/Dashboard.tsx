@@ -202,7 +202,7 @@ export function Dashboard({ myUserId }: { myUserId: string }) {
   const loadMessages = useCallback(async (circleId: string) => {
     const { data } = await supabase
       .from('messages')
-      .select('id, circle_id, user_id, body, created_at, profiles(full_name)')
+      .select('id, circle_id, user_id, body, latitude, longitude, created_at, profiles(full_name)')
       .eq('circle_id', circleId)
       .order('created_at', { ascending: true })
       .limit(MESSAGE_LIMIT)

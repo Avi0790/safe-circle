@@ -189,6 +189,24 @@ location history, SOS) — built end to end.
   hosted DB (100 m -> near, 7 km -> far, no data left behind); the actual
   push delivery needs two real devices with push enabled.
 
+- **Low-battery push** (no UI — server-side, `...000021_low_battery_push.sql`,
+  `send-battery-push`) — beyond the proposal: the apps already flag a low
+  battery (<= 20%) but only if you're looking; a dead phone is the main
+  reason someone silently drops off the map, so the circle gets a push
+  ("Thi's phone is at 12%"). Stateless dedupe: a trigger (with a `WHEN`
+  clause so it's off the hot path) only fires if that person has had no
+  other low-battery ping in the last 2 hours, so it alerts on entering
+  "low" rather than every ping, and not again if the level flaps around
+  20%. Verified on the hosted DB in a rolled-back transaction (healthy
+  ping -> nothing, first low -> exactly one push, second low -> none).
+- **Check in** (the 📍 button beside the chat composer) — beyond the
+  proposal, Life360-style: a chat message that also carries where you are
+  (`messages.latitude/longitude`, `...000022_message_location.sql`), shown
+  with a "View on map" link (Google Maps universal URL, works on iOS and
+  Android) on both the app and the web dashboard's read-only feed. It's an
+  ordinary message, so it reuses the message push and unread badge, and
+  exposes nothing circle-mates couldn't already see.
+
 ## Running locally
 
 ```bash

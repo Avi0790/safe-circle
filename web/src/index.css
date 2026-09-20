@@ -431,3 +431,9 @@ button:disabled {
   font-size: 13px;
   word-break: break-word;
 }
+
+.chat-map-link {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+}
