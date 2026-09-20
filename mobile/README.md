@@ -177,9 +177,14 @@ location history, SOS) — built end to end.
   a trigger on every location insert (`...000019_nearby_alerts.sql`,
   `evaluate_nearby()`), which tracks each pair in `nearby_pairs` and fires
   the `send-nearby-push` Edge Function only on a far -> near transition.
-  500 m to trigger and 800 m to re-arm (hysteresis) so GPS jitter at the
-  edge can't alert every minute; only compares against fixes under 10
-  minutes old. It reveals nothing circle-mates can't already see on the
+  Speed-aware (`...000020_nearby_speed_aware.sql`): the trigger radius is
+  ~45 s of the two people's combined travel, clamped to 500-3000 m — 500 m
+  on foot, ~1.1 km if one of you is at ~56 mph, ~2.2 km for two cars —
+  since fixes arrive up to a minute apart and a fixed 500 m would land
+  after you'd already passed. It re-arms at 1.6x that radius (min 800 m,
+  hysteresis) so GPS jitter at the edge can't alert every minute; the other
+  person's speed only counts if their fix is under 2 minutes old, and only
+  fixes under 10 minutes old are compared at all. It reveals nothing circle-mates can't already see on the
   map. Verified by running the trigger in a rolled-back transaction on the
   hosted DB (100 m -> near, 7 km -> far, no data left behind); the actual
   push delivery needs two real devices with push enabled.

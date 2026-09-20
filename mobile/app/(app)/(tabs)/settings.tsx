@@ -423,9 +423,9 @@ export default function SettingsTab() {
             <View style={styles.rowText}>
               <Text style={styles.sectionLabel}>Nearby alerts</Text>
               <Text style={typography.caption}>
-                Get a notification when someone in your circle comes within about 500 m of you —
-                handy on the road, so you don't have to look at the map. Needs push
-                notifications on.
+                Get a notification when someone in your circle comes near you — about 500 m on
+                foot, and farther out when you're driving so the warning comes early. Handy on
+                the road, so you don't have to look at the map. Needs push notifications on.
               </Text>
             </View>
             {nearbyChecking ? (
