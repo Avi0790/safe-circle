@@ -143,6 +143,40 @@ export default function SettingsTab() {
     setPushBusy(false);
   }
 
+  const [nearbyAlerts, setNearbyAlerts] = useState(false);
+  const [nearbyChecking, setNearbyChecking] = useState(true);
+  const [nearbyError, setNearbyError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!session) return;
+    (async () => {
+      const { data } = await supabase
+        .from('profiles')
+        .select('nearby_alerts')
+        .eq('id', session.user.id)
+        .single();
+      setNearbyAlerts(data?.nearby_alerts ?? false);
+      setNearbyChecking(false);
+    })();
+  }, [session]);
+
+  async function handleToggleNearby(next: boolean) {
+    if (!session) return;
+    setNearbyError(null);
+    setNearbyChecking(true);
+    // RLS (profiles_update_self) already restricts this to your own row.
+    const { error } = await supabase
+      .from('profiles')
+      .update({ nearby_alerts: next })
+      .eq('id', session.user.id);
+    if (error) {
+      setNearbyError(error.message);
+    } else {
+      setNearbyAlerts(next);
+    }
+    setNearbyChecking(false);
+  }
+
   async function handleGetInviteCode() {
     if (!selectedCircle) return;
     setError(null);
@@ -382,6 +416,29 @@ export default function SettingsTab() {
             )}
           </View>
           {pushStatus && <Text style={styles.error}>{pushStatus}</Text>}
+        </View>
+
+        <View style={styles.section}>
+          <View style={styles.row}>
+            <View style={styles.rowText}>
+              <Text style={styles.sectionLabel}>Nearby alerts</Text>
+              <Text style={typography.caption}>
+                Get a notification when someone in your circle comes within about 500 m of you —
+                handy on the road, so you don't have to look at the map. Needs push
+                notifications on.
+              </Text>
+            </View>
+            {nearbyChecking ? (
+              <ActivityIndicator />
+            ) : (
+              <Switch
+                value={nearbyAlerts}
+                onValueChange={handleToggleNearby}
+                trackColor={{ true: colors.accent }}
+              />
+            )}
+          </View>
+          {nearbyError && <Text style={styles.error}>{nearbyError}</Text>}
         </View>
 
         <View style={styles.section}>

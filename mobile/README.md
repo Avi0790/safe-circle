@@ -171,6 +171,19 @@ location history, SOS) — built end to end.
   latest location — a client-side mirror of the backend's own
   `haversine_meters()` formula.
 
+- **Nearby alerts** (Settings switch, `profiles.nearby_alerts`, opt-in) —
+  beyond the proposal: a push when a circle-mate comes within ~500 m, so
+  you don't have to look at the map while driving. Decided server-side by
+  a trigger on every location insert (`...000019_nearby_alerts.sql`,
+  `evaluate_nearby()`), which tracks each pair in `nearby_pairs` and fires
+  the `send-nearby-push` Edge Function only on a far -> near transition.
+  500 m to trigger and 800 m to re-arm (hysteresis) so GPS jitter at the
+  edge can't alert every minute; only compares against fixes under 10
+  minutes old. It reveals nothing circle-mates can't already see on the
+  map. Verified by running the trigger in a rolled-back transaction on the
+  hosted DB (100 m -> near, 7 km -> far, no data left behind); the actual
+  push delivery needs two real devices with push enabled.
+
 ## Running locally
 
 ```bash
