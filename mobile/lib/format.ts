@@ -44,3 +44,31 @@ export function isDriving(speedMetersPerSecond: number | null): boolean {
   const mph = speedToMph(speedMetersPerSecond);
   return mph != null && mph >= DRIVING_SPEED_THRESHOLD_MPH;
 }
+
+// Temporary sharing (profiles.share_until): null means normal always-on
+// sharing, a future time means "sharing until then", a past time means the
+// window has ended and circle-mates can no longer see the person.
+export type ShareStatus = 'always' | 'window' | 'ended';
+
+export function getShareStatus(shareUntil: string | null | undefined, now = Date.now()): ShareStatus {
+  if (!shareUntil) return 'always';
+  return new Date(shareUntil).getTime() > now ? 'window' : 'ended';
+}
+
+export function formatClockTime(iso: string): string {
+  return new Date(iso).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+}
+
+// "12 min", "1 h 5 min", "less than a minute", or "now" once it's passed —
+// for walk timers, where a rounded-up minute count reads better than a
+// ticking mm:ss that would need a per-second re-render.
+export function formatTimeLeft(deadlineIso: string, now = Date.now()): string {
+  const ms = new Date(deadlineIso).getTime() - now;
+  if (ms <= 0) return 'now';
+  const totalMinutes = Math.ceil(ms / 60000);
+  if (totalMinutes <= 1) return 'less than a minute';
+  if (totalMinutes < 60) return `${totalMinutes} min`;
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  return minutes === 0 ? `${hours} h` : `${hours} h ${minutes} min`;
+}

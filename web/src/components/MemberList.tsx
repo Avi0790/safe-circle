@@ -1,5 +1,13 @@
 import type { MemberWithLocation } from '../lib/types'
-import { isDriving, isLowBattery, isStale, speedToMph, timeAgo } from '../lib/format'
+import {
+  formatClockTime,
+  getShareStatus,
+  isDriving,
+  isLowBattery,
+  isStale,
+  speedToMph,
+  timeAgo,
+} from '../lib/format'
 import { formatDistanceMiles, haversineMeters } from '../lib/geo'
 import { Avatar } from './Avatar'
 
@@ -21,6 +29,7 @@ export function MemberList({
   return (
     <ul className="member-list">
       {members.map((member) => {
+        const shareStatus = getShareStatus(member.share_until)
         const stale = member.location != null && isStale(member.location.recorded_at)
         const status = !member.location ? 'offline' : stale ? 'stale' : 'online'
         const selected = member.id === selectedId
@@ -53,7 +62,9 @@ export function MemberList({
             <div className="member-info">
               <div className="member-name">{member.full_name}</div>
               <div className="member-meta">
-                {!member.location ? (
+                {shareStatus === 'ended' ? (
+                  'Stopped sharing'
+                ) : !member.location ? (
                   'No location shared yet'
                 ) : selected ? (
                   historyLoading ? (
@@ -75,6 +86,9 @@ export function MemberList({
                         {lowBattery ? ' ⚠️' : ''}
                       </span>
                     )}
+                    {shareStatus === 'window' && member.share_until
+                      ? ` · sharing until ${formatClockTime(member.share_until)}`
+                      : ''}
                   </>
                 )}
               </div>

@@ -209,6 +209,25 @@ location history, SOS) — built end to end.
   "low" rather than every ping, and not again if the level flaps around
   20%. Verified on the hosted DB in a rolled-back transaction (healthy
   ping -> nothing, first low -> exactly one push, second low -> none).
+- **Temporary sharing** (Settings → Share my location: Until I stop / 1 h /
+  2 h / 8 h; `lib/sharingWindow.ts`) — beyond the proposal, and the opposite
+  of Life360's always-on model. The window is set on the server and enforced
+  there (see `backend/README.md`); the phone mirrors the end time in
+  AsyncStorage so it also stops tracking on its own, including from the
+  background task. If the server refuses a ping (RLS `42501`, only possible
+  once the window closed) the queue is dropped instead of retried forever.
+  Members and the map show "sharing until 4:15 PM" / "Stopped sharing".
+- **Walk me home** (Map tab → 🚶 Walk me home, `app/(app)/walk.tsx`) —
+  pick a saved place and 10–60 min; it turns on location sharing for the
+  walk if needed. The circle sees a banner, is pushed on arrival, and if the
+  timer runs out an SOS goes out automatically (server-side, see
+  `backend/README.md`). "I'm safe" and "+10 min" on the walk screen and
+  banner; a local notification (`lib/walkReminder.ts`) warns 2 min before
+  the deadline, even offline.
+- **Need a ride** (Map tab → 🚗 Need a ride, `lib/rides.ts`,
+  `RideBanner`) — alerts only circle-mates who are driving nearby; if
+  nobody is, offers to ask the whole circle. Anyone can tap "I'll go"
+  (first wins) and gets a Directions link; the requester sees who's coming.
 - **Check in** (the 📍 button beside the chat composer) — beyond the
   proposal, Life360-style: a chat message that also carries where you are
   (`messages.latitude/longitude`, `...000022_message_location.sql`), shown
@@ -324,6 +343,13 @@ the UI. Also caught a real bug this way: the initial `profiles(full_name)`
 embed 400'd (`PGRST201`) because `sos_events` has two FKs to `profiles`
 (`user_id` and `resolved_by`); fixed with an explicit
 `profiles!sos_events_user_id_fkey(...)` hint.
+
+**Not yet verified on real phones:** temporary sharing, Walk me home and
+Need a ride were built and their backend logic tested on the hosted DB, but
+the screens and the push delivery need real devices. (A walk can be tried
+with one phone plus a second account watching; a ride request only reaches
+someone whose phone is actually moving at driving speed, so that needs a
+second phone in a car.)
 
 **Re-verified on the real iPhone after a large batch of additions**
 (avatars, chat, "Here now," the RLS-gap fixes): the colored-initial map

@@ -47,6 +47,29 @@ fourth one. Deployed via `supabase functions deploy send-message-push`;
 verified live by confirming it 401s without the shared secret, same bar
 used for the original webhook security fix above.
 
+### Safety features beyond Life360 (migrations `...000024`–`...000027`)
+
+The design theme is consent-based, time-limited safety. All three share one
+internal push path: `send_alert_push()` (SQL) decides who and what, and the
+`send-alert-push` Edge Function only turns user ids into Expo tokens (401s
+without the shared secret, like the others). `send_alert_push` and the other
+internal helpers are `revoke`d from `anon`/`authenticated` — functions in
+`public` are otherwise callable by any signed-in user over `/rpc`, which for
+these would mean pushing arbitrary text to anyone or raising fake SOS alerts.
+
+| | What it does | Where the guarantee lives |
+|---|---|---|
+| **Temporary sharing** (`profiles.share_until`, `set_share_window`) | Share for a fixed window instead of until you remember to stop. | `locations` RLS: after the window, circle-mates can't read your pings **and** you can't write new ones. Refusing the writes matters — merely hiding them would make everything recorded after expiry visible the next time you started sharing. |
+| **Walk me home** (`walks`, `start_walk` / `end_walk` / `extend_walk`) | Pick a saved place + a timer. Circle is told you left and when you arrive (a trigger on `locations` detects it). | A `pg_cron` job runs `expire_walks()` every minute: a walk past its deadline goes `overdue` and raises a **normal SOS** at your last known location (so it reuses the SOS banner and push), unless you arrive or tap "I'm safe" first — which also clears that SOS. No write policies on `walks`; only the RPCs change it. |
+| **Need a ride** (`ride_requests`, `request_ride` / `accept_ride` / `cancel_ride`) | One tap alerts circle-mates who are **currently driving** (fix < 3 min old, >= 15 mph) **within ~6 mi**. Nobody qualifies? The app offers "ask everyone". | First `accept_ride` wins (atomic `UPDATE ... WHERE status = 'open'`); rate-limited to 5 per 10 min like SOS. |
+
+Verified on the hosted DB in a rolled-back transaction: window open/closed
+visibility, insert refused after expiry, arrival detection, expiry -> SOS
+with last-known location -> resolved by "I'm safe", outsiders can't see,
+start, end or accept anything, drivers-only vs everyone counts, double-accept
+refused, and `has_function_privilege` showing the helpers are not callable by
+clients. The cron job is live (`cron.job_run_details` shows it succeeding).
+
 ## How access control works
 
 Row-level security is the enforcement point, not application code:

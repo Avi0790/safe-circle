@@ -29,7 +29,7 @@ export function useCircleMembers(circleId: string | null) {
 
     const { data: memberRows, error: memberError } = await supabase
       .from('circle_members')
-      .select('user_id, profiles(id, full_name, avatar_url)')
+      .select('user_id, profiles(id, full_name, avatar_url, share_until)')
       .eq('circle_id', circleId);
 
     if (memberError) {
@@ -130,6 +130,20 @@ export function useCircleMembers(circleId: string | null) {
   // right away. profiles has no circle_id to filter on, but its SELECT
   // policy already limits delivery to yourself and circle-mates, and a
   // refetch is cheap and rare (profile edits).
+  // A sharing window ending changes nothing in the database that a client
+  // is told about — the person's location rows just stop being readable —
+  // so refetch when the soonest window is due to close, instead of leaving
+  // their pin on the map until something else triggers a reload.
+  useEffect(() => {
+    const now = Date.now();
+    const upcoming = members
+      .map((m) => (m.share_until ? new Date(m.share_until).getTime() : null))
+      .filter((t): t is number => t != null && t > now);
+    if (upcoming.length === 0) return;
+    const timer = setTimeout(load, Math.min(...upcoming) - now + 1000);
+    return () => clearTimeout(timer);
+  }, [members, load]);
+
   useEffect(() => {
     if (!circleId) return;
     const channel = supabase

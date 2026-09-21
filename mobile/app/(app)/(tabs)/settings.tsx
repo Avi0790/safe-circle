@@ -21,11 +21,13 @@ import { supabase } from '@/lib/supabase';
 import { pickAndUploadAvatar, removeAvatar } from '@/lib/avatarUpload';
 import { colors, radius, spacing, typography } from '@/lib/theme';
 import {
+  getShareUntil,
   isBackgroundTaskActive,
   isTrackingActive,
-  startBackgroundTracking,
-  stopBackgroundTracking,
+  stopIfShareWindowEnded,
 } from '@/lib/locationTracking';
+import { SHARE_DURATIONS, startSharing, stopSharing } from '@/lib/sharingWindow';
+import { formatClockTime } from '@/lib/format';
 import { deregisterPushNotifications, registerForPushNotifications } from '@/lib/pushNotifications';
 
 export default function SettingsTab() {
@@ -88,6 +90,10 @@ export default function SettingsTab() {
   const [sharingBusy, setSharingBusy] = useState(true);
   const [sharingError, setSharingError] = useState<string | null>(null);
   const [sharingMode, setSharingMode] = useState<'background' | 'foreground' | null>(null);
+  // Chosen with the chips below, applied when sharing is switched on.
+  const [durationMinutes, setDurationMinutes] = useState<number | null>(null);
+  // End of the running temporary window, if there is one.
+  const [shareUntil, setShareUntilState] = useState<Date | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -95,10 +101,25 @@ export default function SettingsTab() {
       setSharingEnabled(active);
       if (active) {
         setSharingMode((await isBackgroundTaskActive()) ? 'background' : 'foreground');
+        setShareUntilState(await getShareUntil());
       }
       setSharingBusy(false);
     })();
   }, []);
+
+  // Flip the toggle off by itself when the window runs out while this
+  // screen is open (the tracking service stops itself either way).
+  useEffect(() => {
+    if (!sharingEnabled || !shareUntil) return;
+    const timer = setTimeout(async () => {
+      if (await stopIfShareWindowEnded()) {
+        setSharingEnabled(false);
+        setSharingMode(null);
+        setShareUntilState(null);
+      }
+    }, Math.max(shareUntil.getTime() - Date.now(), 0) + 500);
+    return () => clearTimeout(timer);
+  }, [sharingEnabled, shareUntil]);
 
   async function handleToggleSharing(next: boolean) {
     setSharingError(null);
@@ -108,19 +129,22 @@ export default function SettingsTab() {
     // can't leave the toggle stuck spinning forever.
     try {
       if (next) {
-        const result = await startBackgroundTracking();
+        const result = await startSharing(durationMinutes);
         if (!result.ok) {
           setSharingError(result.reason);
           setSharingEnabled(false);
           setSharingMode(null);
+          setShareUntilState(null);
         } else {
           setSharingEnabled(true);
           setSharingMode(result.backgroundGranted ? 'background' : 'foreground');
+          setShareUntilState(result.until ? new Date(result.until) : null);
         }
       } else {
-        await stopBackgroundTracking();
+        await stopSharing();
         setSharingEnabled(false);
         setSharingMode(null);
+        setShareUntilState(null);
       }
     } catch (err) {
       setSharingError(err instanceof Error ? err.message : 'Something went wrong.');
@@ -435,9 +459,13 @@ export default function SettingsTab() {
             <View style={styles.rowText}>
               <Text style={styles.sectionLabel}>Share my location</Text>
               <Text style={typography.caption}>
-                {sharingMode === 'foreground'
-                  ? 'Sharing while the app is open. Background sharing needs a development build (not Expo Go) — see mobile/README.md.'
-                  : 'Runs in the background, even when the app is closed.'}
+                {sharingEnabled && shareUntil
+                  ? `Sharing until ${formatClockTime(shareUntil.toISOString())}, then it stops on its own.`
+                  : sharingMode === 'foreground'
+                    ? 'Sharing while the app is open. Background sharing needs a development build (not Expo Go) — see mobile/README.md.'
+                    : sharingMode === 'background'
+                      ? 'Runs in the background, even when the app is closed.'
+                      : 'Choose how long to share, then switch it on.'}
               </Text>
             </View>
             {sharingBusy ? (
@@ -450,6 +478,25 @@ export default function SettingsTab() {
               />
             )}
           </View>
+          {!sharingEnabled && (
+            <View style={styles.chipRow}>
+              {SHARE_DURATIONS.map((option) => {
+                const selected = option.minutes === durationMinutes;
+                return (
+                  <Pressable
+                    key={option.label}
+                    style={[styles.chip, selected && styles.chipSelected]}
+                    onPress={() => setDurationMinutes(option.minutes)}
+                    accessibilityState={{ selected }}
+                  >
+                    <Text style={[styles.chipText, selected && styles.chipTextSelected]}>
+                      {option.label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          )}
           {sharingError && <Text style={styles.error}>{sharingError}</Text>}
         </View>
 
@@ -625,6 +672,17 @@ const styles = StyleSheet.create({
     gap: spacing.xl,
   },
   section: { gap: spacing.sm },
+  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  chip: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.full,
+    paddingHorizontal: spacing.md - 2,
+    paddingVertical: spacing.xs + 2,
+  },
+  chipSelected: { backgroundColor: colors.accent, borderColor: colors.accent },
+  chipText: { fontSize: 13, color: colors.text, fontWeight: '600' },
+  chipTextSelected: { color: '#fff' },
   photoRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   photoBusy: { opacity: 0.4 },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },

@@ -74,6 +74,12 @@ if you haven't already.
   are fully user-controlled (editable via `profiles_update_self`), so the
   marker icon HTML-escapes both before interpolating to avoid a
   stored-XSS vector, and only http(s) photo URLs are ever rendered.
+- **Sharing windows, walks and ride requests** — read-only, like SOS: a
+  member on a temporary window shows "sharing until 4:15 PM", or "Stopped
+  sharing" after (their pin disappears — the database stops serving it);
+  active walk-me-home timers and open ride requests appear as banners
+  (`WalkRideBanner.tsx`). An overdue walk isn't repeated because it has
+  already raised a normal SOS.
 - **Driving status and distance** — same as mobile's: shows
   "🚗 Driving NN mph" once a member's reported GPS speed clears a 15mph
   threshold (a rough vehicle signal, not real trip detection — see

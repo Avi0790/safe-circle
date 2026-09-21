@@ -46,6 +46,16 @@ was already being collected but never captured. Also a "Call 911"
 option on the SOS confirm dialog, and Life360-style place icons
 (🏠/🏫/💼) inferred from each place's name.
 
+Three features that deliberately *aren't* Life360 — the theme is
+consent-based, time-limited safety rather than always-on tracking:
+**temporary sharing** (share for 1/2/8 hours, enforced in the database so
+it holds even if the app is force-quit), **Walk me home** (pick a place and
+a timer; your circle sees you're on your way, hears when you arrive, and an
+SOS fires *automatically* if you don't — protection for when you can't press
+the button), and **Need a ride** (one tap alerts only circle-mates who are
+driving near you right now). Details in `backend/README.md` and
+`mobile/README.md`.
+
 Tested on a real iPhone via Expo Go: auth, circles, the map, SOS, and
 live location sharing all confirmed working on real hardware — including
 two real bugs caught only by that testing (a crash in the background

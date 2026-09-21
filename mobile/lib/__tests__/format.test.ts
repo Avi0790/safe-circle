@@ -1,5 +1,7 @@
 import {
   DRIVING_SPEED_THRESHOLD_MPH,
+  formatTimeLeft,
+  getShareStatus,
   isDriving,
   isLowBattery,
   isStale,
@@ -93,5 +95,41 @@ describe('isDriving', () => {
   it('is true at or above the driving threshold', () => {
     const atThresholdMps = DRIVING_SPEED_THRESHOLD_MPH / 2.23694;
     expect(isDriving(atThresholdMps)).toBe(true);
+  });
+});
+
+describe('getShareStatus', () => {
+  const now = Date.parse('2026-09-21T12:00:00Z');
+
+  it('treats no window as always-on sharing', () => {
+    expect(getShareStatus(null, now)).toBe('always');
+    expect(getShareStatus(undefined, now)).toBe('always');
+  });
+
+  it('is "window" until the deadline and "ended" from then on', () => {
+    expect(getShareStatus('2026-09-21T12:00:01Z', now)).toBe('window');
+    expect(getShareStatus('2026-09-21T12:00:00Z', now)).toBe('ended');
+    expect(getShareStatus('2026-09-21T11:00:00Z', now)).toBe('ended');
+  });
+});
+
+describe('formatTimeLeft', () => {
+  const now = Date.parse('2026-09-21T12:00:00Z');
+  const at = (ms: number) => new Date(now + ms).toISOString();
+
+  it('says "now" once the deadline has passed', () => {
+    expect(formatTimeLeft(at(0), now)).toBe('now');
+    expect(formatTimeLeft(at(-5000), now)).toBe('now');
+  });
+
+  it('rounds partial minutes up so it never shows 0 min while time remains', () => {
+    expect(formatTimeLeft(at(20_000), now)).toBe('less than a minute');
+    expect(formatTimeLeft(at(61_000), now)).toBe('2 min');
+    expect(formatTimeLeft(at(12 * 60_000), now)).toBe('12 min');
+  });
+
+  it('switches to hours', () => {
+    expect(formatTimeLeft(at(60 * 60_000), now)).toBe('1 h');
+    expect(formatTimeLeft(at(65 * 60_000), now)).toBe('1 h 5 min');
   });
 });

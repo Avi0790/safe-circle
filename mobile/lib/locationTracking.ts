@@ -27,6 +27,41 @@ async function getSharingPreference(): Promise<boolean> {
   return (await AsyncStorage.getItem(SHARING_ENABLED_KEY)) === '1';
 }
 
+// End of the temporary sharing window (see lib/sharingWindow.ts), mirrored
+// from the server so the phone can stop tracking on its own — including
+// from the background task, where no screen is around to notice. The server
+// enforces the same limit regardless (locations_insert_self refuses pings
+// once profiles.share_until has passed); this just avoids a phone that
+// keeps trying, and keeps the battery from draining for nothing.
+const SHARE_UNTIL_KEY = 'safecircle.shareUntil.v1';
+
+export async function setShareUntil(iso: string | null): Promise<void> {
+  if (iso) {
+    await AsyncStorage.setItem(SHARE_UNTIL_KEY, iso);
+  } else {
+    await AsyncStorage.removeItem(SHARE_UNTIL_KEY);
+  }
+}
+
+export async function getShareUntil(): Promise<Date | null> {
+  const raw = await AsyncStorage.getItem(SHARE_UNTIL_KEY);
+  if (!raw) return null;
+  const date = new Date(raw);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+// Stops tracking if the sharing window has ended. Returns true if it did.
+export async function stopIfShareWindowEnded(): Promise<boolean> {
+  const until = await getShareUntil();
+  if (!until || until.getTime() > Date.now()) return false;
+  await stopBackgroundTracking();
+  await setShareUntil(null);
+  // Anything still queued was recorded inside the window but can never be
+  // accepted now — the server refuses pings after it closes.
+  await clearQueue();
+  return true;
+}
+
 // Background tracking is meaningless on web (this mobile app doesn't
 // target it anyway — see index.web.tsx), and expo-task-manager /
 // expo-location's background APIs aren't available there. Guard the whole
@@ -85,6 +120,16 @@ export async function flushQueueAndSend(newPing?: QueuedPing): Promise<void> {
 
   const { error } = await supabase.from('locations').insert(toSend);
   if (error) {
+    // 42501 = row-level security refused the insert, which for this table
+    // only happens once your sharing window has closed. Retrying can never
+    // succeed, and keeping the batch would block every future ping behind
+    // it — drop it and stop.
+    if (error.code === '42501') {
+      await clearQueue();
+      await stopBackgroundTracking();
+      await setShareUntil(null);
+      return;
+    }
     // Insert is all-or-nothing per request; keep the whole batch queued.
     await saveQueue(toSend);
     return;
@@ -107,6 +152,7 @@ if (isNative) {
 
     const { locations } = (data ?? {}) as { locations?: Location.LocationObject[] };
     if (!locations || locations.length === 0) return;
+    if (await stopIfShareWindowEnded()) return;
 
     // Normally one fix per callback given our interval settings, but handle
     // bursts (e.g. after being backgrounded a while) by sending them together.
@@ -139,6 +185,9 @@ export async function isTrackingActive(): Promise<boolean> {
     await setSharingPreference(false);
     return false;
   }
+  // Same self-heal for a temporary window that ran out while the app was
+  // closed.
+  if (await stopIfShareWindowEnded()) return false;
   return true;
 }
 
@@ -176,6 +225,7 @@ let foregroundHeartbeatTimer: ReturnType<typeof setInterval> | null = null;
 let lastForegroundReportAt = 0;
 
 async function reportForegroundFix(loc: Location.LocationObject) {
+  if (await stopIfShareWindowEnded()) return;
   lastForegroundReportAt = Date.now();
   await flushQueueAndSend(await buildLocationPing(loc));
 }
@@ -332,6 +382,7 @@ export async function stopBackgroundTracking(): Promise<void> {
 export async function resumeForegroundWatchIfActive(): Promise<void> {
   if (!isNative) return;
   if (!(await getSharingPreference())) return;
+  if (await stopIfShareWindowEnded()) return;
   // Defensive: this runs unconditionally at app boot, so a native throw
   // here (we've already hit one from a sibling permissions call — see
   // startBackgroundTracking) must never break startup for every user who

@@ -1,14 +1,20 @@
 import { useEffect, useRef, useState } from 'react';
 import MapView, { Marker, PROVIDER_DEFAULT } from 'react-native-maps';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Alert, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useCircles } from '@/contexts/CircleContext';
 import { useCircleMembers } from '@/hooks/useCircleMembers';
 import { useActiveSosEvents } from '@/hooks/useActiveSosEvents';
 import { SosBanner } from '@/components/SosBanner';
 import { SosButton } from '@/components/SosButton';
+import { WalkBanner } from '@/components/WalkBanner';
+import { RideBanner } from '@/components/RideBanner';
+import { QuickActions } from '@/components/QuickActions';
+import { useActiveWalks } from '@/hooks/useActiveWalks';
+import { useRideRequests } from '@/hooks/useRideRequests';
+import { requestRide } from '@/lib/rides';
 import { Avatar } from '@/components/Avatar';
-import { isDriving, speedToMph } from '@/lib/format';
+import { formatClockTime, getShareStatus, isDriving, speedToMph } from '@/lib/format';
 import type { LatestLocation, MemberWithLocation } from '@/lib/types';
 import { colors, radius, spacing } from '@/lib/theme';
 
@@ -19,7 +25,10 @@ const DEFAULT_REGION = {
   longitudeDelta: 0.2,
 };
 
-function markerDescription(location: LatestLocation): string | undefined {
+function markerDescription(
+  location: LatestLocation,
+  shareUntil: string | null,
+): string | undefined {
   const parts: string[] = [];
   if (isDriving(location.speed)) {
     const mph = speedToMph(location.speed);
@@ -27,6 +36,9 @@ function markerDescription(location: LatestLocation): string | undefined {
   }
   if (location.battery_level != null) {
     parts.push(`${Math.round(location.battery_level * 100)}% battery`);
+  }
+  if (getShareStatus(shareUntil) === 'window' && shareUntil) {
+    parts.push(`sharing until ${formatClockTime(shareUntil)}`);
   }
   return parts.length > 0 ? parts.join(' · ') : undefined;
 }
@@ -53,7 +65,7 @@ function MemberMarker({ member }: { member: MemberWithLocation }) {
         longitude: member.location!.longitude,
       }}
       title={member.full_name}
-      description={markerDescription(member.location!)}
+      description={markerDescription(member.location!, member.share_until)}
       tracksViewChanges={!settled}
       anchor={{ x: 0.5, y: 0.5 }}
     >
@@ -77,7 +89,15 @@ export default function MapTab() {
   const { selectedCircleId } = useCircles();
   const { members, isLoading } = useCircleMembers(selectedCircleId);
   const { events: sosEvents, refresh: refreshSos } = useActiveSosEvents();
+  const { walks, refresh: refreshWalks } = useActiveWalks();
+  const { requests: rideRequests, refresh: refreshRides } = useRideRequests();
   const mapRef = useRef<MapView>(null);
+
+  async function handleAskEveryone() {
+    const result = await requestRide(true);
+    if (!result.ok) Alert.alert("Couldn't request a ride", result.error);
+    refreshRides();
+  }
 
   const located = members.filter((m) => m.location);
 
@@ -97,6 +117,8 @@ export default function MapTab() {
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       <View style={styles.sosBannerWrap}>
         <SosBanner events={sosEvents} onChanged={refreshSos} />
+        <WalkBanner walks={walks} onChanged={refreshWalks} />
+        <RideBanner requests={rideRequests} onChanged={refreshRides} onAskEveryone={handleAskEveryone} />
       </View>
 
       <MapView
@@ -116,6 +138,7 @@ export default function MapTab() {
         </View>
       )}
 
+      <QuickActions onRideRequested={refreshRides} />
       <SosButton onSent={refreshSos} />
     </SafeAreaView>
   );

@@ -7,7 +7,15 @@ import { useCircles } from '@/contexts/CircleContext';
 import { useCircleMembers } from '@/hooks/useCircleMembers';
 import { Avatar } from '@/components/Avatar';
 import { supabase } from '@/lib/supabase';
-import { isDriving, isLowBattery, isStale, speedToMph, timeAgo } from '@/lib/format';
+import {
+  formatClockTime,
+  getShareStatus,
+  isDriving,
+  isLowBattery,
+  isStale,
+  speedToMph,
+  timeAgo,
+} from '@/lib/format';
 import { formatDistanceMiles, haversineMeters } from '@/lib/geo';
 import type { MemberWithLocation } from '@/lib/types';
 import { colors, spacing, typography } from '@/lib/theme';
@@ -109,6 +117,7 @@ function MemberRow({
   const lowBattery = isLowBattery(member.location?.battery_level ?? null);
   const driving = member.location != null && isDriving(member.location.speed);
   const mph = member.location ? speedToMph(member.location.speed) : null;
+  const shareStatus = getShareStatus(member.share_until);
   const dotColor = !member.location ? colors.offline : stale ? colors.stale : colors.online;
   const distanceMiles =
     distanceFrom && member.location
@@ -131,7 +140,9 @@ function MemberRow({
         <View style={styles.rowText}>
           <Text style={styles.name}>{member.full_name}</Text>
           <Text style={typography.caption}>
-            {member.location ? (
+            {shareStatus === 'ended' ? (
+              'Stopped sharing'
+            ) : member.location ? (
               <>
                 {driving
                   ? `🚗 Driving${mph != null ? ` ${Math.round(mph)} mph` : ''}`
@@ -145,6 +156,9 @@ function MemberRow({
                     {lowBattery ? ' ⚠️' : ''}
                   </Text>
                 )}
+                {shareStatus === 'window' && member.share_until
+                  ? ` · sharing until ${formatClockTime(member.share_until)}`
+                  : ''}
               </>
             ) : (
               'No location shared yet'

@@ -9,6 +9,8 @@ export interface Profile {
   id: string
   full_name: string
   avatar_url: string | null
+  // Temporary-sharing window end; null = normal always-on sharing.
+  share_until: string | null
 }
 
 export interface LatestLocation {
@@ -62,4 +64,23 @@ export interface SosEvent {
   message: string | null
   created_at: string
   profiles: { full_name: string } | null
+}
+
+export interface Walk {
+  id: string
+  user_id: string
+  circle_id: string
+  place_name: string
+  expected_by: string
+  status: 'active' | 'arrived' | 'safe' | 'overdue'
+  profiles: { full_name: string } | null
+}
+
+export interface RideRequest {
+  id: string
+  user_id: string
+  status: 'open' | 'accepted' | 'cancelled'
+  created_at: string
+  requester: { full_name: string } | null
+  driver: { full_name: string } | null
 }
