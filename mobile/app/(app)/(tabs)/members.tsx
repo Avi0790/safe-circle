@@ -125,7 +125,7 @@ function MemberRow({
     <View style={styles.row}>
       <Pressable style={styles.rowMain} onPress={onPress}>
         <View style={styles.avatarWrap}>
-          <Avatar id={member.id} name={member.full_name} size={40} />
+          <Avatar id={member.id} name={member.full_name} url={member.avatar_url} size={40} />
           <View style={[styles.dot, { backgroundColor: dotColor }]} />
         </View>
         <View style={styles.rowText}>

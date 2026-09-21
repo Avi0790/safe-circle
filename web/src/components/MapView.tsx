@@ -4,7 +4,7 @@ import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import type { LatestLocation, MemberWithLocation, Place } from '../lib/types'
 import { isDriving, isLowBattery, speedToMph, timeAgo } from '../lib/format'
-import { getAvatarColor, getInitials } from '../lib/avatar'
+import { getAvatarColor, getInitials, isSafeAvatarUrl } from '../lib/avatar'
 import { placeIcon } from '../lib/places'
 
 // Vite bundles Leaflet's default marker images at hashed URLs, which breaks
@@ -30,12 +30,16 @@ function escapeHtml(s: string): string {
     .replace(/'/g, '&#39;')
 }
 
-function avatarIcon(id: string, name: string): L.DivIcon {
+function avatarIcon(id: string, name: string, avatarUrl: string | null): L.DivIcon {
   const color = getAvatarColor(id)
   const initials = escapeHtml(getInitials(name))
+  // A photo that fails to load hides itself, revealing the initials beneath.
+  const photo = isSafeAvatarUrl(avatarUrl)
+    ? `<img src="${escapeHtml(avatarUrl)}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:999px" onerror="this.remove()">`
+    : ''
   return L.divIcon({
     className: 'map-avatar-marker',
-    html: `<div class="map-avatar-ring"><div class="avatar" style="width:32px;height:32px;font-size:13px;background-color:${color}">${initials}</div></div>`,
+    html: `<div class="map-avatar-ring"><div class="avatar" style="position:relative;overflow:hidden;width:32px;height:32px;font-size:13px;background-color:${color}">${initials}${photo}</div></div>`,
     iconSize: [40, 40],
     iconAnchor: [20, 20],
   })
@@ -133,7 +137,7 @@ export function MapView({
         <Marker
           key={member.id}
           position={[member.location!.latitude, member.location!.longitude]}
-          icon={avatarIcon(member.id, member.full_name)}
+          icon={avatarIcon(member.id, member.full_name, member.avatar_url)}
         >
           <Popup>
             <strong>{member.full_name}</strong>

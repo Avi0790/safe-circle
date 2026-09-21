@@ -51,7 +51,7 @@ export interface Message {
   latitude: number | null
   longitude: number | null
   created_at: string
-  profiles: { full_name: string } | null
+  profiles: { full_name: string; avatar_url: string | null } | null
 }
 
 export interface SosEvent {

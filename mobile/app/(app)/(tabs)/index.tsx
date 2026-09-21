@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import MapView, { Marker, PROVIDER_DEFAULT } from 'react-native-maps';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -9,7 +9,7 @@ import { SosBanner } from '@/components/SosBanner';
 import { SosButton } from '@/components/SosButton';
 import { Avatar } from '@/components/Avatar';
 import { isDriving, speedToMph } from '@/lib/format';
-import type { LatestLocation } from '@/lib/types';
+import type { LatestLocation, MemberWithLocation } from '@/lib/types';
 import { colors, radius, spacing } from '@/lib/theme';
 
 const DEFAULT_REGION = {
@@ -29,6 +29,45 @@ function markerDescription(location: LatestLocation): string | undefined {
     parts.push(`${Math.round(location.battery_level * 100)}% battery`);
   }
   return parts.length > 0 ? parts.join(' · ') : undefined;
+}
+
+// A marker's view is snapshotted into a bitmap, so it has to keep tracking
+// changes until whatever it shows has actually drawn — a profile photo
+// arrives asynchronously, and freezing before then would pin an empty
+// circle to the map. Once the avatar reports settled it's frozen (avoids
+// re-rendering the bitmap every frame); the timeout is a safety net so a
+// hung image download can't leave a marker tracking forever.
+function MemberMarker({ member }: { member: MemberWithLocation }) {
+  const [settled, setSettled] = useState(false);
+
+  useEffect(() => {
+    setSettled(false);
+    const timer = setTimeout(() => setSettled(true), 4000);
+    return () => clearTimeout(timer);
+  }, [member.avatar_url]);
+
+  return (
+    <Marker
+      coordinate={{
+        latitude: member.location!.latitude,
+        longitude: member.location!.longitude,
+      }}
+      title={member.full_name}
+      description={markerDescription(member.location!)}
+      tracksViewChanges={!settled}
+      anchor={{ x: 0.5, y: 0.5 }}
+    >
+      <View style={styles.markerAvatar}>
+        <Avatar
+          id={member.id}
+          name={member.full_name}
+          url={member.avatar_url}
+          size={36}
+          onSettled={() => setSettled(true)}
+        />
+      </View>
+    </Marker>
+  );
 }
 
 // Purely a display — turning sharing on/off lives in Settings, which talks
@@ -67,24 +106,7 @@ export default function MapTab() {
         initialRegion={DEFAULT_REGION}
       >
         {located.map((member) => (
-          <Marker
-            key={member.id}
-            coordinate={{
-              latitude: member.location!.latitude,
-              longitude: member.location!.longitude,
-            }}
-            title={member.full_name}
-            description={markerDescription(member.location!)}
-            // The avatar (initials + color) never changes after mount, so
-            // there's nothing to re-snapshot — avoids react-native-maps
-            // re-rendering the marker bitmap on every frame.
-            tracksViewChanges={false}
-            anchor={{ x: 0.5, y: 0.5 }}
-          >
-            <View style={styles.markerAvatar}>
-              <Avatar id={member.id} name={member.full_name} size={36} />
-            </View>
-          </Marker>
+          <MemberMarker key={member.id} member={member} />
         ))}
       </MapView>
 

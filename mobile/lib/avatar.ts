@@ -1,7 +1,6 @@
-// Colored initials in place of a photo — avatar_url exists on profiles but
-// nothing has ever set it (no upload UI, no device to test an image-picker
-// flow against), so this is the "Life360 pin" identity look without that
-// dependency: deterministic per-person color, no upload, no permissions.
+// Identity pins: a profile photo when the person has uploaded one (see
+// lib/avatarUpload.ts), otherwise colored initials — a deterministic
+// per-person color, so everyone still gets a distinct pin with no upload.
 
 const AVATAR_PALETTE = [
   '#7c3aed', // accent purple
@@ -30,4 +29,23 @@ export function getAvatarColor(id: string): string {
     hash = (hash * 31 + id.charCodeAt(i)) >>> 0;
   }
   return AVATAR_PALETTE[hash % AVATAR_PALETTE.length];
+}
+
+// Public-bucket URLs look like
+//   <project>/storage/v1/object/public/avatars/<user id>/<timestamp>.jpg
+// — this recovers the object path so an old photo can be deleted once it's
+// been replaced. Returns null for anything that isn't one of ours.
+export function avatarPathFromUrl(url: string | null | undefined): string | null {
+  if (!url) return null;
+  const marker = '/storage/v1/object/public/avatars/';
+  const i = url.indexOf(marker);
+  if (i === -1) return null;
+  const path = decodeURIComponent(url.slice(i + marker.length).split('?')[0]);
+  return path || null;
+}
+
+// avatar_url is user-writable (profiles_update_self), and other people's
+// clients load whatever it points at — so only ever render plain http(s).
+export function isSafeAvatarUrl(url: string | null | undefined): url is string {
+  return typeof url === 'string' && /^https?:\/\//i.test(url);
 }

@@ -39,7 +39,8 @@ place, edit your name, remove a member) — all closed. Also added
 forgot-password on both clients, a live "who's actually here right now"
 indicator per place, and several Life360-style additions: in-circle chat
 with push notifications and an unread badge (mobile sends, web reads),
-colored-initial avatars everywhere including as map markers, and a
+avatars everywhere including as map markers (a profile photo you choose
+from your library, or colored initials until you do), and a
 "driving" status + distance-to-member readout from GPS speed data that
 was already being collected but never captured. Also a "Call 911"
 option on the SOS confirm dialog, and Life360-style place icons

@@ -47,7 +47,7 @@ export function MemberList({
             tabIndex={member.location ? 0 : undefined}
           >
             <div className="avatar-wrap">
-              <Avatar id={member.id} name={member.full_name} />
+              <Avatar id={member.id} name={member.full_name} url={member.avatar_url} />
               <span className={`dot dot-${status} dot-badge`} />
             </div>
             <div className="member-info">

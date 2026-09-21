@@ -12,11 +12,13 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Avatar } from '@/components/Avatar';
 import { Button } from '@/components/Button';
 import { TextField } from '@/components/TextField';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCircles } from '@/contexts/CircleContext';
 import { supabase } from '@/lib/supabase';
+import { pickAndUploadAvatar, removeAvatar } from '@/lib/avatarUpload';
 import { colors, radius, spacing, typography } from '@/lib/theme';
 import {
   isBackgroundTaskActive,
@@ -45,18 +47,42 @@ export default function SettingsTab() {
   const [nameValue, setNameValue] = useState('');
   const [nameError, setNameError] = useState<string | null>(null);
   const [nameSaving, setNameSaving] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [avatarBusy, setAvatarBusy] = useState(false);
+  const [avatarError, setAvatarError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!session) return;
     (async () => {
       const { data } = await supabase
         .from('profiles')
-        .select('full_name')
+        .select('full_name, avatar_url')
         .eq('id', session.user.id)
         .single();
       setFullName(data?.full_name ?? null);
+      setAvatarUrl(data?.avatar_url ?? null);
     })();
   }, [session]);
+
+  async function handleChangePhoto() {
+    if (!session || avatarBusy) return;
+    setAvatarError(null);
+    setAvatarBusy(true);
+    const result = await pickAndUploadAvatar(session.user.id, avatarUrl);
+    setAvatarBusy(false);
+    if (result.ok) setAvatarUrl(result.url);
+    else if (!result.cancelled) setAvatarError(result.error);
+  }
+
+  async function handleRemovePhoto() {
+    if (!session || avatarBusy) return;
+    setAvatarError(null);
+    setAvatarBusy(true);
+    const result = await removeAvatar(session.user.id, avatarUrl);
+    setAvatarBusy(false);
+    if (result.ok) setAvatarUrl(result.url);
+    else if (!result.cancelled) setAvatarError(result.error);
+  }
 
   const [sharingEnabled, setSharingEnabled] = useState(false);
   const [sharingBusy, setSharingBusy] = useState(true);
@@ -338,6 +364,37 @@ export default function SettingsTab() {
         <Text style={typography.title}>Settings</Text>
 
         <View style={styles.section}>
+          <View style={styles.photoRow}>
+            <Pressable onPress={handleChangePhoto} disabled={avatarBusy} accessibilityLabel="Change profile photo">
+              <View style={avatarBusy && styles.photoBusy}>
+                <Avatar
+                  id={session?.user.id ?? ''}
+                  name={fullName ?? session?.user.email ?? '?'}
+                  url={avatarUrl}
+                  size={72}
+                />
+              </View>
+              {avatarBusy && <ActivityIndicator style={StyleSheet.absoluteFill} />}
+            </Pressable>
+            <View style={styles.rowText}>
+              <Text style={styles.sectionLabel}>Profile photo</Text>
+              <Text style={typography.caption}>
+                Shown on the map and in your circle instead of your initials.
+              </Text>
+              <View style={styles.circleRow}>
+                <Pressable onPress={handleChangePhoto} disabled={avatarBusy} hitSlop={8}>
+                  <Text style={styles.renameLinkText}>{avatarUrl ? 'Change photo' : 'Choose photo'}</Text>
+                </Pressable>
+                {avatarUrl && (
+                  <Pressable onPress={handleRemovePhoto} disabled={avatarBusy} hitSlop={8} style={styles.leaveLink}>
+                    <Text style={styles.leaveLinkText}>Remove</Text>
+                  </Pressable>
+                )}
+              </View>
+            </View>
+          </View>
+          {avatarError && <Text style={styles.error}>{avatarError}</Text>}
+
           <Text style={styles.sectionLabel}>Signed in as</Text>
           <Text style={typography.body}>{session?.user.email}</Text>
           {editingName ? (
@@ -568,6 +625,8 @@ const styles = StyleSheet.create({
     gap: spacing.xl,
   },
   section: { gap: spacing.sm },
+  photoRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  photoBusy: { opacity: 0.4 },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   rowText: { flex: 1, gap: 2 },
   circleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },

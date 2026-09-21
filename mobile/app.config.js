@@ -49,6 +49,12 @@ module.exports = {
         },
       ],
       'expo-notifications',
+      [
+        'expo-image-picker',
+        {
+          photosPermission: 'Safe Circle uses your photos so you can choose a profile picture.',
+        },
+      ],
     ],
     experiments: {
       typedRoutes: true,

@@ -126,5 +126,21 @@ export function useCircleMembers(circleId: string | null) {
     };
   }, [circleId, load]);
 
+  // Someone changing their photo or name should show up for everyone else
+  // right away. profiles has no circle_id to filter on, but its SELECT
+  // policy already limits delivery to yourself and circle-mates, and a
+  // refetch is cheap and rare (profile edits).
+  useEffect(() => {
+    if (!circleId) return;
+    const channel = supabase
+      .channel(`profiles-${circleId}-${instanceId}`)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'profiles' }, () => load())
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [circleId, load]);
+
   return { members, isLoading, error, refresh: load };
 }

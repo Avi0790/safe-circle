@@ -53,7 +53,7 @@ export default function ChatTab() {
     markRead();
   }, [isFocused, messages.length, markRead]);
 
-  const nameById = new Map(members.map((m) => [m.id, m.full_name]));
+  const memberById = new Map(members.map((m) => [m.id, m]));
 
   async function handleSend() {
     if (!draft.trim() || sending) return;
@@ -110,7 +110,8 @@ export default function ChatTab() {
           renderItem={({ item }) => (
             <MessageRow
               message={item}
-              senderName={nameById.get(item.user_id) ?? 'Someone'}
+              senderName={memberById.get(item.user_id)?.full_name ?? 'Someone'}
+              senderAvatarUrl={memberById.get(item.user_id)?.avatar_url ?? null}
               isMine={item.user_id === session?.user.id}
             />
           )}
@@ -166,15 +167,17 @@ export default function ChatTab() {
 function MessageRow({
   message,
   senderName,
+  senderAvatarUrl,
   isMine,
 }: {
   message: Message;
   senderName: string;
+  senderAvatarUrl: string | null;
   isMine: boolean;
 }) {
   return (
     <View style={[styles.messageRow, isMine && styles.messageRowMine]}>
-      {!isMine && <Avatar id={message.user_id} name={senderName} size={28} />}
+      {!isMine && <Avatar id={message.user_id} name={senderName} url={senderAvatarUrl} size={28} />}
       <View style={[styles.bubble, isMine ? styles.bubbleMine : styles.bubbleTheirs]}>
         {!isMine && <Text style={styles.senderName}>{senderName}</Text>}
         <Text style={isMine ? styles.bubbleTextMine : styles.bubbleTextTheirs}>

@@ -202,7 +202,7 @@ export function Dashboard({ myUserId }: { myUserId: string }) {
   const loadMessages = useCallback(async (circleId: string) => {
     const { data } = await supabase
       .from('messages')
-      .select('id, circle_id, user_id, body, latitude, longitude, created_at, profiles(full_name)')
+      .select('id, circle_id, user_id, body, latitude, longitude, created_at, profiles(full_name, avatar_url)')
       .eq('circle_id', circleId)
       .order('created_at', { ascending: true })
       .limit(MESSAGE_LIMIT)
@@ -231,6 +231,25 @@ export function Dashboard({ myUserId }: { myUserId: string }) {
       supabase.removeChannel(channel)
     }
   }, [selectedCircleId, loadMessages])
+
+  // Someone changing their photo or name (mobile app) shows up here without
+  // a reload. profiles' SELECT policy already limits delivery to yourself
+  // and circle-mates.
+  useEffect(() => {
+    if (!selectedCircleId) return
+
+    const channel = supabase
+      .channel(`profiles-${selectedCircleId}`)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'profiles' }, () => {
+        loadMembers(selectedCircleId)
+        loadMessages(selectedCircleId)
+      })
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [selectedCircleId, loadMembers, loadMessages])
 
   const loadPlacesAndEvents = useCallback(async (circleId: string) => {
     const [placesRes, eventsRes] = await Promise.all([

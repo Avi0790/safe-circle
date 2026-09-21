@@ -1,7 +1,6 @@
-// Colored initials in place of a photo — avatar_url exists on profiles but
-// nothing has ever set it (no upload UI on either client), so this is the
-// "Life360 pin" identity look without that dependency: deterministic
-// per-person color, no upload.
+// Identity pins: a profile photo when the person has uploaded one (from the
+// mobile app), otherwise colored initials — a deterministic per-person
+// color, so everyone still gets a distinct pin with no upload.
 
 const AVATAR_PALETTE = [
   '#7c3aed', // accent purple
@@ -30,4 +29,11 @@ export function getAvatarColor(id: string): string {
     hash = (hash * 31 + id.charCodeAt(i)) >>> 0
   }
   return AVATAR_PALETTE[hash % AVATAR_PALETTE.length]
+}
+
+// avatar_url is user-writable (profiles_update_self), and every circle
+// member's browser loads whatever it points at — so only ever render plain
+// http(s).
+export function isSafeAvatarUrl(url: string | null | undefined): url is string {
+  return typeof url === 'string' && /^https?:\/\//i.test(url)
 }

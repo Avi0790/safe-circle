@@ -152,12 +152,22 @@ location history, SOS) — built end to end.
   dashboard (`ChatFeed.tsx`) — sending
   stays mobile-only, matching that dashboard's view-only design.
 - **Avatars** (`lib/avatar.ts`, `components/Avatar.tsx`) — also beyond the
-  proposal: colored initials (deterministic per-person color hashed from
-  user id) everywhere a member shows up, including as custom map markers
-  replacing the default pin — the Life360 "who's who at a glance" look,
-  without needing photo upload (`avatar_url` exists on `profiles` but
-  nothing sets it — no upload UI, and no device this session to test an
-  image-picker flow against).
+  proposal: everywhere a member shows up, including as custom map markers
+  replacing the default pin — the Life360 "who's who at a glance" look.
+  Shows the member's **profile photo** when they've set one, otherwise
+  colored initials (deterministic per-person color hashed from user id).
+- **Profile photos** (`lib/avatarUpload.ts`, Settings → Profile photo) —
+  pick from your library, square-crop, and it's shrunk to 512px JPEG
+  (`expo-image-manipulator`, ~30-80 KB) before upload to the public
+  `avatars` storage bucket under your own `<user id>/` folder (RLS in
+  migration `...000023_avatar_photos.sql`; a fresh path per upload so
+  image caches never serve the old photo, and the replaced photo is
+  deleted). `profiles.avatar_url` points at it, and a `profiles` realtime
+  subscription in `useCircleMembers` makes a new photo appear for the rest
+  of the circle live. Map markers keep tracking view changes until the
+  photo has drawn (`MemberMarker` in the Map tab) — a marker's bitmap is
+  otherwise frozen before an async image arrives. `expo-image-picker` and
+  `expo-image-manipulator` are both in Expo Go, so no dev build needed.
 - **Driving status and distance** (`lib/format.ts`'s `isDriving`/
   `speedToMph`, `lib/geo.ts`'s `haversineMeters`) — also beyond the
   proposal. expo-location's `LocationObject.coords.speed` (ground speed,

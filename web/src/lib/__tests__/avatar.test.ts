@@ -1,4 +1,4 @@
-import { getAvatarColor, getInitials } from '../avatar'
+import { getAvatarColor, getInitials, isSafeAvatarUrl } from '../avatar'
 
 describe('getInitials', () => {
   it('takes first + last initial for a full name', () => {
@@ -34,5 +34,15 @@ describe('getAvatarColor', () => {
       ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'].map((id) => getAvatarColor(id)),
     )
     expect(colorsSeen.size).toBeGreaterThan(1)
+  })
+})
+
+describe('isSafeAvatarUrl', () => {
+  it('accepts http(s) URLs only', () => {
+    expect(isSafeAvatarUrl('https://x.co/a.jpg')).toBe(true)
+    expect(isSafeAvatarUrl('http://127.0.0.1:54321/a.jpg')).toBe(true)
+    expect(isSafeAvatarUrl('javascript:alert(1)')).toBe(false)
+    expect(isSafeAvatarUrl('data:image/png;base64,AAAA')).toBe(false)
+    expect(isSafeAvatarUrl(null)).toBe(false)
   })
 })

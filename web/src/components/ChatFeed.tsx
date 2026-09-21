@@ -13,7 +13,12 @@ export function ChatFeed({ messages }: { messages: Message[] }) {
       <ul className="chat-list">
         {messages.map((message) => (
           <li key={message.id} className="chat-row">
-            <Avatar id={message.user_id} name={message.profiles?.full_name ?? '?'} size={24} />
+            <Avatar
+              id={message.user_id}
+              name={message.profiles?.full_name ?? '?'}
+              url={message.profiles?.avatar_url}
+              size={24}
+            />
             <div className="chat-body">
               <div className="chat-meta">
                 <span className="chat-sender">{message.profiles?.full_name ?? 'Someone'}</span>

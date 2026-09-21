@@ -65,12 +65,15 @@ if you haven't already.
 - Shows a read-only **Chat** feed (`ChatFeed.tsx`) of the circle's
   messages — beyond the proposal, matching mobile's new Chat tab. Sending
   stays mobile-only, same view-only design as everything else here.
-- **Colored-initial avatars** everywhere a member shows up, including as
-  custom Leaflet marker icons on the map — same reasoning as mobile's:
-  `avatar_url` exists but nothing sets it. Note: Leaflet's `divIcon` html
-  is raw, unescaped innerHTML, and `full_name` is fully user-controlled
-  (editable in Settings on mobile), so the marker icon HTML-escapes the
-  initials before interpolating to avoid a stored-XSS vector.
+- **Avatars** everywhere a member shows up, including as custom Leaflet
+  marker icons on the map: the profile photo a member chose in the mobile
+  app (uploaded there — this dashboard never writes), or colored initials
+  when they haven't (or the image fails to load). Updates live when
+  someone changes theirs (`profiles` realtime). Note: Leaflet's `divIcon`
+  html is raw, unescaped innerHTML, and both `full_name` and `avatar_url`
+  are fully user-controlled (editable via `profiles_update_self`), so the
+  marker icon HTML-escapes both before interpolating to avoid a
+  stored-XSS vector, and only http(s) photo URLs are ever rendered.
 - **Driving status and distance** — same as mobile's: shows
   "🚗 Driving NN mph" once a member's reported GPS speed clears a 15mph
   threshold (a rough vehicle signal, not real trip detection — see
