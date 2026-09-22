@@ -631,7 +631,8 @@ export default function SettingsTab() {
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>Privacy</Text>
           <Text style={typography.caption}>
-            See who's checked on your location, and choose how long your location history is kept.
+            See who's checked on your location, choose how long your location history is kept, and
+            hide your location from specific people if you'd rather not share with everyone.
           </Text>
           <Button
             title="Who's checked on me"
@@ -643,6 +644,15 @@ export default function SettingsTab() {
             variant="secondary"
             onPress={() => router.push('/history-retention')}
           />
+          <Button title="Ghost mode" variant="secondary" onPress={() => router.push('/ghost-mode')} />
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>Curfew</Text>
+          <Text style={typography.caption}>
+            Alert your circle automatically if you're not home by a set time.
+          </Text>
+          <Button title="Set curfew" variant="secondary" onPress={() => router.push('/curfew')} />
         </View>
 
         {circles.length > 0 && (

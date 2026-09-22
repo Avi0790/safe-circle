@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import MapView, { Marker, PROVIDER_DEFAULT } from 'react-native-maps';
-import { ActivityIndicator, Alert, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Alert, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useAuth } from '@/contexts/AuthContext';
 import { useCircles } from '@/contexts/CircleContext';
 import { useCircleMembers } from '@/hooks/useCircleMembers';
 import { useActiveSosEvents } from '@/hooks/useActiveSosEvents';
+import { useMapPins } from '@/hooks/useMapPins';
 import { SosBanner } from '@/components/SosBanner';
 import { SosButton } from '@/components/SosButton';
 import { WalkBanner } from '@/components/WalkBanner';
@@ -13,9 +15,10 @@ import { QuickActions } from '@/components/QuickActions';
 import { useActiveWalks } from '@/hooks/useActiveWalks';
 import { useRideRequests } from '@/hooks/useRideRequests';
 import { requestRide } from '@/lib/rides';
+import { supabase } from '@/lib/supabase';
 import { Avatar } from '@/components/Avatar';
-import { formatClockTime, getShareStatus, isDriving, isStatusActive, speedToMph } from '@/lib/format';
-import type { LatestLocation, MemberWithLocation } from '@/lib/types';
+import { formatClockTime, formatTimeLeft, getShareStatus, isDriving, isStatusActive, speedToMph } from '@/lib/format';
+import type { LatestLocation, MapPin, MemberWithLocation } from '@/lib/types';
 import { colors, radius, spacing } from '@/lib/theme';
 
 const DEFAULT_REGION = {
@@ -88,15 +91,58 @@ function MemberMarker({ member }: { member: MemberWithLocation }) {
   );
 }
 
+// A meetup pin's marker — its own icon (rather than the default red pin)
+// and a tap brings up its label, when it expires, and a Remove option for
+// whoever dropped it. tracksViewChanges is false because the emoji text
+// never changes after mount, unlike a member's avatar photo.
+function PinMarker({ pin, isMine, onRemoved }: { pin: MapPin; isMine: boolean; onRemoved: () => void }) {
+  function handlePress() {
+    const buttons: { text: string; style?: 'cancel' | 'destructive'; onPress?: () => void }[] = [
+      { text: 'Close', style: 'cancel' },
+    ];
+    if (isMine) {
+      buttons.push({
+        text: 'Remove pin',
+        style: 'destructive',
+        onPress: async () => {
+          await supabase.rpc('remove_pin', { p_pin_id: pin.id });
+          onRemoved();
+        },
+      });
+    }
+    Alert.alert(
+      `${pin.emoji} ${pin.label}`,
+      `Dropped by ${pin.profiles?.full_name ?? 'someone'} · expires in ${formatTimeLeft(pin.expires_at)}`,
+      buttons,
+    );
+  }
+
+  return (
+    <Marker
+      coordinate={{ latitude: pin.latitude, longitude: pin.longitude }}
+      title={pin.label}
+      tracksViewChanges={false}
+      anchor={{ x: 0.5, y: 0.5 }}
+      onPress={handlePress}
+    >
+      <View style={styles.pinMarker}>
+        <Text style={styles.pinMarkerText}>{pin.emoji}</Text>
+      </View>
+    </Marker>
+  );
+}
+
 // Purely a display — turning sharing on/off lives in Settings, which talks
 // to the background tracking service in lib/locationTracking.ts (AJ's
 // layer). This screen only ever reads from the backend.
 export default function MapTab() {
+  const { session } = useAuth();
   const { selectedCircleId } = useCircles();
   const { members, isLoading } = useCircleMembers(selectedCircleId);
   const { events: sosEvents, refresh: refreshSos } = useActiveSosEvents();
   const { walks, refresh: refreshWalks } = useActiveWalks();
   const { requests: rideRequests, refresh: refreshRides } = useRideRequests();
+  const { pins, refresh: refreshPins } = useMapPins(selectedCircleId);
   const mapRef = useRef<MapView>(null);
 
   async function handleAskEveryone() {
@@ -136,6 +182,9 @@ export default function MapTab() {
         {located.map((member) => (
           <MemberMarker key={member.id} member={member} />
         ))}
+        {pins.map((pin) => (
+          <PinMarker key={pin.id} pin={pin} isMine={pin.created_by === session?.user.id} onRemoved={refreshPins} />
+        ))}
       </MapView>
 
       {isLoading && (
@@ -163,6 +212,22 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 1 },
     elevation: 3,
   },
+  pinMarker: {
+    width: 34,
+    height: 34,
+    borderRadius: radius.full,
+    backgroundColor: colors.bg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: colors.accent,
+    shadowColor: '#000',
+    shadowOpacity: 0.25,
+    shadowRadius: 3,
+    shadowOffset: { width: 0, height: 1 },
+    elevation: 3,
+  },
+  pinMarkerText: { fontSize: 16 },
   sosBannerWrap: { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10 },
   loadingOverlay: {
     position: 'absolute',

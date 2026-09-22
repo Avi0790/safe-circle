@@ -54,6 +54,9 @@ export function QuickActions({ onRideRequested }: { onRideRequested: () => void 
           <Text style={styles.pillText}>🚗 Need a ride</Text>
         )}
       </Pressable>
+      <Pressable style={styles.pill} onPress={() => router.push('/drop-pin')}>
+        <Text style={styles.pillText}>📍 Drop a pin</Text>
+      </Pressable>
     </View>
   );
 }

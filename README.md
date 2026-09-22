@@ -69,7 +69,13 @@ ties quick status and geofencing together for free), **shake for SOS**
 (a few hard shakes brings up the same SOS confirm dialog, for when the
 phone's buried in a pocket), and **weather where they are** (temperature
 and conditions at a member's location — no Life360-style app shows this).
-Details in `backend/README.md` and `mobile/README.md`.
+A fourth batch rounds out the privacy and "meet up" story: **ghost mode**
+(hide your location from one specific person, invisibly, while everyone
+else still sees you), **meetup pins** (drop a temporary "meet here" marker
+for a festival or trailhead, pushed to the circle, gone on its own), and
+**curfew** (set a place and a time once; your circle is alerted
+automatically if you're not there by then — no button to press). Details in
+`backend/README.md` and `mobile/README.md`.
 
 Tested on a real iPhone via Expo Go: auth, circles, the map, SOS, and
 live location sharing all confirmed working on real hardware — including

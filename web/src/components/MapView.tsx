@@ -2,8 +2,8 @@ import { MapContainer, TileLayer, Marker, Popup, Circle, Polyline, useMap } from
 import { useEffect } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-import type { LatestLocation, MemberWithLocation, Place } from '../lib/types'
-import { isDriving, isLowBattery, speedToMph, timeAgo } from '../lib/format'
+import type { LatestLocation, MapPin, MemberWithLocation, Place } from '../lib/types'
+import { formatTimeLeft, isDriving, isLowBattery, speedToMph, timeAgo } from '../lib/format'
 import { getAvatarColor, getInitials, isSafeAvatarUrl } from '../lib/avatar'
 import { placeIcon } from '../lib/places'
 
@@ -45,6 +45,15 @@ function avatarIcon(id: string, name: string, avatarUrl: string | null): L.DivIc
   })
 }
 
+function pinIcon(emoji: string): L.DivIcon {
+  return L.divIcon({
+    className: 'map-pin-marker',
+    html: `<div class="map-pin-ring">${escapeHtml(emoji)}</div>`,
+    iconSize: [34, 34],
+    iconAnchor: [17, 17],
+  })
+}
+
 function FitToMembers({ members }: { members: MemberWithLocation[] }) {
   const map = useMap()
 
@@ -81,11 +90,13 @@ export function MapView({
   places = [],
   history = [],
   presenceByPlace = {},
+  pins = [],
 }: {
   members: MemberWithLocation[]
   places?: Place[]
   history?: LatestLocation[]
   presenceByPlace?: Record<string, string[]>
+  pins?: MapPin[]
 }) {
   const located = members.filter((m) => m.location)
 
@@ -132,6 +143,18 @@ export function MapView({
             )}
           </Popup>
         </Circle>
+      ))}
+      {pins.map((pin) => (
+        <Marker key={pin.id} position={[pin.latitude, pin.longitude]} icon={pinIcon(pin.emoji)}>
+          <Popup>
+            <strong>
+              {pin.emoji} {pin.label}
+            </strong>
+            <br />
+            Dropped by {pin.profiles?.full_name ?? 'someone'} · expires in{' '}
+            {formatTimeLeft(pin.expires_at)}
+          </Popup>
+        </Marker>
       ))}
       {located.map((member) => (
         <Marker

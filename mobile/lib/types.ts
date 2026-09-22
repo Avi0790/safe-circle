@@ -96,3 +96,30 @@ export interface SosAcknowledgement {
   created_at: string;
   profiles: { full_name: string } | null;
 }
+
+export interface HiddenFrom {
+  owner_id: string;
+  hidden_from_id: string;
+  created_at: string;
+  profiles: { full_name: string } | null;
+}
+
+export interface MapPin {
+  id: string;
+  circle_id: string;
+  created_by: string;
+  emoji: string;
+  label: string;
+  latitude: number;
+  longitude: number;
+  expires_at: string;
+  created_at: string;
+  profiles: { full_name: string } | null;
+}
+
+export interface Curfew {
+  user_id: string;
+  place_id: string;
+  curfew_time: string;
+  last_alerted_date: string | null;
+}

@@ -88,3 +88,16 @@ export interface RideRequest {
   requester: { full_name: string } | null
   driver: { full_name: string } | null
 }
+
+export interface MapPin {
+  id: string
+  circle_id: string
+  created_by: string
+  emoji: string
+  label: string
+  latitude: number
+  longitude: number
+  expires_at: string
+  created_at: string
+  profiles: { full_name: string } | null
+}

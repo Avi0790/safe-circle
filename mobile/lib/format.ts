@@ -80,3 +80,17 @@ export function formatTimeLeft(deadlineIso: string, now = Date.now()): string {
 export function isStatusActive(expiresAt: string | null | undefined): boolean {
   return expiresAt != null && new Date(expiresAt).getTime() > Date.now();
 }
+
+// Formats a Postgres `time` column ("22:00:00", "22:00") as "10:00 PM" —
+// a plain string parse rather than routing through Date, since curfew_time
+// (see the curfew feature in Settings) has no date component and is
+// compared against UTC clock time on the server, not a local Date the
+// device would mis-zone.
+export function formatTimeOfDay(time: string): string {
+  const [hourStr, minuteStr] = time.split(':');
+  const hour24 = Number(hourStr);
+  const minute = Number(minuteStr);
+  const period = hour24 >= 12 ? 'PM' : 'AM';
+  const hour12 = hour24 % 12 === 0 ? 12 : hour24 % 12;
+  return `${hour12}:${String(minute).padStart(2, '0')} ${period}`;
+}

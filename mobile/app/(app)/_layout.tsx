@@ -38,6 +38,9 @@ function AppNavigator() {
             <Stack.Screen name="walk" options={{ headerShown: true }} />
             <Stack.Screen name="location-views" options={{ headerShown: true }} />
             <Stack.Screen name="history-retention" options={{ headerShown: true }} />
+            <Stack.Screen name="ghost-mode" options={{ headerShown: true }} />
+            <Stack.Screen name="drop-pin" options={{ headerShown: true, presentation: 'modal' }} />
+            <Stack.Screen name="curfew" options={{ headerShown: true }} />
             <Stack.Screen name="member/[userId]" options={{ headerShown: true }} />
           </Stack.Protected>
 

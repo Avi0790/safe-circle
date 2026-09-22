@@ -1,6 +1,7 @@
 import {
   DRIVING_SPEED_THRESHOLD_MPH,
   formatTimeLeft,
+  formatTimeOfDay,
   getShareStatus,
   isStatusActive,
   isDriving,
@@ -141,5 +142,21 @@ describe('isStatusActive', () => {
     expect(isStatusActive(undefined)).toBe(false);
     expect(isStatusActive(new Date(Date.now() + 60_000).toISOString())).toBe(true);
     expect(isStatusActive(new Date(Date.now() - 60_000).toISOString())).toBe(false);
+  });
+});
+
+describe('formatTimeOfDay', () => {
+  it('formats midnight and noon', () => {
+    expect(formatTimeOfDay('00:00')).toBe('12:00 AM');
+    expect(formatTimeOfDay('12:00')).toBe('12:00 PM');
+  });
+
+  it('formats a morning and evening time, padding minutes', () => {
+    expect(formatTimeOfDay('09:05')).toBe('9:05 AM');
+    expect(formatTimeOfDay('22:00')).toBe('10:00 PM');
+  });
+
+  it('handles a seconds component', () => {
+    expect(formatTimeOfDay('23:30:00')).toBe('11:30 PM');
   });
 });

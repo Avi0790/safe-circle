@@ -89,6 +89,13 @@ if you haven't already.
   history is expanded, shows the temperature and conditions at their most
   recent point ("🌧️ 58°F, Rain") next to "Showing location history". Same
   Open-Meteo client-side fetch as mobile's; fails silently if it can't load.
+- **Meetup pins** — pins dropped from the mobile app (`drop_pin`) show on
+  this map too, with the same emoji marker and a popup naming who dropped
+  it and when it expires. Read-only, like everywhere else — dropping and
+  removing pins stay mobile-only actions. Ghost mode and curfew have no
+  web-dashboard surface: ghost mode is invisible by design (a hidden
+  member's pin just doesn't appear, same as any other sharing gap), and
+  curfew is a personal setting with nothing circle-wide to show.
 - **Driving status and distance** — same as mobile's: shows
   "🚗 Driving NN mph" once a member's reported GPS speed clears a 15mph
   threshold (a rough vehicle signal, not real trip detection — see

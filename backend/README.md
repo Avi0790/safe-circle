@@ -119,6 +119,29 @@ from "a manual status is active" — so the original check skipped every
 first arrival; the fix asks whether a manual status is *currently active*
 instead of what the flag happens to be.
 
+### Ghost mode, meetup pins, and curfew (migrations `...000035`–`...000038`)
+
+| | What it does | Where the guarantee lives |
+|---|---|---|
+| **Ghost mode** (`hidden_from`, `hide_from` / `unhide_from`) | Hide your location from one specific circle-mate while everyone else still sees you normally — no Life360 equivalent, which is circle-wide or nothing. | `locations` RLS gains one more condition (`is_hidden_by()`); `hidden_from` itself can only be read by its owner, so neither the hidden person nor anyone else can confirm who's been hidden from whom. |
+| **Meetup pins** (`map_pins`, `drop_pin` / `remove_pin`) | Drop a temporary "meet here" pin (festival, trailhead, campus) for the whole circle, pushed on drop, gone on its own. | `drop_pin` validates membership, label length, and a 24h cap on the expiry; a daily `pg_cron` job (`purge_expired_pins`) clears rows a day past expiry — live filtering is `expires_at > now()` on the client side, this is just storage hygiene. |
+| **Curfew** (`curfews`, `set_curfew` / `clear_curfew`) | "Alert my circle if I'm not home by 10pm" — set once, then automatic. Reuses `place_membership_state` (already kept live by `evaluate_geofences()`), so there's no second location-tracking mechanism. | A `pg_cron` job (`check_curfews`, every 5 min) alerts once per calendar day (`last_alerted_date`) and skips anyone currently inside their curfew place. **Known simplification:** compared against UTC clock time — `profiles` has no timezone column, and real per-user timezone handling is out of scope for a capstone demo; documented here and in `mobile/README.md` rather than silently wrong. |
+
+Verified on the hosted DB in a rolled-back transaction. One real bug caught
+and fixed in `...000038`: hiding someone did nothing — the `locations`
+policy's inline `hidden_from` subquery ran as the *viewer*, and
+`hidden_from`'s own RLS only lets the *owner* read their rows, so as the
+hidden viewer the subquery could never see the row hiding them and always
+evaluated to "not hidden." Same class of problem `shares_circle_with()` and
+`is_member_of()` already solve for `circle_members`: wrapped the check in
+its own security-definer function (`is_hidden_by()`) so it runs as the
+table owner instead. Also verified: an outsider can't drop or see a pin in
+a circle they're not in; only the creator can remove their own pin; a label
+over 40 chars or a pin longer than 24h is rejected; `purge_expired_pins`
+only removes pins a day past expiry; curfew alerts fire once per day, skip
+while home, and re-arm the next day; changing a curfew resets the
+once-per-day guard; and an outsider can't set another person's curfew.
+
 ## How access control works
 
 Row-level security is the enforcement point, not application code:

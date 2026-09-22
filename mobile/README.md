@@ -292,6 +292,33 @@ second account to acknowledge from.
   doesn't show) rather than surfacing an error on a screen that's mainly
   about location history. The web dashboard shows the same thing for the
   currently-expanded member.
+- **Ghost mode** (Settings → Privacy → Ghost mode, `app/(app)/ghost-mode.tsx`)
+  — a per-person switch to hide your location from one specific circle-mate
+  while everyone else still sees you normally. No Life360 equivalent
+  (circle-wide sharing is all-or-nothing there). The hidden person's map
+  just shows your dot missing — indistinguishable from an ordinary sharing
+  gap — and only you can see your own hide-list (see `backend/README.md`).
+- **Meetup pins** (Map tab → 📍 Drop a pin, `app/(app)/drop-pin.tsx`,
+  `hooks/useMapPins.ts`) — drop a temporary "meet here" marker at your
+  current location for a festival, a trailhead, a campus meetup — anything
+  not worth saving as a permanent place. Pushes to the rest of the circle,
+  expires on its own (1–24h, chosen when dropping it), and only the person
+  who dropped it can remove it early (tap the marker). Shown on both the
+  mobile map and the web dashboard's.
+- **Curfew** (Settings → Curfew → Set curfew, `app/(app)/curfew.tsx`) —
+  "alert my circle if I'm not home by 10pm," set once and then automatic.
+  Picks a saved place and a time from chips (no native time-picker
+  dependency, matching the chip pattern used for walk durations and sharing
+  windows elsewhere in the app). Entirely server-side after that — see
+  `backend/README.md`'s known simplification about comparing against UTC
+  clock time rather than a per-user timezone, which `profiles` has no
+  column for.
+
+**Not yet verified on real phones:** ghost mode, meetup pins, and curfew
+were built and their backend logic tested on the hosted DB, but the screens
+themselves need a device. Ghost mode and curfew are easy to try solo (with
+a second test account to confirm the hiding/alerting actually happens);
+meetup pins are easiest with two phones so a push can be seen arriving.
 
 ## Running locally
 

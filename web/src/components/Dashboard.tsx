@@ -4,6 +4,7 @@ import type {
   Circle,
   GeofenceEvent,
   LatestLocation,
+  MapPin,
   MemberWithLocation,
   Message,
   Place,
@@ -38,6 +39,7 @@ export function Dashboard({ myUserId }: { myUserId: string }) {
   const [sosEvents, setSosEvents] = useState<SosEvent[]>([])
   const [walks, setWalks] = useState<Walk[]>([])
   const [rides, setRides] = useState<RideRequest[]>([])
+  const [pins, setPins] = useState<MapPin[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [historyMemberId, setHistoryMemberId] = useState<string | null>(null)
@@ -258,6 +260,36 @@ export function Dashboard({ myUserId }: { myUserId: string }) {
       supabase.removeChannel(channel)
     }
   }, [loadWalksAndRides])
+
+  // Meetup pins (mobile-only to drop/remove; this dashboard only shows
+  // them, same as everything else). Circle-scoped, unlike walks/rides.
+  const loadPins = useCallback(async (circleId: string) => {
+    const { data } = await supabase
+      .from('map_pins')
+      .select('id, circle_id, created_by, emoji, label, latitude, longitude, expires_at, created_at, profiles(full_name)')
+      .eq('circle_id', circleId)
+      .gt('expires_at', new Date().toISOString())
+      .order('created_at', { ascending: false })
+    setPins((data as unknown as MapPin[]) ?? [])
+  }, [])
+
+  useEffect(() => {
+    if (!selectedCircleId) return
+    loadPins(selectedCircleId)
+
+    const channel = supabase
+      .channel(`map-pins-${selectedCircleId}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'map_pins', filter: `circle_id=eq.${selectedCircleId}` },
+        () => loadPins(selectedCircleId),
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [selectedCircleId, loadPins])
 
   // In-circle chat (...000016_messages.sql) — read-only here, matching this
   // dashboard's design; sending is mobile-only
@@ -493,6 +525,7 @@ export function Dashboard({ myUserId }: { myUserId: string }) {
           places={places}
           history={history}
           presenceByPlace={presenceByPlace}
+          pins={pins}
         />
       </main>
     </div>
