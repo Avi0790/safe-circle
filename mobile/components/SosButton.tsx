@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { ActivityIndicator, Alert, Linking, Pressable, StyleSheet, Text } from 'react-native';
-import * as Location from 'expo-location';
-import { supabase } from '@/lib/supabase';
+import { sendSos } from '@/lib/sos';
 import { colors, spacing } from '@/lib/theme';
 
 // One-tap emergency alert (the proposal's last stretch goal, page 3).
@@ -23,7 +22,7 @@ export function SosButton({ onSent }: { onSent?: () => void }) {
       [
         { text: 'Cancel', style: 'cancel' },
         { text: 'Call 911', onPress: callEmergencyServices },
-        { text: 'Send SOS', style: 'destructive', onPress: sendSos },
+        { text: 'Send SOS', style: 'destructive', onPress: handleSendSos },
       ],
     );
   }
@@ -34,29 +33,15 @@ export function SosButton({ onSent }: { onSent?: () => void }) {
     });
   }
 
-  async function sendSos() {
+  async function handleSendSos() {
     setSending(true);
-    try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert('Location permission denied', "Can't send your location with the SOS.");
-        return;
-      }
-      const position = await Location.getCurrentPositionAsync({});
-      const { error } = await supabase.from('sos_events').insert({
-        latitude: position.coords.latitude,
-        longitude: position.coords.longitude,
-      });
-      if (error) {
-        Alert.alert('Could not send SOS', error.message);
-        return;
-      }
-      onSent?.();
-    } catch {
-      Alert.alert('Could not get your location.');
-    } finally {
-      setSending(false);
+    const result = await sendSos();
+    setSending(false);
+    if (!result.ok) {
+      Alert.alert('Could not send SOS', result.message);
+      return;
     }
+    onSent?.();
   }
 
   return (

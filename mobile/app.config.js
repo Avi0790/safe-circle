@@ -55,6 +55,12 @@ module.exports = {
           photosPermission: 'Safe Circle uses your photos so you can choose a profile picture.',
         },
       ],
+      [
+        'expo-sensors',
+        {
+          motionPermission: 'Safe Circle uses motion data so you can shake your phone to send an SOS.',
+        },
+      ],
     ],
     experiments: {
       typedRoutes: true,

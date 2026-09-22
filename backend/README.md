@@ -94,6 +94,31 @@ acknowledges; status text over 40 chars and windows over 24h rejected; and
 clients. Both new cron jobs (`purge-old-locations`, `escalate-sos`) are
 registered alongside `expire-walks`.
 
+### Auto status from places (migrations `...000033`–`...000034`)
+
+Arriving at a saved place sets your quick status on its own ("🏠 Home",
+"📚 In class") — no Life360 equivalent, and nearly free: `evaluate_geofences()`
+(migration `...000006`) already logs every arrive/leave transition to
+`geofence_events`, so `apply_auto_status()` is just a second trigger on that
+same table rather than duplicating the geofence math. `profiles.status_auto`
+distinguishes "the app set this" from "I picked this" — arriving somewhere
+only ever touches an absent or previously-auto status, and a status you set
+yourself (via `set_status`) is never silently overwritten or cleared by a
+later arrival/departure. Place names are matched with the same rules as
+mobile/web's `placeIcon()` (`status_for_place()`, kept in sync by hand).
+
+Verified on the hosted DB with real location inserts crossing into and out
+of a place (not a synthetic call — this exercises the whole chain:
+`locations` insert → `evaluate_geofences` → `geofence_events` insert →
+`apply_auto_status`): arriving sets the status, leaving clears it, a manual
+status survives both an arrival and a departure at another place, and a
+fresh arrival after clearing a manual status re-applies the auto one. One
+real bug caught by that test and fixed in `...000034`: a brand-new
+profile's `status_auto` defaults to `false` (not null) — indistinguishable
+from "a manual status is active" — so the original check skipped every
+first arrival; the fix asks whether a manual status is *currently active*
+instead of what the flag happens to be.
+
 ## How access control works
 
 Row-level security is the enforcement point, not application code:

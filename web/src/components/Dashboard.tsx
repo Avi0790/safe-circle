@@ -18,6 +18,7 @@ import { ActivityFeed } from './ActivityFeed'
 import { ChatFeed } from './ChatFeed'
 import { SosBanner } from './SosBanner'
 import { WalkRideBanner } from './WalkRideBanner'
+import { fetchWeather, type Weather } from '../lib/weather'
 
 const MESSAGE_LIMIT = 50
 
@@ -43,6 +44,7 @@ export function Dashboard({ myUserId }: { myUserId: string }) {
   const [history, setHistory] = useState<LatestLocation[]>([])
   const [historyLoading, setHistoryLoading] = useState(false)
   const [messages, setMessages] = useState<Message[]>([])
+  const [weather, setWeather] = useState<Weather | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -159,14 +161,24 @@ export function Dashboard({ myUserId }: { myUserId: string }) {
       .eq('user_id', userId)
       .order('recorded_at', { ascending: false })
       .limit(HISTORY_LIMIT)
-    setHistory(((data as LatestLocation[] | null) ?? []).reverse())
+    const rows = (data as LatestLocation[] | null) ?? []
+    setHistory([...rows].reverse())
     setHistoryLoading(false)
+
+    // Weather at their most recent ping — a nice-to-have, fetched
+    // separately so a slow or failed request never blocks the history
+    // itself. See lib/weather.ts.
+    setWeather(null)
+    if (rows[0]) {
+      fetchWeather(rows[0].latitude, rows[0].longitude).then(setWeather)
+    }
   }, [])
 
   function toggleMemberHistory(userId: string) {
     if (historyMemberId === userId) {
       setHistoryMemberId(null)
       setHistory([])
+      setWeather(null)
       return
     }
     setHistoryMemberId(userId)
@@ -467,6 +479,7 @@ export function Dashboard({ myUserId }: { myUserId: string }) {
           members={members}
           selectedId={historyMemberId}
           historyLoading={historyLoading}
+          weather={weather}
           onSelect={toggleMemberHistory}
           myUserId={myUserId}
         />

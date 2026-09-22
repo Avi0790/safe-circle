@@ -265,6 +265,34 @@ but the screens themselves need a device. Who's-checked-on-me and quick
 status are the easiest to try solo; SOS acknowledge and escalation need a
 second account to acknowledge from.
 
+- **Auto status from places** — arriving at a saved place sets your quick
+  status on its own ("🏠 Home", "📚 In class") and clears it when you leave;
+  entirely server-side (see `backend/README.md`'s `apply_auto_status()`), so
+  there's no mobile code for this beyond the existing status-chip display.
+  Never overrides a status you set yourself in Settings.
+- **Shake for SOS** (Settings → Shake for SOS; `lib/shakeDetector.ts`,
+  `hooks/useShakeToSos.ts`) — shake the phone hard a few times to bring up
+  the same SOS confirm dialog as the button, for when the phone's in a
+  pocket or bag and finding the button isn't realistic. Off by default
+  (opt-in switch) — always-on shake detection would risk firing from an
+  ordinary bump (running, a car door), which is the wrong failure mode for
+  something that pages the whole circle. `ShakeDetector` (the gesture
+  logic: N hard jolts within a window, then a cooldown) is a plain class
+  with no dependency on the accelerometer, so it's unit-tested directly
+  (`lib/__tests__/shakeDetector.test.ts`) rather than needing a device or a
+  sensor mock; `useShakeToSos` is the thin `expo-sensors` wiring on top.
+  Reads via `expo-sensors` (`NSMotionUsageDescription` in `app.config.js`);
+  works in Expo Go, no dev build needed.
+- **Weather where they are** (member detail screen, both native and web
+  variants; `lib/weather.ts`) — the temperature and conditions at a
+  member's most recent location, e.g. "🌧️ 58°F, Rain" — something no
+  Life360-style app shows, and genuinely useful ("why did they stay in").
+  Uses Open-Meteo (open-meteo.com), free and keyless, so it's a plain
+  client-side fetch with no backend involvement; fails silently (just
+  doesn't show) rather than surfacing an error on a screen that's mainly
+  about location history. The web dashboard shows the same thing for the
+  currently-expanded member.
+
 ## Running locally
 
 ```bash

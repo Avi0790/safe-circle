@@ -4,6 +4,7 @@ import { Stack, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '@/lib/supabase';
 import { isDriving, speedToMph, timeAgo } from '@/lib/format';
+import { fetchWeather, type Weather } from '@/lib/weather';
 import { colors, spacing, typography } from '@/lib/theme';
 
 interface HistoryPing {
@@ -24,6 +25,7 @@ export default function MemberHistoryScreenWeb() {
   const [fullName, setFullName] = useState('');
   const [pings, setPings] = useState<HistoryPing[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [weather, setWeather] = useState<Weather | null>(null);
 
   useEffect(() => {
     if (!userId) return;
@@ -41,8 +43,15 @@ export default function MemberHistoryScreenWeb() {
       ]);
       if (cancelled) return;
       setFullName(profile?.full_name ?? 'Member');
-      setPings((locations as HistoryPing[]) ?? []);
+      const rows = (locations as HistoryPing[]) ?? [];
+      setPings(rows);
       setIsLoading(false);
+
+      if (rows[0]) {
+        fetchWeather(rows[0].latitude, rows[0].longitude).then((w) => {
+          if (!cancelled) setWeather(w);
+        });
+      }
     }
 
     load();
@@ -76,6 +85,11 @@ export default function MemberHistoryScreenWeb() {
             {maxSpeedMph != null && (
               <Text style={typography.caption}>
                 🚗 Max speed: {Math.round(maxSpeedMph)} mph
+              </Text>
+            )}
+            {weather && (
+              <Text style={typography.caption}>
+                {weather.emoji} {weather.tempF}°F, {weather.description} where they are
               </Text>
             )}
           </View>

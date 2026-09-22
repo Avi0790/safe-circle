@@ -10,18 +10,23 @@ import {
   timeAgo,
 } from '../lib/format'
 import { formatDistanceMiles, haversineMeters } from '../lib/geo'
+import type { Weather } from '../lib/weather'
 import { Avatar } from './Avatar'
 
 export function MemberList({
   members,
   selectedId,
   historyLoading,
+  weather,
   onSelect,
   myUserId,
 }: {
   members: MemberWithLocation[]
   selectedId?: string | null
   historyLoading?: boolean
+  // Weather at the selected member's most recent location — see
+  // Dashboard.tsx's loadHistory.
+  weather?: Weather | null
   onSelect?: (userId: string) => void
   myUserId?: string | null
 }) {
@@ -79,7 +84,10 @@ export function MemberList({
                   historyLoading ? (
                     'Loading history…'
                   ) : (
-                    'Showing location history — click to hide'
+                    <>
+                      Showing location history — click to hide
+                      {weather && ` · ${weather.emoji} ${weather.tempF}°F, ${weather.description}`}
+                    </>
                   )
                 ) : (
                   <>

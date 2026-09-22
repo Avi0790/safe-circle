@@ -20,6 +20,7 @@ import { useCircles } from '@/contexts/CircleContext';
 import { supabase } from '@/lib/supabase';
 import { pickAndUploadAvatar, removeAvatar } from '@/lib/avatarUpload';
 import { QUICK_STATUSES, STATUS_DURATION_MINUTES } from '@/lib/status';
+import { useShakeSettings } from '@/contexts/ShakeSettingsContext';
 import { colors, radius, spacing, typography } from '@/lib/theme';
 import {
   getShareUntil,
@@ -34,6 +35,7 @@ import { deregisterPushNotifications, registerForPushNotifications } from '@/lib
 export default function SettingsTab() {
   const router = useRouter();
   const { session } = useAuth();
+  const { enabled: shakeEnabled, setEnabled: setShakeEnabled } = useShakeSettings();
   const { circles, selectedCircle, setSelectedCircleId, refresh: refreshCircles } = useCircles();
   const [inviteCode, setInviteCode] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -611,6 +613,19 @@ export default function SettingsTab() {
             variant="secondary"
             onPress={() => router.push('/places')}
           />
+        </View>
+
+        <View style={styles.section}>
+          <View style={styles.row}>
+            <View style={styles.rowText}>
+              <Text style={styles.sectionLabel}>Shake for SOS</Text>
+              <Text style={typography.caption}>
+                Shake your phone hard a few times to trigger the SOS alert — still asks you to
+                confirm first. Handy if your phone is in a pocket or bag.
+              </Text>
+            </View>
+            <Switch value={shakeEnabled} onValueChange={setShakeEnabled} trackColor={{ true: colors.accent }} />
+          </View>
         </View>
 
         <View style={styles.section}>

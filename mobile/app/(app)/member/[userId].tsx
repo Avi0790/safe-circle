@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import MapView, { Marker, Polyline, PROVIDER_DEFAULT } from 'react-native-maps';
 import { supabase } from '@/lib/supabase';
 import { isDriving, speedToMph, timeAgo } from '@/lib/format';
+import { fetchWeather, type Weather } from '@/lib/weather';
 import { colors, spacing, typography } from '@/lib/theme';
 
 interface HistoryPing {
@@ -25,6 +26,7 @@ export default function MemberHistoryScreen() {
   const [fullName, setFullName] = useState('');
   const [pings, setPings] = useState<HistoryPing[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [weather, setWeather] = useState<Weather | null>(null);
 
   useEffect(() => {
     if (!userId) return;
@@ -42,8 +44,17 @@ export default function MemberHistoryScreen() {
       ]);
       if (cancelled) return;
       setFullName(profile?.full_name ?? 'Member');
-      setPings((locations as HistoryPing[]) ?? []);
+      const rows = (locations as HistoryPing[]) ?? [];
+      setPings(rows);
       setIsLoading(false);
+
+      // Most recent ping (rows come back newest-first) — a nice-to-have,
+      // so it's fetched separately and never blocks the history itself.
+      if (rows[0]) {
+        fetchWeather(rows[0].latitude, rows[0].longitude).then((w) => {
+          if (!cancelled) setWeather(w);
+        });
+      }
     }
 
     load();
@@ -108,6 +119,11 @@ export default function MemberHistoryScreen() {
             {maxSpeedMph != null && (
               <Text style={typography.caption}>
                 🚗 Max speed: {Math.round(maxSpeedMph)} mph
+              </Text>
+            )}
+            {weather && (
+              <Text style={typography.caption}>
+                {weather.emoji} {weather.tempF}°F, {weather.description} where they are
               </Text>
             )}
           </View>

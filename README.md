@@ -62,8 +62,14 @@ hidden in the UI), **SOS acknowledge + escalation** (circle-mates can tap
 "I'm on my way" so the sender knows they've been seen; an unacknowledged
 SOS re-pushes the whole circle automatically), and **quick status** chips
 ("On my way", "Studying", "Don't disturb") that say more than a dot on a
-map and expire on their own. Details in `backend/README.md` and
-`mobile/README.md`.
+map and expire on their own. A third batch adds a few things that are
+just genuinely cool and unique rather than pure safety workflow:
+**auto status from places** (arriving at "Home" sets "🏠 Home" on its own,
+ties quick status and geofencing together for free), **shake for SOS**
+(a few hard shakes brings up the same SOS confirm dialog, for when the
+phone's buried in a pocket), and **weather where they are** (temperature
+and conditions at a member's location — no Life360-style app shows this).
+Details in `backend/README.md` and `mobile/README.md`.
 
 Tested on a real iPhone via Expo Go: auth, circles, the map, SOS, and
 live location sharing all confirmed working on real hardware — including

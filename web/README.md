@@ -85,6 +85,10 @@ if you haven't already.
   it's still active; an active SOS shows who's tapped "I'm on my way" on
   mobile ("👀 Bob is on it"). Setting a status or acknowledging an SOS both
   stay mobile-only actions, matching this dashboard's view-only design.
+- **Weather where they are** (`lib/weather.ts`) — when a member's location
+  history is expanded, shows the temperature and conditions at their most
+  recent point ("🌧️ 58°F, Rain") next to "Showing location history". Same
+  Open-Meteo client-side fetch as mobile's; fails silently if it can't load.
 - **Driving status and distance** — same as mobile's: shows
   "🚗 Driving NN mph" once a member's reported GPS speed clears a 15mph
   threshold (a rough vehicle signal, not real trip detection — see
