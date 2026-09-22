@@ -70,3 +70,7 @@ export function formatTimeLeft(deadlineIso: string, now = Date.now()): string {
   const minutes = totalMinutes % 60
   return minutes === 0 ? `${hours} h` : `${hours} h ${minutes} min`
 }
+
+export function isStatusActive(expiresAt: string | null | undefined): boolean {
+  return expiresAt != null && new Date(expiresAt).getTime() > Date.now()
+}

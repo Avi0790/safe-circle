@@ -11,6 +11,9 @@ export interface Profile {
   avatar_url: string | null
   // Temporary-sharing window end; null = normal always-on sharing.
   share_until: string | null
+  status_emoji: string | null
+  status_text: string | null
+  status_expires_at: string | null
 }
 
 export interface LatestLocation {
@@ -64,6 +67,7 @@ export interface SosEvent {
   message: string | null
   created_at: string
   profiles: { full_name: string } | null
+  sos_acknowledgements: { user_id: string; profiles: { full_name: string } | null }[]
 }
 
 export interface Walk {

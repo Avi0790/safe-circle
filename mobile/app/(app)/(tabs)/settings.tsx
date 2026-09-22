@@ -19,6 +19,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useCircles } from '@/contexts/CircleContext';
 import { supabase } from '@/lib/supabase';
 import { pickAndUploadAvatar, removeAvatar } from '@/lib/avatarUpload';
+import { QUICK_STATUSES, STATUS_DURATION_MINUTES } from '@/lib/status';
 import { colors, radius, spacing, typography } from '@/lib/theme';
 import {
   getShareUntil,
@@ -52,19 +53,47 @@ export default function SettingsTab() {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [avatarBusy, setAvatarBusy] = useState(false);
   const [avatarError, setAvatarError] = useState<string | null>(null);
+  const [statusEmoji, setStatusEmoji] = useState<string | null>(null);
+  const [statusBusy, setStatusBusy] = useState(false);
+  const [statusError, setStatusError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!session) return;
     (async () => {
       const { data } = await supabase
         .from('profiles')
-        .select('full_name, avatar_url')
+        .select('full_name, avatar_url, status_emoji, status_expires_at')
         .eq('id', session.user.id)
         .single();
       setFullName(data?.full_name ?? null);
       setAvatarUrl(data?.avatar_url ?? null);
+      setStatusEmoji(
+        data?.status_expires_at && new Date(data.status_expires_at).getTime() > Date.now()
+          ? (data?.status_emoji ?? null)
+          : null,
+      );
     })();
   }, [session]);
+
+  async function handleSetStatus(emoji: string, label: string) {
+    if (statusBusy) return;
+    setStatusError(null);
+    setStatusBusy(true);
+    const isSame = statusEmoji === emoji;
+    const { error } = isSame
+      ? await supabase.rpc('clear_status')
+      : await supabase.rpc('set_status', {
+          p_emoji: emoji,
+          p_text: label,
+          p_minutes: STATUS_DURATION_MINUTES,
+        });
+    setStatusBusy(false);
+    if (error) {
+      setStatusError(error.message);
+      return;
+    }
+    setStatusEmoji(isSame ? null : emoji);
+  }
 
   async function handleChangePhoto() {
     if (!session || avatarBusy) return;
@@ -419,6 +448,33 @@ export default function SettingsTab() {
           </View>
           {avatarError && <Text style={styles.error}>{avatarError}</Text>}
 
+          <View style={styles.section}>
+            <Text style={styles.sectionLabel}>Quick status</Text>
+            <Text style={typography.caption}>
+              Shown next to your name and pin for {STATUS_DURATION_MINUTES / 60} hours, or until
+              you clear it.
+            </Text>
+            <View style={styles.chipRow}>
+              {QUICK_STATUSES.map((option) => {
+                const selected = statusEmoji === option.emoji;
+                return (
+                  <Pressable
+                    key={option.emoji}
+                    style={[styles.chip, selected && styles.chipSelected]}
+                    onPress={() => handleSetStatus(option.emoji, option.label)}
+                    disabled={statusBusy}
+                    accessibilityState={{ selected }}
+                  >
+                    <Text style={[styles.chipText, selected && styles.chipTextSelected]}>
+                      {option.emoji} {option.label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+            {statusError && <Text style={styles.error}>{statusError}</Text>}
+          </View>
+
           <Text style={styles.sectionLabel}>Signed in as</Text>
           <Text style={typography.body}>{session?.user.email}</Text>
           {editingName ? (
@@ -554,6 +610,23 @@ export default function SettingsTab() {
             title="Manage places"
             variant="secondary"
             onPress={() => router.push('/places')}
+          />
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>Privacy</Text>
+          <Text style={typography.caption}>
+            See who's checked on your location, and choose how long your location history is kept.
+          </Text>
+          <Button
+            title="Who's checked on me"
+            variant="secondary"
+            onPress={() => router.push('/location-views')}
+          />
+          <Button
+            title="Location history"
+            variant="secondary"
+            onPress={() => router.push('/history-retention')}
           />
         </View>
 

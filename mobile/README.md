@@ -235,6 +235,35 @@ location history, SOS) — built end to end.
   Android) on both the app and the web dashboard's read-only feed. It's an
   ordinary message, so it reuses the message push and unread badge, and
   exposes nothing circle-mates couldn't already see.
+- **Who's checked on me** (Settings → Privacy → Who's checked on me,
+  `app/(app)/location-views.tsx`) — a log of when a circle-mate opened your
+  location history (`app/(app)/member/[userId].tsx` calls
+  `record_location_view` on mount, deduped server-side to once per 15 min).
+  Not every glance at the live map, which is everyone, all the time, and
+  would just be noise — this is specifically someone pulling up your
+  history.
+- **Auto-delete history** (Settings → Privacy → Location history,
+  `app/(app)/history-retention.tsx`) — pick 1, 7 or 30 days, or forever.
+  A daily server job actually deletes the old rows (see
+  `backend/README.md`); your current pin is never affected by this, however
+  old it gets.
+- **SOS acknowledge + escalation** (`SosBanner.tsx`'s "I'm on my way"
+  button) — a circle-mate acknowledging tells the sender who's responding
+  (shown as "👀 Bob is on it" on the sender's own banner); if nobody does
+  within 3 minutes, the whole circle is pushed again automatically
+  (server-side `pg_cron`, see `backend/README.md`) instead of a first push
+  nobody saw just sitting there unanswered.
+- **Quick status** (Settings → Quick status; Members list, map marker;
+  `lib/status.ts`) — a chip like "🚗 On my way" or "📚 Studying" next to
+  your name, from a fixed picklist so there's no free-text moderation
+  problem. Expires after 4 hours on its own (checked client-side via
+  `isStatusActive`), or tap the same chip again to clear it early.
+
+**Not yet verified on real phones:** the four features above were built
+and their backend logic tested on the hosted DB (see `backend/README.md`),
+but the screens themselves need a device. Who's-checked-on-me and quick
+status are the easiest to try solo; SOS acknowledge and escalation need a
+second account to acknowledge from.
 
 ## Running locally
 

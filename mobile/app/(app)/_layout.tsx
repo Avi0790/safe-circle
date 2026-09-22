@@ -29,6 +29,8 @@ function AppNavigator() {
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="places" options={{ headerShown: true }} />
         <Stack.Screen name="walk" options={{ headerShown: true }} />
+        <Stack.Screen name="location-views" options={{ headerShown: true }} />
+        <Stack.Screen name="history-retention" options={{ headerShown: true }} />
         <Stack.Screen name="member/[userId]" options={{ headerShown: true }} />
       </Stack.Protected>
 

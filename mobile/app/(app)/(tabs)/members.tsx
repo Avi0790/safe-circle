@@ -13,6 +13,7 @@ import {
   isDriving,
   isLowBattery,
   isStale,
+  isStatusActive,
   speedToMph,
   timeAgo,
 } from '@/lib/format';
@@ -138,7 +139,15 @@ function MemberRow({
           <View style={[styles.dot, { backgroundColor: dotColor }]} />
         </View>
         <View style={styles.rowText}>
-          <Text style={styles.name}>{member.full_name}</Text>
+          <View style={styles.nameRow}>
+            <Text style={styles.name}>{member.full_name}</Text>
+            {isStatusActive(member.status_expires_at) && member.status_emoji && (
+              <Text style={styles.statusChip}>
+                {member.status_emoji}
+                {member.status_text ? ` ${member.status_text}` : ''}
+              </Text>
+            )}
+          </View>
           <Text style={typography.caption}>
             {shareStatus === 'ended' ? (
               'Stopped sharing'
@@ -212,6 +221,16 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     borderWidth: 2,
     borderColor: colors.bg,
+  },
+  nameRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: spacing.xs },
+  statusChip: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.accent,
+    backgroundColor: colors.bgElevated,
+    borderRadius: 999,
+    paddingHorizontal: spacing.xs + 2,
+    paddingVertical: 1,
   },
   rowText: { flex: 1, gap: 2 },
   chevron: { fontSize: 20, color: colors.offline },

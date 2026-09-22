@@ -46,6 +46,10 @@ export default function MemberHistoryScreenWeb() {
     }
 
     load();
+    // Logs that you looked at this person's location (deduped server-side to
+    // once per 15 min) — see migration ...000028_location_views.sql. A no-op
+    // when userId is your own id.
+    supabase.rpc('record_location_view', { p_viewed_id: userId }).then(() => {}, () => {});
     return () => {
       cancelled = true;
     };

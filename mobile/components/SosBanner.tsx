@@ -9,6 +9,7 @@ import { colors, radius, spacing, typography } from '@/lib/theme';
 export function SosBanner({ events, onChanged }: { events: SosEvent[]; onChanged: () => void }) {
   const { session } = useAuth();
   const [resolvingId, setResolvingId] = useState<number | null>(null);
+  const [acknowledgingId, setAcknowledgingId] = useState<number | null>(null);
 
   if (events.length === 0) return null;
 
@@ -22,29 +23,61 @@ export function SosBanner({ events, onChanged }: { events: SosEvent[]; onChanged
     onChanged();
   }
 
+  async function handleAcknowledge(id: number) {
+    setAcknowledgingId(id);
+    await supabase.rpc('acknowledge_sos', { p_sos_event_id: id });
+    setAcknowledgingId(null);
+    onChanged();
+  }
+
   return (
     <View style={styles.container}>
       {events.map((event) => {
         const isMine = event.user_id === session?.user.id;
+        const acks = event.sos_acknowledgements ?? [];
+        const iAcknowledged = acks.some((a) => a.user_id === session?.user.id);
         return (
           <View key={event.id} style={styles.banner}>
             <Text style={styles.title}>
               {isMine ? '🆘 Your SOS is active' : `🆘 ${event.profiles?.full_name ?? 'Someone'} needs help`}
             </Text>
             {event.message && <Text style={styles.message}>"{event.message}"</Text>}
+            {isMine && acks.length > 0 && (
+              <Text style={styles.acks}>
+                👀 {acks.map((a) => a.profiles?.full_name ?? 'Someone').join(', ')}{' '}
+                {acks.length === 1 ? 'is' : 'are'} on it
+              </Text>
+            )}
             <View style={styles.footer}>
               <Text style={styles.time}>{timeAgo(event.created_at)}</Text>
-              <Pressable
-                style={styles.button}
-                onPress={() => handleResolve(event.id)}
-                disabled={resolvingId === event.id}
-              >
-                {resolvingId === event.id ? (
-                  <ActivityIndicator color="#fff" size="small" />
-                ) : (
-                  <Text style={styles.buttonText}>{isMine ? 'Cancel SOS' : 'Mark resolved'}</Text>
+              <View style={styles.buttonRow}>
+                {!isMine && (
+                  <Pressable
+                    style={styles.button}
+                    onPress={() => handleAcknowledge(event.id)}
+                    disabled={acknowledgingId === event.id || iAcknowledged}
+                  >
+                    {acknowledgingId === event.id ? (
+                      <ActivityIndicator color="#fff" size="small" />
+                    ) : (
+                      <Text style={styles.buttonText}>
+                        {iAcknowledged ? "✓ You're on it" : "I'm on my way"}
+                      </Text>
+                    )}
+                  </Pressable>
                 )}
-              </Pressable>
+                <Pressable
+                  style={styles.button}
+                  onPress={() => handleResolve(event.id)}
+                  disabled={resolvingId === event.id}
+                >
+                  {resolvingId === event.id ? (
+                    <ActivityIndicator color="#fff" size="small" />
+                  ) : (
+                    <Text style={styles.buttonText}>{isMine ? 'Cancel SOS' : 'Mark resolved'}</Text>
+                  )}
+                </Pressable>
+              </View>
             </View>
           </View>
         );
@@ -63,12 +96,15 @@ const styles = StyleSheet.create({
   },
   title: { color: '#fff', fontWeight: '700', fontSize: 15 },
   message: { ...typography.caption, color: '#fff', opacity: 0.9 },
+  acks: { ...typography.caption, color: '#fff', opacity: 0.95, fontWeight: '600' },
   footer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     marginTop: spacing.xs,
+    gap: spacing.xs,
   },
+  buttonRow: { flexDirection: 'row', gap: spacing.xs },
   time: { color: '#fff', fontSize: 12, opacity: 0.85 },
   button: {
     backgroundColor: 'rgba(255,255,255,0.2)',

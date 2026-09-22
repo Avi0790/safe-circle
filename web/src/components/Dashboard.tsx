@@ -70,7 +70,7 @@ export function Dashboard({ myUserId }: { myUserId: string }) {
 
     const { data: memberRows, error: memberError } = await supabase
       .from('circle_members')
-      .select('user_id, profiles(id, full_name, avatar_url, share_until)')
+      .select('user_id, profiles(id, full_name, avatar_url, share_until, status_emoji, status_text, status_expires_at)')
       .eq('circle_id', circleId)
 
     if (memberError) {
@@ -180,7 +180,9 @@ export function Dashboard({ myUserId }: { myUserId: string }) {
   const loadSosEvents = useCallback(async () => {
     const { data } = await supabase
       .from('sos_events')
-      .select('*, profiles!sos_events_user_id_fkey(full_name)')
+      .select(
+        '*, profiles!sos_events_user_id_fkey(full_name), sos_acknowledgements(user_id, profiles(full_name))',
+      )
       .is('resolved_at', null)
       .order('created_at', { ascending: false })
     setSosEvents((data as unknown as SosEvent[]) ?? [])
@@ -192,6 +194,9 @@ export function Dashboard({ myUserId }: { myUserId: string }) {
     const channel = supabase
       .channel('sos-events')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'sos_events' }, () =>
+        loadSosEvents(),
+      )
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'sos_acknowledgements' }, () =>
         loadSosEvents(),
       )
       .subscribe()

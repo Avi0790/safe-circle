@@ -13,9 +13,14 @@ export function useActiveSosEvents() {
     // sos_events has two FKs to profiles (user_id, resolved_by), so the
     // embed needs an explicit relationship hint or PostgREST can't tell
     // which one to use (PGRST201: "more than one relationship was found").
+    // Nested embed pulls each event's acknowledgements (who's seen it and
+    // is responding) in the same request — see acknowledge_sos in
+    // migration ...000030_sos_acknowledge.sql.
     const { data } = await supabase
       .from('sos_events')
-      .select('*, profiles!sos_events_user_id_fkey(full_name)')
+      .select(
+        '*, profiles!sos_events_user_id_fkey(full_name), sos_acknowledgements(user_id, created_at, profiles(full_name))',
+      )
       .is('resolved_at', null)
       .order('created_at', { ascending: false });
     setEvents((data as unknown as SosEvent[]) ?? []);
@@ -30,6 +35,9 @@ export function useActiveSosEvents() {
     const channel = supabase
       .channel('sos-events')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'sos_events' }, () => load())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'sos_acknowledgements' }, () =>
+        load(),
+      )
       .subscribe();
     return () => {
       supabase.removeChannel(channel);

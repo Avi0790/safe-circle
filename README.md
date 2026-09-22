@@ -53,7 +53,16 @@ it holds even if the app is force-quit), **Walk me home** (pick a place and
 a timer; your circle sees you're on your way, hears when you arrive, and an
 SOS fires *automatically* if you don't — protection for when you can't press
 the button), and **Need a ride** (one tap alerts only circle-mates who are
-driving near you right now). Details in `backend/README.md` and
+driving near you right now). A second batch pushes further on the same
+theme, this time aimed at Life360's biggest privacy criticism — that it
+watches constantly with no accountability: **who's checked on me** (a log
+of when a circle-mate opened your location history), **auto-delete
+history** (pick 1/7/30 days or forever; enforced by a daily job, not just
+hidden in the UI), **SOS acknowledge + escalation** (circle-mates can tap
+"I'm on my way" so the sender knows they've been seen; an unacknowledged
+SOS re-pushes the whole circle automatically), and **quick status** chips
+("On my way", "Studying", "Don't disturb") that say more than a dot on a
+map and expire on their own. Details in `backend/README.md` and
 `mobile/README.md`.
 
 Tested on a real iPhone via Expo Go: auth, circles, the map, SOS, and

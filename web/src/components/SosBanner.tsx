@@ -16,6 +16,12 @@ export function SosBanner({ events }: { events: SosEvent[] }) {
             🆘 {event.profiles?.full_name ?? 'Someone'} needs help
           </span>
           {event.message && <span className="sos-alert-message">"{event.message}"</span>}
+          {event.sos_acknowledgements.length > 0 && (
+            <span className="sos-alert-message">
+              👀 {event.sos_acknowledgements.map((a) => a.profiles?.full_name ?? 'Someone').join(', ')}{' '}
+              {event.sos_acknowledgements.length === 1 ? 'is' : 'are'} on it
+            </span>
+          )}
           <span className="sos-alert-time">{timeAgo(event.created_at)}</span>
         </div>
       ))}

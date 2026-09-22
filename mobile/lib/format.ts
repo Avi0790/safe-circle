@@ -72,3 +72,11 @@ export function formatTimeLeft(deadlineIso: string, now = Date.now()): string {
   const minutes = totalMinutes % 60;
   return minutes === 0 ? `${hours} h` : `${hours} h ${minutes} min`;
 }
+
+// A quick status (profiles.status_emoji/status_text/status_expires_at)
+// self-expires rather than needing to be manually cleared — this is the
+// client-side mirror of that check (the server never resurrects an expired
+// one, but a stale row doesn't disappear from the table on its own either).
+export function isStatusActive(expiresAt: string | null | undefined): boolean {
+  return expiresAt != null && new Date(expiresAt).getTime() > Date.now();
+}

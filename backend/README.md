@@ -70,6 +70,30 @@ start, end or accept anything, drivers-only vs everyone counts, double-accept
 refused, and `has_function_privilege` showing the helpers are not callable by
 clients. The cron job is live (`cron.job_run_details` shows it succeeding).
 
+### Privacy and accountability features (migrations `...000028`–`...000032`)
+
+A second batch on the same theme, aimed at Life360's other big criticism —
+always-on tracking with no accountability for who's watching or how long
+data sticks around.
+
+| | What it does | Where the guarantee lives |
+|---|---|---|
+| **Who's checked on me** (`location_views`, `record_location_view`) | Logs when a circle-mate opens your location *history* screen (not every glance at the live map — that's everyone, continuously, and would just be noise). | Deduped to one row per (viewer, viewed) pair per 15 min; only the viewer and the viewed person can read the log — a third circle-mate can't see who's watching whom. |
+| **Auto-delete history** (`profiles.history_retention_days`, `set_history_retention`) | Pick 1 / 7 / 30 days or forever for your own location trail. | A `pg_cron` job (`purge_old_locations`, daily at 04:17 UTC) deletes rows past the window — actual deletion, not a UI filter — but never the single most recent row per person, so the live map pin can't disappear from a stale retention setting. |
+| **SOS acknowledge + escalation** (`sos_acknowledgements`, `acknowledge_sos`, `escalate_unacknowledged_sos`) | Circle-mates tap "I'm on my way"; the sender is told who's responding. If **nobody** acknowledges within 3 min, the whole circle is re-pushed (repeated every 5 min via `pg_cron`) instead of the alert quietly sitting there. | `acknowledge_sos` only pushes on a genuinely new acknowledgement (`on conflict do nothing` + `found`) — caught in testing: an early version re-pushed the sender on every repeat tap of the same button. |
+| **Quick status** (`profiles.status_emoji/status_text/status_expires_at`, `set_status` / `clear_status`) | A short chip ("On my way", "Studying", "Don't disturb") next to your name and pin, from a fixed picklist. | Self-expires after up to 24h (`status_expires_at`) — checked client-side (`isStatusActive`) rather than needing a cleanup job, since an expired chip just stops being *shown*, it doesn't need to stop *existing*. |
+
+Verified on the hosted DB in a rolled-back transaction: view logging dedupes
+and is blocked for outsiders and self-views; retention purge keeps recent
+rows and always keeps the latest one even when everything else is old;
+invalid retention/status values rejected; acknowledging twice inserts once
+and pushes once (the bug above, confirmed fixed); an unacknowledged SOS
+escalates once and then throttles; escalation is skipped once someone
+acknowledges; status text over 40 chars and windows over 24h rejected; and
+`has_function_privilege` showing the internal helpers aren't callable by
+clients. Both new cron jobs (`purge-old-locations`, `escalate-sos`) are
+registered alongside `expire-walks`.
+
 ## How access control works
 
 Row-level security is the enforcement point, not application code:

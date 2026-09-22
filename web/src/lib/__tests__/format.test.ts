@@ -2,6 +2,7 @@ import {
   DRIVING_SPEED_THRESHOLD_MPH,
   formatTimeLeft,
   getShareStatus,
+  isStatusActive,
   isDriving,
   isLowBattery,
   isStale,
@@ -127,5 +128,14 @@ describe('formatTimeLeft', () => {
     expect(formatTimeLeft(at(61_000), now)).toBe('2 min')
     expect(formatTimeLeft(at(60 * 60_000), now)).toBe('1 h')
     expect(formatTimeLeft(at(65 * 60_000), now)).toBe('1 h 5 min')
+  })
+})
+
+describe('isStatusActive', () => {
+  it('is false with no expiry, and true/false around the deadline', () => {
+    expect(isStatusActive(null)).toBe(false)
+    expect(isStatusActive(undefined)).toBe(false)
+    expect(isStatusActive(new Date(Date.now() + 60_000).toISOString())).toBe(true)
+    expect(isStatusActive(new Date(Date.now() - 60_000).toISOString())).toBe(false)
   })
 })

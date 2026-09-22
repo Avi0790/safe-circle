@@ -14,7 +14,7 @@ import { useActiveWalks } from '@/hooks/useActiveWalks';
 import { useRideRequests } from '@/hooks/useRideRequests';
 import { requestRide } from '@/lib/rides';
 import { Avatar } from '@/components/Avatar';
-import { formatClockTime, getShareStatus, isDriving, speedToMph } from '@/lib/format';
+import { formatClockTime, getShareStatus, isDriving, isStatusActive, speedToMph } from '@/lib/format';
 import type { LatestLocation, MemberWithLocation } from '@/lib/types';
 import { colors, radius, spacing } from '@/lib/theme';
 
@@ -28,8 +28,14 @@ const DEFAULT_REGION = {
 function markerDescription(
   location: LatestLocation,
   shareUntil: string | null,
+  statusEmoji: string | null,
+  statusText: string | null,
+  statusExpiresAt: string | null,
 ): string | undefined {
   const parts: string[] = [];
+  if (isStatusActive(statusExpiresAt) && statusEmoji) {
+    parts.push(`${statusEmoji}${statusText ? ` ${statusText}` : ''}`);
+  }
   if (isDriving(location.speed)) {
     const mph = speedToMph(location.speed);
     parts.push(`🚗 Driving${mph != null ? ` ${Math.round(mph)} mph` : ''}`);
@@ -65,7 +71,7 @@ function MemberMarker({ member }: { member: MemberWithLocation }) {
         longitude: member.location!.longitude,
       }}
       title={member.full_name}
-      description={markerDescription(member.location!, member.share_until)}
+      description={markerDescription(member.location!, member.share_until, member.status_emoji, member.status_text, member.status_expires_at)}
       tracksViewChanges={!settled}
       anchor={{ x: 0.5, y: 0.5 }}
     >

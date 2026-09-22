@@ -5,6 +5,7 @@ import {
   isDriving,
   isLowBattery,
   isStale,
+  isStatusActive,
   speedToMph,
   timeAgo,
 } from '../lib/format'
@@ -60,7 +61,15 @@ export function MemberList({
               <span className={`dot dot-${status} dot-badge`} />
             </div>
             <div className="member-info">
-              <div className="member-name">{member.full_name}</div>
+              <div className="member-name">
+                {member.full_name}
+                {isStatusActive(member.status_expires_at) && member.status_emoji && (
+                  <span className="status-chip">
+                    {member.status_emoji}
+                    {member.status_text ? ` ${member.status_text}` : ''}
+                  </span>
+                )}
+              </div>
               <div className="member-meta">
                 {shareStatus === 'ended' ? (
                   'Stopped sharing'

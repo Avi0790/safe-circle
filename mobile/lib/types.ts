@@ -5,6 +5,9 @@ export interface Profile {
   // Temporary-sharing window end (see lib/format.ts getShareStatus); null =
   // normal always-on sharing.
   share_until: string | null;
+  status_emoji: string | null;
+  status_text: string | null;
+  status_expires_at: string | null;
 }
 
 export interface Circle {
@@ -49,6 +52,7 @@ export interface SosEvent {
   resolved_at: string | null;
   resolved_by: string | null;
   profiles: { full_name: string } | null;
+  sos_acknowledgements: { user_id: string; created_at: string; profiles: { full_name: string } | null }[];
 }
 
 export type WalkStatus = 'active' | 'arrived' | 'safe' | 'overdue';
@@ -76,4 +80,19 @@ export interface RideRequest {
   created_at: string;
   requester: { full_name: string } | null;
   driver: { full_name: string } | null;
+}
+
+export interface LocationView {
+  id: number;
+  viewer_id: string;
+  viewed_id: string;
+  created_at: string;
+  profiles: { full_name: string } | null;
+}
+
+export interface SosAcknowledgement {
+  sos_event_id: number;
+  user_id: string;
+  created_at: string;
+  profiles: { full_name: string } | null;
 }

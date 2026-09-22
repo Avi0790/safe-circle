@@ -80,6 +80,11 @@ if you haven't already.
   active walk-me-home timers and open ride requests appear as banners
   (`WalkRideBanner.tsx`). An overdue walk isn't repeated because it has
   already raised a normal SOS.
+- **Quick status chips and SOS acknowledgements** — read-only: a member's
+  chip ("🚗 On my way") shows next to their name in `MemberList.tsx` while
+  it's still active; an active SOS shows who's tapped "I'm on my way" on
+  mobile ("👀 Bob is on it"). Setting a status or acknowledging an SOS both
+  stay mobile-only actions, matching this dashboard's view-only design.
 - **Driving status and distance** — same as mobile's: shows
   "🚗 Driving NN mph" once a member's reported GPS speed clears a 15mph
   threshold (a rough vehicle signal, not real trip detection — see
