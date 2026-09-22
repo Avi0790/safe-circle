@@ -101,3 +101,14 @@ export interface MapPin {
   created_at: string
   profiles: { full_name: string } | null
 }
+
+export interface SafetyTimer {
+  id: string
+  user_id: string
+  circle_id: string
+  label: string | null
+  expected_by: string
+  status: 'active' | 'safe' | 'overdue'
+  created_at: string
+  profiles: { full_name: string } | null
+}

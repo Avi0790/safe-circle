@@ -320,6 +320,35 @@ themselves need a device. Ghost mode and curfew are easy to try solo (with
 a second test account to confirm the hiding/alerting actually happens);
 meetup pins are easiest with two phones so a push can be seen arriving.
 
+- **Text for help** (Map tab → ⋯ Quick actions → 📲 Text for help,
+  `lib/textForHelp.ts`) — a fallback that works when push can't: every
+  other alert here depends on this phone and Supabase both having
+  internet at once, and SMS can get through in places data can't. Picks
+  from circle-mates who've added a phone number (Settings → Phone number)
+  and/or personal backup contacts (Settings → Backup contacts →
+  `app/(app)/backup-contacts.tsx`), then opens the native SMS composer
+  (`expo-sms`) with a message and a Google Maps link to your current
+  location — same as "Call 911" already does for phone calls, it composes
+  but never silently sends; you still tap send.
+- **Check on me** (⋯ Quick actions → ⏱️ Check on me,
+  `app/(app)/safety-timer.tsx`) — Walk me home's sibling for when there's
+  no destination: studying alone, a first date, a solo hike. Set a timer
+  and an optional note; if you don't tap "I'm safe" in time, an SOS goes
+  out automatically at your last known location, the same protection Walk
+  me home gives for when you can't act.
+
+With five actions beyond the map now (walk, check-on-me, ride, drop-pin,
+text-for-help), `QuickActions.tsx` changed from three stacked pills to a
+single "⋯ Quick actions" toggle that opens a small menu — stacking five
+separate pills would have covered too much of the map.
+
+**Not yet verified on real phones:** text for help and check-on-me were
+built and (for check-on-me) tested end-to-end on the hosted DB with real
+location inserts, but the SMS composer itself and the check-on-me screens
+need a device — `SMS.isAvailableAsync()` always returns `false` on the iOS
+simulator, so text-for-help specifically needs physical hardware to try at
+all.
+
 ## Running locally
 
 ```bash

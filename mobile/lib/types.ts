@@ -8,6 +8,9 @@ export interface Profile {
   status_emoji: string | null;
   status_text: string | null;
   status_expires_at: string | null;
+  // Only ever used for the "Text for help" SMS fallback — never shown
+  // anywhere else in either app.
+  phone_number: string | null;
 }
 
 export interface Circle {
@@ -122,4 +125,25 @@ export interface Curfew {
   place_id: string;
   curfew_time: string;
   last_alerted_date: string | null;
+}
+
+export interface BackupContact {
+  id: string;
+  user_id: string;
+  name: string;
+  phone_number: string;
+  created_at: string;
+}
+
+export type SafetyTimerStatus = 'active' | 'safe' | 'overdue';
+
+export interface SafetyTimer {
+  id: string;
+  user_id: string;
+  circle_id: string;
+  label: string | null;
+  expected_by: string;
+  status: SafetyTimerStatus;
+  created_at: string;
+  profiles: { full_name: string } | null;
 }

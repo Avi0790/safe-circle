@@ -10,9 +10,11 @@ import { useMapPins } from '@/hooks/useMapPins';
 import { SosBanner } from '@/components/SosBanner';
 import { SosButton } from '@/components/SosButton';
 import { WalkBanner } from '@/components/WalkBanner';
+import { SafetyTimerBanner } from '@/components/SafetyTimerBanner';
 import { RideBanner } from '@/components/RideBanner';
 import { QuickActions } from '@/components/QuickActions';
 import { useActiveWalks } from '@/hooks/useActiveWalks';
+import { useActiveSafetyTimers } from '@/hooks/useActiveSafetyTimers';
 import { useRideRequests } from '@/hooks/useRideRequests';
 import { requestRide } from '@/lib/rides';
 import { supabase } from '@/lib/supabase';
@@ -141,6 +143,7 @@ export default function MapTab() {
   const { members, isLoading } = useCircleMembers(selectedCircleId);
   const { events: sosEvents, refresh: refreshSos } = useActiveSosEvents();
   const { walks, refresh: refreshWalks } = useActiveWalks();
+  const { timers, refresh: refreshTimers } = useActiveSafetyTimers();
   const { requests: rideRequests, refresh: refreshRides } = useRideRequests();
   const { pins, refresh: refreshPins } = useMapPins(selectedCircleId);
   const mapRef = useRef<MapView>(null);
@@ -170,6 +173,7 @@ export default function MapTab() {
       <View style={styles.sosBannerWrap}>
         <SosBanner events={sosEvents} onChanged={refreshSos} />
         <WalkBanner walks={walks} onChanged={refreshWalks} />
+        <SafetyTimerBanner timers={timers} onChanged={refreshTimers} />
         <RideBanner requests={rideRequests} onChanged={refreshRides} onAskEveryone={handleAskEveryone} />
       </View>
 

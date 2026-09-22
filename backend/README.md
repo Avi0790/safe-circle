@@ -142,6 +142,35 @@ only removes pins a day past expiry; curfew alerts fire once per day, skip
 while home, and re-arm the next day; changing a curfew resets the
 once-per-day guard; and an outsider can't set another person's curfew.
 
+### Text for help and check-on-me timers (migrations `...000039`–`...000040`)
+
+Every alert feature so far — SOS, walks, curfew, nearby — depends on this
+phone *and* Supabase both having internet at the same time. A dead data
+connection or an outage takes all of it down together. Two additions close
+that gap.
+
+| | What it does | Where the guarantee lives |
+|---|---|---|
+| **Text for help** (`profiles.phone_number`, `backup_contacts`) | An SMS fallback: compose (not silently send) a text with a location link to circle-mates who've added a phone number, or to personal backup contacts outside any circle. | `phone_number` rides on `profiles`' existing RLS — no new policy needed. `backup_contacts` is the first table in this project with direct owner-only policies (`for all using/with check (user_id = auth.uid())`) instead of security-definer RPCs, since there's no cross-user visibility to broker: nobody but the owner should ever read or write it. |
+| **Check on me** (`safety_timers`, `start_safety_timer` / `end_safety_timer` / `extend_safety_timer`) | Walk me home's sibling for when there's no destination — studying alone, a first date, a solo hike. Set a timer and an optional note; an SOS fires automatically at your last known location if you don't check in. | A separate table from `walks` rather than making `place_id` nullable there — `walks`' schema (destination coordinates, arrival radius, the arrival trigger) is entirely built around having a place to arrive at, and retrofitting it would have been riskier than a small table with none of that. Same `pg_cron`-driven expiry pattern as `expire_walks()`. |
+
+`end_safety_timer` learned from the SOS-acknowledge bug two batches back
+(migration `...000032`): it checks `if t.status = 'safe' then return; end if;`
+*before* doing anything else, so calling it more than once (a slow network,
+a double-tap) only ever pushes the circle once — verified directly with
+three back-to-back calls in one rolled-back transaction, not just inferred
+from the guard being present.
+
+Also verified: a circle-mate can read someone's `phone_number` (existing
+`profiles` RLS) but an outsider can't see the profile row at all; a
+circle-mate cannot read or write another person's `backup_contacts`;
+`start_safety_timer` rejects an outsider, a label over 60 chars, and a
+timer longer than 8 hours; starting a second timer ends the first the same
+way a second walk does; expiry raises an SOS carrying the note and the
+last known location, and a second expiry run on the same overdue timer is
+a no-op; extending past the 10-hour cap is rejected; and another person
+can't end or extend your timer.
+
 ## How access control works
 
 Row-level security is the enforcement point, not application code:

@@ -74,8 +74,14 @@ A fourth batch rounds out the privacy and "meet up" story: **ghost mode**
 else still sees you), **meetup pins** (drop a temporary "meet here" marker
 for a festival or trailhead, pushed to the circle, gone on its own), and
 **curfew** (set a place and a time once; your circle is alerted
-automatically if you're not there by then — no button to press). Details in
-`backend/README.md` and `mobile/README.md`.
+automatically if you're not there by then — no button to press). A fifth
+batch closes a real gap: every alert so far needs both this phone *and*
+Supabase to have internet — **text for help** composes an SMS with your
+location to circle-mates or personal backup contacts, a fallback that can
+get through when push can't, and **check on me** is Walk me home's sibling
+for when there's no destination (studying alone, a first date, a solo
+hike) — set a timer, and an SOS fires automatically if you don't check in.
+Details in `backend/README.md` and `mobile/README.md`.
 
 Tested on a real iPhone via Expo Go: auth, circles, the map, SOS, and
 live location sharing all confirmed working on real hardware — including

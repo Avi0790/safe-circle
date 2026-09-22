@@ -29,7 +29,7 @@ export function useCircleMembers(circleId: string | null) {
 
     const { data: memberRows, error: memberError } = await supabase
       .from('circle_members')
-      .select('user_id, profiles(id, full_name, avatar_url, share_until, status_emoji, status_text, status_expires_at)')
+      .select('user_id, profiles(id, full_name, avatar_url, share_until, status_emoji, status_text, status_expires_at, phone_number)')
       .eq('circle_id', circleId);
 
     if (memberError) {

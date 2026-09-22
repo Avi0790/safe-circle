@@ -96,6 +96,11 @@ if you haven't already.
   web-dashboard surface: ghost mode is invisible by design (a hidden
   member's pin just doesn't appear, same as any other sharing gap), and
   curfew is a personal setting with nothing circle-wide to show.
+- **Check-on-me timers** — shown in the same banner as walk-me-home timers
+  (`WalkRideBanner.tsx`), read-only: who asked to be checked on, their
+  note if they left one, and when it's due. Text for help and backup
+  contacts have no web surface — they're personal, on-device actions
+  (composing an SMS) with nothing for a dashboard to show or do.
 - **Driving status and distance** — same as mobile's: shows
   "🚗 Driving NN mph" once a member's reported GPS speed clears a 15mph
   threshold (a rough vehicle signal, not real trip detection — see

@@ -1,0 +1,100 @@
+import { useState } from 'react';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useRouter } from 'expo-router';
+import { useAuth } from '@/contexts/AuthContext';
+import { useNow } from '@/hooks/useNow';
+import { supabase } from '@/lib/supabase';
+import { formatClockTime, formatTimeLeft } from '@/lib/format';
+import type { SafetyTimer } from '@/lib/types';
+import { colors, radius, spacing } from '@/lib/theme';
+
+// Walk me home's WalkBanner, for a destination-less "check on me" timer.
+// A circle-mate's overdue timer isn't repeated here — it's already raised
+// a normal SOS, shown by the SOS banner above this with their last known
+// location.
+export function SafetyTimerBanner({
+  timers,
+  onChanged,
+}: {
+  timers: SafetyTimer[];
+  onChanged: () => void;
+}) {
+  const { session } = useAuth();
+  const router = useRouter();
+  const now = useNow(20_000);
+  const [endingId, setEndingId] = useState<string | null>(null);
+
+  const visible = timers.filter((t) => t.user_id === session?.user.id || t.status === 'active');
+  if (visible.length === 0) return null;
+
+  async function handleSafe(timer: SafetyTimer) {
+    setEndingId(timer.id);
+    await supabase.rpc('end_safety_timer', { p_id: timer.id });
+    setEndingId(null);
+    onChanged();
+  }
+
+  return (
+    <View style={styles.container}>
+      {visible.map((timer) => {
+        const isMine = timer.user_id === session?.user.id;
+        const overdue = timer.status === 'overdue';
+        return (
+          <Pressable
+            key={timer.id}
+            style={[styles.banner, overdue && styles.bannerOverdue]}
+            onPress={isMine ? () => router.push('/safety-timer') : undefined}
+            disabled={!isMine}
+          >
+            <View style={styles.text}>
+              <Text style={styles.title}>
+                {overdue
+                  ? '⏰ Your check-on-me timer ran out'
+                  : isMine
+                    ? `⏱️ ${timer.label ?? 'Asked to be checked on'}`
+                    : `⏱️ ${timer.profiles?.full_name ?? 'Someone'} asked to be checked on`}
+              </Text>
+              <Text style={styles.detail}>
+                {overdue
+                  ? 'Your circle was alerted. Tap "I\'m safe" if you\'re okay.'
+                  : `Due ${formatClockTime(timer.expected_by)} · ${formatTimeLeft(timer.expected_by, now)}`}
+              </Text>
+            </View>
+            {isMine && (
+              <Pressable style={styles.button} onPress={() => handleSafe(timer)} disabled={endingId === timer.id}>
+                {endingId === timer.id ? (
+                  <ActivityIndicator color="#fff" size="small" />
+                ) : (
+                  <Text style={styles.buttonText}>I'm safe</Text>
+                )}
+              </Pressable>
+            )}
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { gap: spacing.xs, paddingHorizontal: spacing.sm, paddingBottom: spacing.sm },
+  banner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.accent,
+    borderRadius: radius.md,
+    padding: spacing.md,
+  },
+  bannerOverdue: { backgroundColor: colors.danger },
+  text: { flex: 1, gap: 2 },
+  title: { color: '#fff', fontWeight: '700', fontSize: 15 },
+  detail: { color: '#fff', fontSize: 13, opacity: 0.9 },
+  button: {
+    backgroundColor: 'rgba(255,255,255,0.22)',
+    paddingHorizontal: spacing.sm + 2,
+    paddingVertical: spacing.xs + 2,
+    borderRadius: radius.sm,
+  },
+  buttonText: { color: '#fff', fontWeight: '600', fontSize: 13 },
+});

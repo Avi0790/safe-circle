@@ -58,17 +58,23 @@ export default function SettingsTab() {
   const [statusEmoji, setStatusEmoji] = useState<string | null>(null);
   const [statusBusy, setStatusBusy] = useState(false);
   const [statusError, setStatusError] = useState<string | null>(null);
+  const [phoneNumber, setPhoneNumber] = useState<string | null>(null);
+  const [editingPhone, setEditingPhone] = useState(false);
+  const [phoneValue, setPhoneValue] = useState('');
+  const [phoneError, setPhoneError] = useState<string | null>(null);
+  const [phoneSaving, setPhoneSaving] = useState(false);
 
   useEffect(() => {
     if (!session) return;
     (async () => {
       const { data } = await supabase
         .from('profiles')
-        .select('full_name, avatar_url, status_emoji, status_expires_at')
+        .select('full_name, avatar_url, status_emoji, status_expires_at, phone_number')
         .eq('id', session.user.id)
         .single();
       setFullName(data?.full_name ?? null);
       setAvatarUrl(data?.avatar_url ?? null);
+      setPhoneNumber(data?.phone_number ?? null);
       setStatusEmoji(
         data?.status_expires_at && new Date(data.status_expires_at).getTime() > Date.now()
           ? (data?.status_emoji ?? null)
@@ -76,6 +82,32 @@ export default function SettingsTab() {
       );
     })();
   }, [session]);
+
+  function startEditPhone() {
+    setPhoneValue(phoneNumber ?? '');
+    setPhoneError(null);
+    setEditingPhone(true);
+  }
+
+  async function handleSavePhone() {
+    if (!session) return;
+    const value = phoneValue.trim();
+    setPhoneSaving(true);
+    // RLS (profiles_update_self) already restricts this to your own row.
+    // Only used for the "Text for help" SMS fallback (Map tab) — never
+    // shown anywhere else.
+    const { error } = await supabase
+      .from('profiles')
+      .update({ phone_number: value || null })
+      .eq('id', session.user.id);
+    setPhoneSaving(false);
+    if (error) {
+      setPhoneError(error.message);
+      return;
+    }
+    setPhoneNumber(value || null);
+    setEditingPhone(false);
+  }
 
   async function handleSetStatus(emoji: string, label: string) {
     if (statusBusy) return;
@@ -510,6 +542,57 @@ export default function SettingsTab() {
               </Pressable>
             </View>
           )}
+
+          <Text style={styles.sectionLabel}>Phone number</Text>
+          <Text style={typography.caption}>
+            Only used for "Text for help" (Map tab) — a text-message fallback for when there's no
+            internet for push. Never shown anywhere else.
+          </Text>
+          {editingPhone ? (
+            <View style={styles.renameForm}>
+              <TextField
+                label="Phone number"
+                value={phoneValue}
+                onChangeText={setPhoneValue}
+                keyboardType="phone-pad"
+                placeholder="+1 555 123 4567"
+              />
+              {phoneError && <Text style={styles.error}>{phoneError}</Text>}
+              <View style={styles.circleRow}>
+                <View style={styles.circleButton}>
+                  <Button title="Save" onPress={handleSavePhone} loading={phoneSaving} />
+                </View>
+                <View style={styles.circleButton}>
+                  <Button
+                    title="Cancel"
+                    variant="secondary"
+                    onPress={() => setEditingPhone(false)}
+                    disabled={phoneSaving}
+                  />
+                </View>
+              </View>
+            </View>
+          ) : (
+            <View style={styles.row}>
+              <Text style={[typography.body, styles.rowText]}>{phoneNumber ?? 'Not set'}</Text>
+              <Pressable onPress={startEditPhone} hitSlop={8}>
+                <Text style={styles.renameLinkText}>Edit</Text>
+              </Pressable>
+            </View>
+          )}
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>Backup contacts</Text>
+          <Text style={typography.caption}>
+            People outside your circle (a neighbor, a relative) to text in an emergency, in
+            addition to your circle.
+          </Text>
+          <Button
+            title="Manage backup contacts"
+            variant="secondary"
+            onPress={() => router.push('/backup-contacts')}
+          />
         </View>
 
         <View style={styles.section}>

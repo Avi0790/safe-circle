@@ -10,6 +10,7 @@ import type {
   Place,
   Profile,
   RideRequest,
+  SafetyTimer,
   SosEvent,
   Walk,
 } from '../lib/types'
@@ -38,6 +39,7 @@ export function Dashboard({ myUserId }: { myUserId: string }) {
   const [presenceByPlace, setPresenceByPlace] = useState<Record<string, string[]>>({})
   const [sosEvents, setSosEvents] = useState<SosEvent[]>([])
   const [walks, setWalks] = useState<Walk[]>([])
+  const [safetyTimers, setSafetyTimers] = useState<SafetyTimer[]>([])
   const [rides, setRides] = useState<RideRequest[]>([])
   const [pins, setPins] = useState<MapPin[]>([])
   const [loading, setLoading] = useState(true)
@@ -220,14 +222,19 @@ export function Dashboard({ myUserId }: { myUserId: string }) {
     }
   }, [loadSosEvents])
 
-  // Walk-me-home timers and ride requests (mobile creates and answers them;
-  // this dashboard, like for SOS, only shows them). RLS scopes both to
-  // people you share a circle with.
+  // Walk-me-home timers, check-on-me safety timers, and ride requests
+  // (mobile creates and answers them; this dashboard, like for SOS, only
+  // shows them). RLS scopes all three to people you share a circle with.
   const loadWalksAndRides = useCallback(async () => {
-    const [walkRes, rideRes] = await Promise.all([
+    const [walkRes, timerRes, rideRes] = await Promise.all([
       supabase
         .from('walks')
         .select('id, user_id, circle_id, place_name, expected_by, status, profiles(full_name)')
+        .in('status', ['active', 'overdue'])
+        .order('expected_by'),
+      supabase
+        .from('safety_timers')
+        .select('id, user_id, circle_id, label, expected_by, status, created_at, profiles(full_name)')
         .in('status', ['active', 'overdue'])
         .order('expected_by'),
       supabase
@@ -240,6 +247,7 @@ export function Dashboard({ myUserId }: { myUserId: string }) {
         .order('created_at', { ascending: false }),
     ])
     setWalks((walkRes.data as unknown as Walk[]) ?? [])
+    setSafetyTimers((timerRes.data as unknown as SafetyTimer[]) ?? [])
     setRides((rideRes.data as unknown as RideRequest[]) ?? [])
   }, [])
 
@@ -249,6 +257,9 @@ export function Dashboard({ myUserId }: { myUserId: string }) {
     const channel = supabase
       .channel('walks-and-rides')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'walks' }, () =>
+        loadWalksAndRides(),
+      )
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'safety_timers' }, () =>
         loadWalksAndRides(),
       )
       .on('postgres_changes', { event: '*', schema: 'public', table: 'ride_requests' }, () =>
@@ -506,7 +517,7 @@ export function Dashboard({ myUserId }: { myUserId: string }) {
         {error && <p className="error">{error}</p>}
 
         <SosBanner events={sosEvents} />
-        <WalkRideBanner walks={walks} rides={rides} />
+        <WalkRideBanner walks={walks} timers={safetyTimers} rides={rides} />
         <MemberList
           members={members}
           selectedId={historyMemberId}
