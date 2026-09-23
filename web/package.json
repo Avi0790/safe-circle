@@ -1,5 +1,8 @@
 {
   "name": "web",
+  "author": "Surendra B K (https://github.com/surendr7a)",
+  "license": "MIT",
+  "repository": "github:surendr7a/SafeCircle",
   "private": true,
   "version": "0.0.0",
   "type": "module",

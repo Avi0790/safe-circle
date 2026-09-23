@@ -129,6 +129,7 @@ export function LoginScreen({ initialError = null }: { initialError?: string | n
           Use the same account you signed up with in the Safe Circle mobile app.
         </p>
       </form>
+      <p className="credit">Created and developed by Surendra B K</p>
     </div>
   )
 }

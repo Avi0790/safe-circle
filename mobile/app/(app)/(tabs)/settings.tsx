@@ -839,6 +839,12 @@ export default function SettingsTab() {
         <View style={styles.section}>
           <Button title="Sign out" variant="secondary" onPress={handleSignOut} />
         </View>
+
+        <View style={styles.aboutSection}>
+          <Text style={styles.aboutTitle}>Safe Circle</Text>
+          <Text style={typography.caption}>Created and developed by Surendra B K</Text>
+          <Text style={typography.caption}>github.com/surendr7a/SafeCircle</Text>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -846,6 +852,8 @@ export default function SettingsTab() {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.bg },
+  aboutSection: { alignItems: 'center', gap: 2, paddingTop: spacing.md },
+  aboutTitle: { ...typography.caption, color: colors.textHeading, fontWeight: '700' },
   content: {
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.md,

@@ -528,6 +528,12 @@ export function Dashboard({ myUserId }: { myUserId: string }) {
         />
         <ActivityFeed events={events} />
         <ChatFeed messages={messages} />
+        <p className="credit credit-sidebar">
+          Safe Circle — created and developed by{' '}
+          <a href="https://github.com/surendr7a/SafeCircle" target="_blank" rel="noopener noreferrer">
+            Surendra B K
+          </a>
+        </p>
       </aside>
 
       <main className="map-pane">

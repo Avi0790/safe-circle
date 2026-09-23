@@ -1,5 +1,8 @@
 {
   "name": "mobile",
+  "author": "Surendra B K (https://github.com/surendr7a)",
+  "license": "MIT",
+  "repository": "github:surendr7a/SafeCircle",
   "version": "1.0.0",
   "main": "expo-router/entry",
   "dependencies": {

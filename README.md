@@ -2,9 +2,14 @@
 
 Family location sharing that respects your battery and your privacy.
 
-CS capstone project, Fall 2026 — Team Beacon: **Avi** (mobile & UI), **AJ**
-(location engine), **Surendra** (backend & data), **Thi** (web client &
-QA).
+**Created, designed and developed by [Surendra B K](https://github.com/surendr7a)** —
+the whole stack: the Supabase backend (schema, row-level security, Edge
+Functions, scheduled jobs), the iOS/Android app, the web dashboard, the
+test suites and the CI pipeline, plus every feature beyond the original
+proposal.
+
+CS capstone project, Fall 2026 (Team Beacon). Proposal team: Avi (mobile &
+UI), AJ (location engine), Surendra (backend & data), Thi (web client & QA).
 
 ## What it does
 
@@ -16,11 +21,11 @@ for the full pitch and how access control is enforced.
 
 ## Structure
 
-| Package | Owner | What it is |
+| Package | Built by | What it is |
 |---|---|---|
-| [`backend/`](backend/README.md) | Surendra | Supabase: schema, row-level security, invite-code RPCs, geofencing + push notifications |
-| [`web/`](web/README.md) | Thi | Read-only React + Leaflet live-map dashboard |
-| [`mobile/`](mobile/README.md) | Avi & AJ | Expo/React Native app — auth, circles, live map, and the background location engine |
+| [`backend/`](backend/README.md) | Surendra B K | Supabase: schema, row-level security, invite-code RPCs, geofencing + push notifications |
+| [`web/`](web/README.md) | Surendra B K | Read-only React + Leaflet live-map dashboard |
+| [`mobile/`](mobile/README.md) | Surendra B K | Expo/React Native app — auth, circles, live map, and the background location engine |
 
 Each package has its own README with setup and verification details.
 
@@ -126,3 +131,11 @@ tracking on real hardware.
 Fifteen weeks, five phases — see page 7 of the proposal for the full
 breakdown and checkpoints. Hard rule: whatever's unfinished at the end of
 week 13 gets cut; weeks 14–15 are for testing and the write-up only.
+
+## Author
+
+**Surendra B K** — creator and lead developer of Safe Circle.
+GitHub: [@surendr7a](https://github.com/surendr7a)
+
+Licensed under the MIT License — see [LICENSE](LICENSE). Keep the copyright
+notice when you reuse it.

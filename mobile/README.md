@@ -1,11 +1,13 @@
 # Safe Circle — Mobile App
 
-React Native + Expo (TypeScript) app for the Safe Circle capstone project.
-Covers both **Avi's layer** (page 6: auth screens, onboarding, circle
-create/join flows, member list, settings, design system) and **AJ's
-layer** (background location: permissions flow, tracking service,
-throttling, offline queue) — talking to the Supabase backend in
-[`../backend`](../backend).
+*Part of [Safe Circle](../README.md) — created and developed by **Surendra B K** ([@surendr7a](https://github.com/surendr7a)).*
+
+React Native + Expo (TypeScript) app for the Safe Circle capstone project,
+designed and built by Surendra B K. Covers everything the proposal (page 6)
+split into two layers — auth screens, onboarding, circle create/join flows,
+member list, settings, design system, and the background location engine
+(permissions flow, tracking service, throttling, offline queue) — talking to
+the Supabase backend in [`../backend`](../backend).
 
 ## What's here
 

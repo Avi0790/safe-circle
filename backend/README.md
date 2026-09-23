@@ -1,5 +1,7 @@
 # Safe Circle — Backend
 
+*Part of [Safe Circle](../README.md) — created and developed by **Surendra B K** ([@surendr7a](https://github.com/surendr7a)).*
+
 Backend & data layer for the Safe Circle capstone project (Team Beacon).
 Built on [Supabase](https://supabase.com): hosted Postgres, auth, and realtime —
 no custom server to run or deploy.

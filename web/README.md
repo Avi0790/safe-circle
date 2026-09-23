@@ -1,7 +1,9 @@
 # Safe Circle — Web Dashboard
 
-Read-only live map for the Safe Circle capstone project (Thi's layer, per
-the proposal — page 3/5: "web dashboard... read-only, no tracking happens
+*Part of [Safe Circle](../README.md) — created and developed by **Surendra B K** ([@surendr7a](https://github.com/surendr7a)).*
+
+Read-only live map for the Safe Circle capstone project, designed and built
+by Surendra B K (per the proposal — page 3/5: "web dashboard... read-only, no tracking happens
 from the web"). React + Vite + Leaflet, talking directly to the Supabase
 backend in [`../backend`](../backend).
 
