@@ -69,6 +69,10 @@ module.exports = {
       supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL ?? rootEnv.EXPO_PUBLIC_SUPABASE_URL,
       supabaseAnonKey:
         process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? rootEnv.EXPO_PUBLIC_SUPABASE_ANON_KEY,
+      // Where the web dashboard is hosted — guest tracking links point at
+      // its /track/<token> page, so it has to be a URL other people's
+      // browsers can reach (not localhost) for links to work for them.
+      webUrl: process.env.EXPO_PUBLIC_WEB_URL ?? rootEnv.EXPO_PUBLIC_WEB_URL ?? 'http://localhost:5173',
       eas: {
         projectId: '242bb342-021e-4f7e-a78d-d13941d9fd28',
       },

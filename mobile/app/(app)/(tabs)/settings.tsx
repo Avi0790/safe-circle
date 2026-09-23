@@ -731,12 +731,37 @@ export default function SettingsTab() {
         </View>
 
         <View style={styles.section}>
+          <Text style={styles.sectionLabel}>Emergency & guests</Text>
+          <Text style={typography.caption}>
+            A medical card your circle can read only during an active SOS, and time-limited live
+            links for people who don't have the app.
+          </Text>
+          <Button title="Medical card" variant="secondary" onPress={() => router.push('/medical-card')} />
+          <Button title="Guest tracking link" variant="secondary" onPress={() => router.push('/share-link')} />
+        </View>
+
+        <View style={styles.section}>
           <Text style={styles.sectionLabel}>Curfew</Text>
           <Text style={typography.caption}>
             Alert your circle automatically if you're not home by a set time.
           </Text>
           <Button title="Set curfew" variant="secondary" onPress={() => router.push('/curfew')} />
         </View>
+
+        {circles.some((c) => c.created_by === session?.user.id) && (
+          <View style={styles.section}>
+            <Text style={styles.sectionLabel}>Join approvals</Text>
+            <Text style={typography.caption}>
+              Require your OK before anyone new joins a circle you created, and review who's
+              waiting.
+            </Text>
+            <Button
+              title="Manage join approvals"
+              variant="secondary"
+              onPress={() => router.push('/join-requests')}
+            />
+          </View>
+        )}
 
         {circles.length > 0 && (
           <View style={styles.section}>

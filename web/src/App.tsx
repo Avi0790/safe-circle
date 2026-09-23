@@ -4,8 +4,10 @@ import { supabase } from './lib/supabase'
 import { LoginScreen } from './components/LoginScreen'
 import { Dashboard } from './components/Dashboard'
 import { ResetPasswordScreen } from './components/ResetPasswordScreen'
+import { GuestTrack } from './components/GuestTrack'
+import { parseTrackToken } from './lib/track'
 
-function App() {
+function AuthenticatedApp() {
   const [session, setSession] = useState<Session | null>(null)
   const [checkingSession, setCheckingSession] = useState(true)
   const [recoveryMode, setRecoveryMode] = useState(false)
@@ -52,6 +54,13 @@ function App() {
   }
 
   return session ? <Dashboard myUserId={session.user.id} /> : <LoginScreen initialError={linkError} />
+}
+
+// A guest tracking link (/track/<token>) must work with no account, so it's
+// decided before any of the sign-in logic above runs.
+function App() {
+  const token = parseTrackToken(window.location.pathname)
+  return token ? <GuestTrack token={token} /> : <AuthenticatedApp />
 }
 
 export default App

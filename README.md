@@ -86,7 +86,13 @@ location to circle-mates or personal backup contacts, a fallback that can
 get through when push can't, and **check on me** is Walk me home's sibling
 for when there's no destination (studying alone, a first date, a solo
 hike) — set a timer, and an SOS fires automatically if you don't check in.
-Details in `backend/README.md` and `mobile/README.md`.
+A sixth batch is about who gets in and who can see what: **join approval**
+(a leaked invite code only creates a request the creator can deny), a
+**medical card** that circle-mates can read only during your active SOS
+(enforced by row-level security), and **guest tracking links** — a
+time-limited link that shows your live location in any browser to someone who
+doesn't have the app, which Life360 can't do. Details in `backend/README.md`
+and `mobile/README.md`.
 
 Tested on a real iPhone via Expo Go: auth, circles, the map, SOS, and
 live location sharing all confirmed working on real hardware — including

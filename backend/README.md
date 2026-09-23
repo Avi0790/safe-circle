@@ -173,6 +173,27 @@ last known location, and a second expiry run on the same overdue timer is
 a no-op; extending past the 10-hour cap is rejected; and another person
 can't end or extend your timer.
 
+### Join approval, medical card, and guest links (migrations `...000041`–`...000043`)
+
+| | What it does | Where the guarantee lives |
+|---|---|---|
+| **Join approval** (`circles.require_approval`, `join_requests`, `join_with_code`, `decide_join_request`) | A circle's creator can require their OK for each new member, so an invite code that leaks into the wrong chat only creates a request they can deny — instead of adding a stranger to a group that sees everyone's live location. Off by default; existing circles are unchanged. | `redeem_invite_code` (the old instant-join path) now returns null for approval-required circles, so an old client can't bypass it — verified. `join_with_code` shares the same 10-per-15-min attempt counter and still *returns* (not raises) on a bad code so the attempt counts. A repeat request while one is pending doesn't re-notify the creator. |
+| **Medical card** (`medical_cards`, `has_active_sos`) | Blood type, allergies, conditions, medications, a note — readable by circle-mates **only while you have an active SOS** (unresolved, under 12h old). | RLS, not a hidden UI section: `medical_cards_select_during_sos`. Verified: invisible with no SOS, visible during one, invisible again once resolved or after 12h, never writable by a circle-mate, never visible to an outsider. |
+| **Guest links** (`share_links`, `create_share_link`, `get_shared_location`, `revoke_share_link`) | A link for someone who doesn't have the app — a grandparent, a friend picking you up. Shows the latest location and a first name only, until it expires or you revoke it. Life360 needs everyone to install the app and join a circle. | The token is 192 random bits, stored only as a hash and returned once. `get_shared_location` is the only thing `anon` can call; it returns nothing for an unknown, expired or revoked token (indistinguishable), and `anon` can't read `share_links`, `locations`, `profiles` or `medical_cards` directly — verified with a real anon JWT. Max 5 active links, 15 min–24 h. The owner sees a per-link visit count (a visit = at most one per 5 min, so the page's 15 s refresh doesn't inflate it). |
+
+Verified on the hosted DB in rolled-back transactions, plus a real browser
+check of the guest page (map, low-battery styling, expired state) against a
+throwaway fixture that was deleted afterwards. One thing that looked like a
+bug and wasn't: an "anon can read `share_links`" result came from my test
+leaving the previous user's JWT claims set while switching to the `anon` role
+(so `auth.uid()` was still non-null); re-run with real anon claims it returned
+0 rows.
+
+**Deployment note:** guest links point at the web dashboard's `/track/<token>`
+page (`web/vercel.json` rewrites all paths to the SPA). Until the dashboard is
+deployed and `EXPO_PUBLIC_WEB_URL` is set, links only open on the dev network —
+the mobile screen warns about this.
+
 ## How access control works
 
 Row-level security is the enforcement point, not application code:

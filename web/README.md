@@ -103,6 +103,14 @@ if you haven't already.
   note if they left one, and when it's due. Text for help and backup
   contacts have no web surface — they're personal, on-device actions
   (composing an SMS) with nothing for a dashboard to show or do.
+- **Guest tracking page** (`/track/<token>`, `components/GuestTrack.tsx`,
+  `lib/track.ts`) — the one screen here that needs no account: opened from a
+  link a member shares from the mobile app, it shows only that person's first
+  name and latest location on a map (refreshing every 15 s) until the link
+  expires or is revoked; an unknown, expired or revoked token all look the
+  same ("This link has ended"). Routed before any sign-in logic in `App.tsx`;
+  `vercel.json` rewrites every path to the SPA so deep links work once
+  deployed.
 - **Driving status and distance** — same as mobile's: shows
   "🚗 Driving NN mph" once a member's reported GPS speed clears a 15mph
   threshold (a rough vehicle signal, not real trip detection — see

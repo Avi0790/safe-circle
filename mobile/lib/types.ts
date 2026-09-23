@@ -147,3 +147,21 @@ export interface SafetyTimer {
   created_at: string;
   profiles: { full_name: string } | null;
 }
+
+export interface MedicalCard {
+  user_id: string;
+  blood_type: string | null;
+  allergies: string | null;
+  conditions: string | null;
+  medications: string | null;
+  notes: string | null;
+}
+
+export interface ShareLink {
+  id: string;
+  expires_at: string;
+  revoked_at: string | null;
+  created_at: string;
+  view_count: number;
+  last_viewed_at: string | null;
+}

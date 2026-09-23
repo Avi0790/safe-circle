@@ -351,6 +351,21 @@ need a device — `SMS.isAvailableAsync()` always returns `false` on the iOS
 simulator, so text-for-help specifically needs physical hardware to try at
 all.
 
+- **Join approvals** (Settings → Join approvals, `app/(app)/join-requests.tsx`;
+  join flow in `circle-setup.tsx`) — creators can require their OK before a new
+  member joins, so a leaked invite code can't add a stranger. Joiners see a
+  "Request sent" screen and a push when decided.
+- **Medical card** (Settings → Medical card, `app/(app)/medical-card.tsx`) —
+  circle-mates see it only during your active SOS, via a "🩺 Medical" button on
+  the SOS banner (enforced by RLS, see `backend/README.md`).
+- **Guest tracking link** (Settings → Guest tracking link,
+  `app/(app)/share-link.tsx`) — create a 1/4/24 h link and hand it to the share
+  sheet; see who's opened it and revoke it. Needs the web dashboard deployed for
+  links to work off your network (`EXPO_PUBLIC_WEB_URL`).
+
+**Not yet verified on real phones:** these three screens. The backend rules
+are tested, and the guest page they link to was checked in a browser.
+
 ## Running locally
 
 ```bash

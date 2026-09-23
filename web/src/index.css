@@ -496,3 +496,28 @@ button:disabled {
 .credit a {
   color: inherit;
 }
+
+/* Guest tracking page (/track/<token>) */
+.guest-track {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+.guest-header {
+  padding: 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-elevated);
+}
+.guest-header .hint {
+  margin: 4px 0 0;
+}
+.guest-map {
+  flex: 1;
+  width: 100%;
+}
+.guest-track .credit {
+  padding: 8px;
+  margin: 0;
+  background: var(--bg-elevated);
+  border-top: 1px solid var(--border);
+}

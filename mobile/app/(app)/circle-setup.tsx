@@ -7,7 +7,7 @@ import { useCircles } from '@/contexts/CircleContext';
 import { supabase } from '@/lib/supabase';
 import { colors, spacing, typography } from '@/lib/theme';
 
-type Mode = 'choose' | 'create' | 'join' | 'created';
+type Mode = 'choose' | 'create' | 'join' | 'created' | 'pending';
 
 export default function CircleSetupScreen() {
   const { refresh } = useCircles();
@@ -15,6 +15,7 @@ export default function CircleSetupScreen() {
   const [circleName, setCircleName] = useState('');
   const [inviteCode, setInviteCode] = useState('');
   const [createdCode, setCreatedCode] = useState('');
+  const [pendingCircleName, setPendingCircleName] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -42,17 +43,26 @@ export default function CircleSetupScreen() {
       return;
     }
     setLoading(true);
-    const { data, error } = await supabase.rpc('redeem_invite_code', { code: inviteCode.trim() });
+    // join_with_code (migration ...000041_join_approval.sql) instead of
+    // redeem_invite_code: it also handles circles whose creator requires
+    // approval, returning 'pending' rather than joining instantly.
+    const { data, error } = await supabase.rpc('join_with_code', { code: inviteCode.trim() });
     setLoading(false);
     if (error) {
       // e.g. rate-limited ("Too many invite code attempts...")
       setError(error.message);
       return;
     }
-    if (!data) {
-      // Invalid/expired code returns null rather than throwing — see
-      // redeem_invite_code()'s docstring in the backend migration.
+    const result = data as { status: 'joined' | 'pending' | 'invalid'; circle_name?: string } | null;
+    if (!result || result.status === 'invalid') {
+      // An invalid/expired code is a normal return value, not an exception,
+      // so the attempt still counts toward the rate limit.
       setError('Invalid invite code.');
+      return;
+    }
+    if (result.status === 'pending') {
+      setPendingCircleName(result.circle_name ?? 'that circle');
+      setMode('pending');
       return;
     }
     await refresh();
@@ -90,6 +100,24 @@ export default function CircleSetupScreen() {
             />
             {error && <Text style={styles.error}>{error}</Text>}
             <Button title="Create" onPress={handleCreate} loading={loading} />
+            <Button title="Back" variant="secondary" onPress={() => setMode('choose')} />
+          </View>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (mode === 'pending') {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.content}>
+          <Text style={typography.title}>Request sent</Text>
+          <Text style={typography.body}>
+            {pendingCircleName} asks its creator to approve new members. You'll get a
+            notification when they decide — or tap below to check.
+          </Text>
+          <View style={styles.form}>
+            <Button title="Check again" onPress={refresh} />
             <Button title="Back" variant="secondary" onPress={() => setMode('choose')} />
           </View>
         </View>

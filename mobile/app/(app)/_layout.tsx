@@ -42,6 +42,9 @@ function AppNavigator() {
             <Stack.Screen name="ghost-mode" options={{ headerShown: true }} />
             <Stack.Screen name="drop-pin" options={{ headerShown: true, presentation: 'modal' }} />
             <Stack.Screen name="curfew" options={{ headerShown: true }} />
+            <Stack.Screen name="join-requests" options={{ headerShown: true }} />
+            <Stack.Screen name="medical-card" options={{ headerShown: true }} />
+            <Stack.Screen name="share-link" options={{ headerShown: true }} />
             <Stack.Screen name="backup-contacts" options={{ headerShown: true }} />
             <Stack.Screen name="text-for-help" options={{ headerShown: true, presentation: 'modal' }} />
             <Stack.Screen name="member/[userId]" options={{ headerShown: true }} />

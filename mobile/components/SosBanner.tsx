@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { timeAgo } from '@/lib/format';
+import { formatMedicalCard } from '@/lib/medicalCard';
 import type { SosEvent } from '@/lib/types';
 import { colors, radius, spacing, typography } from '@/lib/theme';
 
@@ -21,6 +22,21 @@ export function SosBanner({ events, onChanged }: { events: SosEvent[]; onChanged
       .eq('id', id);
     setResolvingId(null);
     onChanged();
+  }
+
+  // RLS only returns the card while this person's SOS is active (migration
+  // ...000042_medical_card.sql) — so this can never leak it outside one.
+  async function handleMedical(event: SosEvent) {
+    const { data } = await supabase
+      .from('medical_cards')
+      .select('*')
+      .eq('user_id', event.user_id)
+      .maybeSingle();
+    const name = event.profiles?.full_name ?? 'They';
+    Alert.alert(
+      `🩺 ${name}'s medical card`,
+      formatMedicalCard(data) ?? `${name} hasn't added any medical information.`,
+    );
   }
 
   async function handleAcknowledge(id: number) {
@@ -51,6 +67,11 @@ export function SosBanner({ events, onChanged }: { events: SosEvent[]; onChanged
             <View style={styles.footer}>
               <Text style={styles.time}>{timeAgo(event.created_at)}</Text>
               <View style={styles.buttonRow}>
+                {!isMine && (
+                  <Pressable style={styles.button} onPress={() => handleMedical(event)}>
+                    <Text style={styles.buttonText}>🩺 Medical</Text>
+                  </Pressable>
+                )}
                 {!isMine && (
                   <Pressable
                     style={styles.button}
