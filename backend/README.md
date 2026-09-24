@@ -194,6 +194,19 @@ page (`web/vercel.json` rewrites all paths to the SPA). Until the dashboard is
 deployed and `EXPO_PUBLIC_WEB_URL` is set, links only open on the dev network —
 the mobile screen warns about this.
 
+### Nearby alerts respect ghost mode and sharing windows (migration `...000044`)
+
+Found while re-reading the nearby-alert trigger: it predated ghost mode and
+sharing windows and ignored both, so hiding your location from Bob still let
+Bob's phone say "Alice is nearby" — exactly what hiding is meant to prevent.
+`evaluate_nearby()` now skips anyone whose sharing window has ended, and never
+notifies a recipient about someone who has hidden from them. (The hidden-from
+check is a direct query rather than `is_hidden_by()`, which is defined in terms
+of `auth.uid()` — inside this trigger that's the person who just reported a
+location, not the person being notified.) Verified in a rolled-back
+transaction: baseline still alerts both people; after Alice hides from Bob,
+only Alice is told Bob is near; after Alice's window ends, nobody is alerted.
+
 ## How access control works
 
 Row-level security is the enforcement point, not application code:
