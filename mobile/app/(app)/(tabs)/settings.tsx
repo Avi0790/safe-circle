@@ -31,6 +31,7 @@ import {
 import { SHARE_DURATIONS, startSharing, stopSharing } from '@/lib/sharingWindow';
 import { formatClockTime } from '@/lib/format';
 import { deregisterPushNotifications, registerForPushNotifications } from '@/lib/pushNotifications';
+import { clearMembersCache } from '@/lib/membersCache';
 
 export default function SettingsTab() {
   const router = useRouter();
@@ -325,6 +326,9 @@ export default function SettingsTab() {
     if (session) {
       await deregisterPushNotifications(session.user.id).catch(() => {});
     }
+    // The cached member list is other people's locations on this device —
+    // it mustn't outlive the account that was allowed to see it.
+    await clearMembersCache();
     await supabase.auth.signOut();
   }
 

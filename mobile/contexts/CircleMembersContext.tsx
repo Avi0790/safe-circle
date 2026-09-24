@@ -1,6 +1,8 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
+import { loadCachedMembers, saveCachedMembers } from '@/lib/membersCache';
 import type { LatestLocation, MemberWithLocation, Profile } from '@/lib/types';
 
 interface CircleMembersValue {
@@ -39,6 +41,11 @@ export function CircleMembersProvider({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const reloadTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { session } = useAuth();
+  const userId = session?.user.id ?? null;
+  // True once real data from the network has landed for the current circle,
+  // so a slow cache read can never overwrite it.
+  const hasFreshData = useRef(false);
 
   const load = useCallback(async () => {
     if (!circleId) {
@@ -87,14 +94,15 @@ export function CircleMembersProvider({
       (locations ?? []).map((loc) => [loc.user_id, loc as LatestLocation]),
     );
 
-    setMembers(
-      profiles.map((profile) => ({
-        ...profile,
-        location: locationByUser.get(profile.id) ?? null,
-      })),
-    );
+    const fresh = profiles.map((profile) => ({
+      ...profile,
+      location: locationByUser.get(profile.id) ?? null,
+    }));
+    hasFreshData.current = true;
+    setMembers(fresh);
     setIsLoading(false);
-  }, [circleId]);
+    if (userId) saveCachedMembers(userId, circleId, fresh);
+  }, [circleId, userId]);
 
   const scheduleLoad = useCallback(() => {
     if (reloadTimer.current) clearTimeout(reloadTimer.current);
@@ -103,6 +111,22 @@ export function CircleMembersProvider({
       load();
     }, RELOAD_DEBOUNCE_MS);
   }, [load]);
+
+  // Draw the last-seen list immediately (stale-while-revalidate); the
+  // network fetch below replaces it within a moment.
+  useEffect(() => {
+    hasFreshData.current = false;
+    if (!circleId || !userId) return;
+    let cancelled = false;
+    loadCachedMembers(userId, circleId).then((cached) => {
+      if (cancelled || !cached || hasFreshData.current) return;
+      setMembers(cached);
+      setIsLoading(false);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [circleId, userId]);
 
   useEffect(() => {
     setIsLoading(true);
