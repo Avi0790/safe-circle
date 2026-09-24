@@ -91,8 +91,11 @@ A sixth batch is about who gets in and who can see what: **join approval**
 **medical card** that circle-mates can read only during your active SOS
 (enforced by row-level security), and **guest tracking links** — a
 time-limited link that shows your live location in any browser to someone who
-doesn't have the app, which Life360 can't do. Details in `backend/README.md`
-and `mobile/README.md`.
+doesn't have the app, which Life360 can't do. A seventh batch covers what a real app owes its users: **download my data**,
+**delete my account** (safely — circles you created are handed to another
+member instead of vanishing for everyone), **transfer circle ownership**, an
+optional **Face ID lock**, and an **SOS fallback** that offers a text message
+when there's no internet. Details in `backend/README.md` and `mobile/README.md`.
 
 Tested on a real iPhone via Expo Go: auth, circles, the map, SOS, and
 live location sharing all confirmed working on real hardware — including

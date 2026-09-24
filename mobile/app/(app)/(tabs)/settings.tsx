@@ -21,6 +21,7 @@ import { supabase } from '@/lib/supabase';
 import { pickAndUploadAvatar, removeAvatar } from '@/lib/avatarUpload';
 import { QUICK_STATUSES, STATUS_DURATION_MINUTES } from '@/lib/status';
 import { useShakeSettings } from '@/contexts/ShakeSettingsContext';
+import { useAppLock } from '@/contexts/AppLockContext';
 import { colors, radius, spacing, typography } from '@/lib/theme';
 import {
   getShareUntil,
@@ -37,6 +38,31 @@ export default function SettingsTab() {
   const router = useRouter();
   const { session } = useAuth();
   const { enabled: shakeEnabled, setEnabled: setShakeEnabled } = useShakeSettings();
+  const { enabled: lockEnabled, setEnabled: setLockEnabled } = useAppLock();
+  const [lockError, setLockError] = useState<string | null>(null);
+  const [exporting, setExporting] = useState(false);
+
+  async function handleToggleLock(next: boolean) {
+    setLockError(null);
+    setLockError(await setLockEnabled(next));
+  }
+
+  // Everything the app holds about you, as one JSON document, through the
+  // phone's share sheet (save to Files, email it to yourself, ...).
+  async function handleExportData() {
+    setExporting(true);
+    const { data, error: rpcError } = await supabase.rpc('export_my_data');
+    setExporting(false);
+    if (rpcError || !data) {
+      Alert.alert("Couldn't export your data", rpcError?.message ?? 'Try again in a moment.');
+      return;
+    }
+    try {
+      await Share.share({ message: JSON.stringify(data, null, 2), title: 'My Safe Circle data' });
+    } catch {
+      // Dismissing the share sheet isn't an error.
+    }
+  }
   const { circles, selectedCircle, setSelectedCircleId, refresh: refreshCircles } = useCircles();
   const [inviteCode, setInviteCode] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -716,6 +742,20 @@ export default function SettingsTab() {
         </View>
 
         <View style={styles.section}>
+          <View style={styles.row}>
+            <View style={styles.rowText}>
+              <Text style={styles.sectionLabel}>Lock the app</Text>
+              <Text style={typography.caption}>
+                Ask for Face ID, your fingerprint or your passcode to open Safe Circle, so a
+                borrowed phone can't be used to look at your family's locations.
+              </Text>
+            </View>
+            <Switch value={lockEnabled} onValueChange={handleToggleLock} trackColor={{ true: colors.accent }} />
+          </View>
+          {lockError && <Text style={styles.error}>{lockError}</Text>}
+        </View>
+
+        <View style={styles.section}>
           <Text style={styles.sectionLabel}>Privacy</Text>
           <Text style={typography.caption}>
             See who's checked on your location, choose how long your location history is kept, and
@@ -863,6 +903,15 @@ export default function SettingsTab() {
           {inviteCode && (
             <Button title="Share invite" variant="secondary" onPress={handleShareInvite} />
           )}
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>Your data</Text>
+          <Text style={typography.caption}>
+            Download everything Safe Circle holds about you, or delete your account for good.
+          </Text>
+          <Button title="Download my data" variant="secondary" onPress={handleExportData} loading={exporting} />
+          <Button title="Delete my account" variant="secondary" onPress={() => router.push('/delete-account')} />
         </View>
 
         <View style={styles.section}>

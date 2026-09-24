@@ -1,22 +1,25 @@
 import { useState } from 'react';
 import type { ReactNode } from 'react';
-import { Stack } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import { ActivityIndicator, Alert, View } from 'react-native';
+import { AppLockProvider } from '@/contexts/AppLockContext';
 import { CircleProvider, useCircles } from '@/contexts/CircleContext';
 import { CircleMembersProvider } from '@/contexts/CircleMembersContext';
 import { ShakeSettingsProvider, useShakeSettings } from '@/contexts/ShakeSettingsContext';
 import { useShakeToSos } from '@/hooks/useShakeToSos';
-import { sendSos } from '@/lib/sos';
+import { offerTextForHelp, sendSos } from '@/lib/sos';
 
 export default function AppLayout() {
   return (
-    <CircleProvider>
-      <ShakeSettingsProvider>
-        <MembersScope>
-          <AppNavigator />
-        </MembersScope>
-      </ShakeSettingsProvider>
-    </CircleProvider>
+    <AppLockProvider>
+      <CircleProvider>
+        <ShakeSettingsProvider>
+          <MembersScope>
+            <AppNavigator />
+          </MembersScope>
+        </ShakeSettingsProvider>
+      </CircleProvider>
+    </AppLockProvider>
   );
 }
 
@@ -54,6 +57,7 @@ function AppNavigator() {
             <Stack.Screen name="drop-pin" options={{ headerShown: true, presentation: 'modal' }} />
             <Stack.Screen name="curfew" options={{ headerShown: true }} />
             <Stack.Screen name="join-requests" options={{ headerShown: true }} />
+            <Stack.Screen name="delete-account" options={{ headerShown: true }} />
             <Stack.Screen name="medical-card" options={{ headerShown: true }} />
             <Stack.Screen name="share-link" options={{ headerShown: true }} />
             <Stack.Screen name="backup-contacts" options={{ headerShown: true }} />
@@ -77,6 +81,7 @@ function AppNavigator() {
 // button itself has, not a silent auto-send.
 function ShakeSosListener({ enabled }: { enabled: boolean }) {
   const { enabled: shakeEnabled } = useShakeSettings();
+  const router = useRouter();
   const [sending, setSending] = useState(false);
 
   useShakeToSos(enabled && shakeEnabled && !sending, () => {
@@ -92,7 +97,7 @@ function ShakeSosListener({ enabled }: { enabled: boolean }) {
             setSending(true);
             const result = await sendSos();
             setSending(false);
-            if (!result.ok) Alert.alert('Could not send SOS', result.message);
+            if (!result.ok) offerTextForHelp(result.message, () => router.push('/text-for-help'));
           },
         },
       ],

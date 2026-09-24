@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ActivityIndicator, Alert, Linking, Pressable, StyleSheet, Text } from 'react-native';
-import { sendSos } from '@/lib/sos';
+import { useRouter } from 'expo-router';
+import { sendSos, offerTextForHelp } from '@/lib/sos';
 import { colors, spacing } from '@/lib/theme';
 
 // One-tap emergency alert (the proposal's last stretch goal, page 3).
@@ -8,6 +9,7 @@ import { colors, spacing } from '@/lib/theme';
 // with everyone in the circle via sos_events -> notify_sos_event trigger
 // -> send-sos-push Edge Function.
 export function SosButton({ onSent }: { onSent?: () => void }) {
+  const router = useRouter();
   const [sending, setSending] = useState(false);
 
   function handlePress() {
@@ -38,7 +40,7 @@ export function SosButton({ onSent }: { onSent?: () => void }) {
     const result = await sendSos();
     setSending(false);
     if (!result.ok) {
-      Alert.alert('Could not send SOS', result.message);
+      offerTextForHelp(result.message, () => router.push('/text-for-help'));
       return;
     }
     onSent?.();

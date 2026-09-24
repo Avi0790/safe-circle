@@ -24,7 +24,7 @@ import { colors, spacing, typography } from '@/lib/theme';
 export default function MembersTab() {
   const router = useRouter();
   const { session } = useAuth();
-  const { selectedCircle } = useCircles();
+  const { selectedCircle, refresh: refreshCircles } = useCircles();
   const { members, isLoading, refresh } = useCircleMembers(selectedCircle?.id ?? null);
   const [removingId, setRemovingId] = useState<string | null>(null);
 
@@ -42,6 +42,31 @@ export default function MembersTab() {
           text: 'Remove',
           style: 'destructive',
           onPress: () => handleRemoveMember(selectedCircle.id, member.id),
+        },
+      ],
+    );
+  }
+
+  function confirmMakeOwner(member: MemberWithLocation) {
+    if (!selectedCircle) return;
+    Alert.alert(
+      `Make ${member.full_name} the owner?`,
+      `They'll be able to rename ${selectedCircle.name}, remove members and approve new ones. You'll become an ordinary member and can leave the circle.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Make owner',
+          onPress: async () => {
+            const { error } = await supabase.rpc('transfer_circle_ownership', {
+              p_circle_id: selectedCircle.id,
+              p_new_owner: member.id,
+            });
+            if (error) {
+              Alert.alert("Couldn't transfer ownership", error.message);
+              return;
+            }
+            await refreshCircles();
+          },
         },
       ],
     );
@@ -84,6 +109,7 @@ export default function MembersTab() {
             member={item}
             onPress={() => router.push(`/member/${item.id}`)}
             canRemove={isCreator && item.id !== session?.user.id}
+            onMakeOwner={() => confirmMakeOwner(item)}
             removing={removingId === item.id}
             onRemove={() => confirmRemoveMember(item)}
             distanceFrom={item.id === session?.user.id ? null : myLocation}
@@ -103,6 +129,7 @@ function MemberRow({
   canRemove,
   removing,
   onRemove,
+  onMakeOwner,
   distanceFrom,
 }: {
   member: MemberWithLocation;
@@ -110,6 +137,8 @@ function MemberRow({
   canRemove: boolean;
   removing: boolean;
   onRemove: () => void;
+  // Creators only (same condition as Remove): hand the circle to this member.
+  onMakeOwner: () => void;
   // Your own current location, to show "X mi away" — null for your own
   // row (nothing to measure) or when your own location isn't known.
   distanceFrom: MemberWithLocation['location'];
@@ -177,6 +206,11 @@ function MemberRow({
         <Text style={styles.chevron}>›</Text>
       </Pressable>
       {canRemove && (
+        <Pressable onPress={onMakeOwner} disabled={removing} hitSlop={8} style={styles.removeLink}>
+          <Text style={styles.ownerLinkText}>Make owner</Text>
+        </Pressable>
+      )}
+      {canRemove && (
         <Pressable onPress={onRemove} disabled={removing} hitSlop={8} style={styles.removeLink}>
           <Text style={styles.removeLinkText}>{removing ? 'Removing…' : 'Remove'}</Text>
         </Pressable>
@@ -209,6 +243,7 @@ const styles = StyleSheet.create({
     paddingTop: spacing.xs,
     paddingHorizontal: spacing.xs,
   },
+  ownerLinkText: { color: colors.accent, fontSize: 13, fontWeight: '600' },
   removeLinkText: { color: colors.danger, fontSize: 13, fontWeight: '600' },
   lowBattery: { color: colors.danger, fontWeight: '600' },
   avatarWrap: { position: 'relative' },

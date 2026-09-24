@@ -376,6 +376,25 @@ events into one refetch; `hooks/useCircleMembers.ts` just reads it. Expo Go in
 development mode is also inherently slower than a real build, and running over
 `--tunnel` adds latency of its own.
 
+- **Your data** (Settings → Your data): **Download my data** shares the
+  export as a JSON document through the share sheet; **Delete my account**
+  (`app/(app)/delete-account.tsx`, type DELETE to confirm) removes the account,
+  stopping location sharing and removing the profile photo first. Creators of
+  shared circles hand them over automatically (see `backend/README.md`).
+- **Transfer ownership** (Members tab → Make owner, creators only) — so a
+  creator can finally leave their own circle.
+- **Lock the app** (Settings → Lock the app, `contexts/AppLockContext.tsx`,
+  `expo-local-authentication`) — asks for Face ID / fingerprint / passcode on
+  launch and after 30 s in the background, and covers the screen whenever the
+  app isn't active so the map doesn't appear in the app-switcher preview. It
+  proves the check works before turning on, so a broken setup can't lock you
+  out. The app keeps running underneath (sharing and alerts continue). In Expo
+  Go, iOS may fall back to the passcode instead of Face ID — Face ID needs a
+  development build.
+- **SOS fallback** — if an SOS can't be sent (typically no internet), the
+  error now offers **Text for help** instead of just failing (button and
+  shake-to-SOS both).
+
 ## Running locally
 
 ```bash

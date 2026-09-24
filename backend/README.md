@@ -207,6 +207,18 @@ location, not the person being notified.) Verified in a rolled-back
 transaction: baseline still alerts both people; after Alice hides from Bob,
 only Alice is told Bob is near; after Alice's window ends, nobody is alerted.
 
+### Ownership transfer, data export and account deletion (migration `...000045`)
+
+| | What it does | Notes |
+|---|---|---|
+| **Transfer ownership** (`transfer_circle_ownership`) | The creator hands a circle to another member. Creators previously couldn't leave their own circle without orphaning it. | Creator-only; the new owner must already be a member; the old owner immediately loses creator powers. |
+| **Download my data** (`export_my_data`) | Everything the app holds about you as one JSON document: profile, circles, locations (newest 5,000), messages, SOS/walk/timer history, medical card, backup contacts, who's viewed your history, and more. | Scoped strictly to the caller; not callable by `anon`. |
+| **Delete my account** (`delete_my_account`) | Removes the account and everything hanging off it. | Two traps found by reading the foreign keys first: `circles.created_by` cascades, so deleting a creator would have deleted the circle for everyone else — shared circles are now handed to the longest-standing member first, and only circles with nobody else in them are deleted; and `sos_events.resolved_by` has no `ON DELETE` action, which would have blocked deletion for anyone who'd ever resolved someone's SOS — those references are cleared and the SOS kept. Profile photos are removed by the app before deleting (SQL isn't allowed to delete from Storage). |
+
+Verified in a rolled-back transaction, including both traps: a member who had
+resolved an SOS deletes cleanly, and a creator's deletion leaves the shared
+circle alive under the next-oldest member while a solo circle is removed.
+
 ## How access control works
 
 Row-level security is the enforcement point, not application code:

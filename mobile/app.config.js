@@ -56,6 +56,12 @@ module.exports = {
         },
       ],
       [
+        'expo-local-authentication',
+        {
+          faceIDPermission: 'Safe Circle uses Face ID to keep your family\'s locations private if someone else picks up your phone.',
+        },
+      ],
+      [
         'expo-sensors',
         {
           motionPermission: 'Safe Circle uses motion data so you can shake your phone to send an SOS.',
