@@ -1,7 +1,9 @@
 import { useState } from 'react';
+import type { ReactNode } from 'react';
 import { Stack } from 'expo-router';
 import { ActivityIndicator, Alert, View } from 'react-native';
 import { CircleProvider, useCircles } from '@/contexts/CircleContext';
+import { CircleMembersProvider } from '@/contexts/CircleMembersContext';
 import { ShakeSettingsProvider, useShakeSettings } from '@/contexts/ShakeSettingsContext';
 import { useShakeToSos } from '@/hooks/useShakeToSos';
 import { sendSos } from '@/lib/sos';
@@ -10,10 +12,19 @@ export default function AppLayout() {
   return (
     <CircleProvider>
       <ShakeSettingsProvider>
-        <AppNavigator />
+        <MembersScope>
+          <AppNavigator />
+        </MembersScope>
       </ShakeSettingsProvider>
     </CircleProvider>
   );
+}
+
+// Owns the single shared copy of the selected circle's members (see
+// contexts/CircleMembersContext.tsx).
+function MembersScope({ children }: { children: ReactNode }) {
+  const { selectedCircleId } = useCircles();
+  return <CircleMembersProvider circleId={selectedCircleId}>{children}</CircleMembersProvider>;
 }
 
 function AppNavigator() {

@@ -25,10 +25,16 @@ export function RideBanner({
   const { session } = useAuth();
   const now = useNow(30_000);
   const [busyId, setBusyId] = useState<string | null>(null);
+  // Other people's open requests you've waved off on this device. Only
+  // hides them here — the request itself stays open for everyone else.
+  const [dismissed, setDismissed] = useState<Set<string>>(new Set());
   const me = session?.user.id;
 
   const visible = requests.filter((r) => {
-    if (r.status === 'open') return now - new Date(r.created_at).getTime() < OPEN_TTL_MS;
+    if (r.status === 'open') {
+      if (r.user_id !== me && dismissed.has(r.id)) return false;
+      return now - new Date(r.created_at).getTime() < OPEN_TTL_MS;
+    }
     // Accepted: matters to the requester and the driver, not to bystanders.
     return r.user_id === me || r.accepted_by === me;
   });
@@ -85,6 +91,7 @@ export function RideBanner({
           detail = `Asked ${timeAgo(r.created_at)}`;
           actions = [
             { label: "I'll go", onPress: () => run(r.id, () => supabase.rpc('accept_ride', { p_request_id: r.id })) },
+            { label: 'Not now', onPress: () => setDismissed((prev) => new Set(prev).add(r.id)) },
           ];
         }
 

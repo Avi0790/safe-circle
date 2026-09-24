@@ -366,6 +366,16 @@ all.
 **Not yet verified on real phones:** these three screens. The backend rules
 are tested, and the guest page they link to was checked in a browser.
 
+**Performance note:** the Map, Members and Chat tabs are all mounted at once
+(React Navigation keeps them alive), and each used to run its own copy of the
+members hook — three sets of queries and twelve realtime channels, refetched
+three times over on every profile or membership change (including the automatic
+status updates when someone arrives somewhere). `contexts/CircleMembersContext.tsx`
+now owns one shared copy with a single realtime channel and debounces bursts of
+events into one refetch; `hooks/useCircleMembers.ts` just reads it. Expo Go in
+development mode is also inherently slower than a real build, and running over
+`--tunnel` adds latency of its own.
+
 ## Running locally
 
 ```bash

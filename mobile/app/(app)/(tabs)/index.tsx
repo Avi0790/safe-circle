@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import MapView, { Marker, PROVIDER_DEFAULT } from 'react-native-maps';
 import { ActivityIndicator, Alert, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCircles } from '@/contexts/CircleContext';
 import { useCircleMembers } from '@/hooks/useCircleMembers';
@@ -147,6 +147,7 @@ export default function MapTab() {
   const { requests: rideRequests, refresh: refreshRides } = useRideRequests();
   const { pins, refresh: refreshPins } = useMapPins(selectedCircleId);
   const mapRef = useRef<MapView>(null);
+  const insets = useSafeAreaInsets();
 
   async function handleAskEveryone() {
     const result = await requestRide(true);
@@ -170,7 +171,9 @@ export default function MapTab() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
-      <View style={styles.sosBannerWrap}>
+      {/* Absolutely-positioned children ignore SafeAreaView's padding, so
+          without this offset the banners were drawn under the clock/notch. */}
+      <View style={[styles.sosBannerWrap, { top: insets.top }]}>
         <SosBanner events={sosEvents} onChanged={refreshSos} />
         <WalkBanner walks={walks} onChanged={refreshWalks} />
         <SafetyTimerBanner timers={timers} onChanged={refreshTimers} />
