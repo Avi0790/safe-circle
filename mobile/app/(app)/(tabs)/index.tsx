@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import MapView, { Marker, PROVIDER_DEFAULT } from 'react-native-maps';
 import type { MapType } from 'react-native-maps';
+import * as Location from 'expo-location';
 import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '@/contexts/AuthContext';
@@ -174,9 +175,14 @@ export default function MapTab() {
   }
 
   const located = members.filter((m) => m.location);
+  // Whether the circle has ever been framed into view — guards the
+  // GPS-centering effect below so it can't zoom back into just you after
+  // the map has already widened to show everyone.
+  const hasFitToMembers = useRef(false);
 
   useEffect(() => {
     if (located.length === 0 || !mapRef.current) return;
+    hasFitToMembers.current = true;
     mapRef.current.fitToCoordinates(
       located.map((m) => ({
         latitude: m.location!.latitude,
@@ -186,6 +192,42 @@ export default function MapTab() {
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [located.length]);
+
+  // The map used to open on a hardcoded San Francisco region and only
+  // recenter once the circle's locations had loaded from the server — slow,
+  // and it never moved at all if you hadn't shared yet. This asks the phone's
+  // own GPS directly and jumps there immediately, independent of any circle
+  // data. Skipped if the "fit everyone" effect above already ran first
+  // (member data arrived faster than the GPS fix), so it can't undo that.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        let { status } = await Location.getForegroundPermissionsAsync();
+        if (status !== 'granted') {
+          ({ status } = await Location.requestForegroundPermissionsAsync());
+        }
+        if (status !== 'granted' || cancelled) return;
+        const position = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+        if (cancelled || !mapRef.current || hasFitToMembers.current) return;
+        mapRef.current.animateToRegion(
+          {
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+            latitudeDelta: 0.05,
+            longitudeDelta: 0.05,
+          },
+          400,
+        );
+      } catch {
+        // Permission denied, or the GPS didn't respond — the fit-to-members
+        // effect (or worst case, the hardcoded default region) still covers it.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
@@ -204,6 +246,8 @@ export default function MapTab() {
         style={styles.map}
         initialRegion={DEFAULT_REGION}
         mapType={mapType}
+        showsUserLocation
+        showsMyLocationButton
       >
         {located.map((member) => (
           <MemberMarker key={member.id} member={member} />

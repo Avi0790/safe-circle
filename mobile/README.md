@@ -404,6 +404,15 @@ development mode is also inherently slower than a real build, and running over
   not persisted per circle. Only on the main Map tab for now — the
   member-history trail screens still use the standard map.
 
+- **Opens on your own location** — the Map tab used to open on a hardcoded
+  San Francisco region and only recenter once the circle's locations had
+  loaded from the server, which could be slow or (if you'd never shared)
+  never happen at all. It now asks the phone's GPS directly on open and
+  jumps there immediately, independent of the circle data; if the map has
+  already widened to fit everyone by the time the GPS fix returns, that
+  fix is skipped rather than zooming back into just you. Also turned on
+  the native "my location" blue dot and (Android) a recenter button.
+
 ## Running locally
 
 ```bash
