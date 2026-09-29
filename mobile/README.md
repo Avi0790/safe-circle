@@ -413,15 +413,20 @@ development mode is also inherently slower than a real build, and running over
 - **Opens on your own location** — the Map tab used to open on a hardcoded
   San Francisco region and only recenter once the circle's locations had
   loaded from the server, which could be slow or (if you'd never shared)
-  never happen at all. It now asks the phone's GPS directly on open and
-  jumps there immediately, independent of the circle data; if the map has
-  already widened to fit everyone by the time the GPS fix returns, that
-  fix is skipped rather than zooming back into just you. Also turned on
-  the native "my location" blue dot and (Android) a recenter button. If
-  location access was denied — including previously, since iOS/Android
-  don't re-show the system permission prompt once you've said no —
-  the screen used to just silently stay put with no explanation; it now
-  shows a banner explaining why, with a tap-through to Settings.
+  never happen at all. The first fix used an imperative `mapRef.current
+  .animateToRegion()` call right after mount, which turned out to be its
+  own bug: react-native-maps has a well-known issue where that call
+  silently does nothing if it fires before the native map view has
+  finished initializing (especially on iOS/`PROVIDER_DEFAULT`), so it
+  could still open on San Francisco depending on timing. The `MapView`
+  itself now isn't rendered at all until a starting region is known —
+  either the phone's own GPS fix, or a hardcoded fallback after an 8s
+  timeout — and that's handed to `initialRegion` at first mount instead,
+  which has no such race to lose. Also shows the native "my location"
+  blue dot and (Android) a recenter button. If location access was denied
+  — including previously, since iOS/Android don't re-show the system
+  permission prompt once you've said no — a banner explains why, with a
+  tap-through to Settings, instead of the screen just silently staying put.
 
 ## Running locally
 

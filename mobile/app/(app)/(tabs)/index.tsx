@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import MapView, { Marker, PROVIDER_DEFAULT } from 'react-native-maps';
-import type { MapType } from 'react-native-maps';
+import type { MapType, Region } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { ActivityIndicator, Alert, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -175,14 +175,9 @@ export default function MapTab() {
   }
 
   const located = members.filter((m) => m.location);
-  // Whether the circle has ever been framed into view — guards the
-  // GPS-centering effect below so it can't zoom back into just you after
-  // the map has already widened to show everyone.
-  const hasFitToMembers = useRef(false);
 
   useEffect(() => {
     if (located.length === 0 || !mapRef.current) return;
-    hasFitToMembers.current = true;
     mapRef.current.fitToCoordinates(
       located.map((m) => ({
         latitude: m.location!.latitude,
@@ -200,15 +195,26 @@ export default function MapTab() {
   // requestForegroundPermissionsAsync() quietly returns 'denied' forever
   // after that, with nothing on screen to explain why nothing moved.
   const [locationIssue, setLocationIssue] = useState<'denied' | 'unavailable' | null>(null);
+  // Starts null; the map isn't rendered at all until this resolves (see the
+  // JSX below). Earlier this used an imperative mapRef.animateToRegion()
+  // call right after mount instead — react-native-maps has a well-known
+  // issue where that silently does nothing if it fires before the native
+  // view has finished initializing, especially on iOS/PROVIDER_DEFAULT.
+  // Deciding the starting region *before* the map ever mounts, and handing
+  // it to `initialRegion`, sidesteps that race entirely: there's no native
+  // view yet for the call to race against.
+  const [initialRegion, setInitialRegion] = useState<Region | null>(null);
 
-  // The map used to open on a hardcoded San Francisco region and only
-  // recenter once the circle's locations had loaded from the server — slow,
-  // and it never moved at all if you hadn't shared yet. This asks the phone's
-  // own GPS directly and jumps there immediately, independent of any circle
-  // data. Skipped if the "fit everyone" effect above already ran first
-  // (member data arrived faster than the GPS fix), so it can't undo that.
   useEffect(() => {
     let cancelled = false;
+    // However this resolves — granted, denied, or GPS failure — the map
+    // must eventually render something. If nothing else has set a region
+    // within a few seconds, fall back to the hardcoded default rather than
+    // leaving the screen stuck on a loading spinner forever.
+    const fallbackTimer = setTimeout(() => {
+      if (!cancelled) setInitialRegion((r) => r ?? DEFAULT_REGION);
+    }, 8000);
+
     (async () => {
       let status: Location.PermissionStatus;
       try {
@@ -229,25 +235,23 @@ export default function MapTab() {
         const position = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
         if (cancelled) return;
         setLocationIssue(null);
-        if (!mapRef.current || hasFitToMembers.current) return;
-        mapRef.current.animateToRegion(
-          {
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
-            latitudeDelta: 0.05,
-            longitudeDelta: 0.05,
-          },
-          400,
-        );
+        setInitialRegion({
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+          latitudeDelta: 0.05,
+          longitudeDelta: 0.05,
+        });
       } catch {
         // Permission is granted but the fix itself failed (GPS off, no
         // signal indoors, timed out) — the fit-to-members effect still
-        // covers this if anyone else's location is known.
+        // covers this if anyone else's location is known, and the
+        // fallback timer above covers the case where nobody's is.
         if (!cancelled) setLocationIssue('unavailable');
       }
     })();
     return () => {
       cancelled = true;
+      clearTimeout(fallbackTimer);
     };
   }, []);
 
@@ -276,24 +280,32 @@ export default function MapTab() {
         )}
       </View>
 
-      <MapView
-        ref={mapRef}
-        provider={PROVIDER_DEFAULT}
-        style={styles.map}
-        initialRegion={DEFAULT_REGION}
-        mapType={mapType}
-        showsUserLocation
-        showsMyLocationButton
-      >
-        {located.map((member) => (
-          <MemberMarker key={member.id} member={member} />
-        ))}
-        {pins.map((pin) => (
-          <PinMarker key={pin.id} pin={pin} isMine={pin.created_by === session?.user.id} onRemoved={refreshPins} />
-        ))}
-      </MapView>
+      {initialRegion ? (
+        <MapView
+          ref={mapRef}
+          provider={PROVIDER_DEFAULT}
+          style={styles.map}
+          initialRegion={initialRegion}
+          mapType={mapType}
+          showsUserLocation
+          showsMyLocationButton
+        >
+          {located.map((member) => (
+            <MemberMarker key={member.id} member={member} />
+          ))}
+          {pins.map((pin) => (
+            <PinMarker key={pin.id} pin={pin} isMine={pin.created_by === session?.user.id} onRemoved={refreshPins} />
+          ))}
+        </MapView>
+      ) : (
+        // Nothing to show yet — waiting on the GPS fix (or its fallback
+        // timer) that decides where the map should first open. See the
+        // effect above for why this is a wait rather than mounting the map
+        // early and recentering it after the fact.
+        <View style={styles.map} />
+      )}
 
-      {isLoading && (
+      {(isLoading || !initialRegion) && (
         <View style={styles.loadingOverlay}>
           <ActivityIndicator />
         </View>
