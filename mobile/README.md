@@ -395,6 +395,15 @@ development mode is also inherently slower than a real build, and running over
   error now offers **Text for help** instead of just failing (button and
   shake-to-SOS both).
 
+- **Satellite map** (Map tab, top-right 🛰️/🗺️ button, `lib/mapTypePreference.ts`)
+  — toggles react-native-maps' built-in `mapType` between standard and
+  `hybrid` (satellite imagery with road/place labels kept on top). Apple
+  Maps (iOS) and Google Maps (Android) both include this for free through
+  react-native-maps — no separate API key or paid tier, unlike most
+  "satellite view" integrations. Per-device preference (`AsyncStorage`),
+  not persisted per circle. Only on the main Map tab for now — the
+  member-history trail screens still use the standard map.
+
 ## Running locally
 
 ```bash

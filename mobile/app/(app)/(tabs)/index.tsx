@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import MapView, { Marker, PROVIDER_DEFAULT } from 'react-native-maps';
-import { ActivityIndicator, Alert, StyleSheet, Text, View } from 'react-native';
+import type { MapType } from 'react-native-maps';
+import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCircles } from '@/contexts/CircleContext';
@@ -13,6 +14,12 @@ import { WalkBanner } from '@/components/WalkBanner';
 import { SafetyTimerBanner } from '@/components/SafetyTimerBanner';
 import { RideBanner } from '@/components/RideBanner';
 import { QuickActions } from '@/components/QuickActions';
+import {
+  getMapType,
+  setMapType,
+  SATELLITE_MAP_TYPE,
+  STANDARD_MAP_TYPE,
+} from '@/lib/mapTypePreference';
 import { useActiveWalks } from '@/hooks/useActiveWalks';
 import { useActiveSafetyTimers } from '@/hooks/useActiveSafetyTimers';
 import { useRideRequests } from '@/hooks/useRideRequests';
@@ -148,6 +155,17 @@ export default function MapTab() {
   const { pins, refresh: refreshPins } = useMapPins(selectedCircleId);
   const mapRef = useRef<MapView>(null);
   const insets = useSafeAreaInsets();
+  const [mapType, setMapTypeState] = useState<MapType>(STANDARD_MAP_TYPE);
+
+  useEffect(() => {
+    getMapType().then(setMapTypeState);
+  }, []);
+
+  function toggleMapType() {
+    const next = mapType === SATELLITE_MAP_TYPE ? STANDARD_MAP_TYPE : SATELLITE_MAP_TYPE;
+    setMapTypeState(next);
+    setMapType(next);
+  }
 
   async function handleAskEveryone() {
     const result = await requestRide(true);
@@ -185,6 +203,7 @@ export default function MapTab() {
         provider={PROVIDER_DEFAULT}
         style={styles.map}
         initialRegion={DEFAULT_REGION}
+        mapType={mapType}
       >
         {located.map((member) => (
           <MemberMarker key={member.id} member={member} />
@@ -199,6 +218,14 @@ export default function MapTab() {
           <ActivityIndicator />
         </View>
       )}
+
+      <Pressable
+        style={[styles.mapTypeButton, { top: insets.top + spacing.sm }]}
+        onPress={toggleMapType}
+        accessibilityLabel={mapType === SATELLITE_MAP_TYPE ? 'Switch to standard map' : 'Switch to satellite map'}
+      >
+        <Text style={styles.mapTypeButtonText}>{mapType === SATELLITE_MAP_TYPE ? '🗺️' : '🛰️'}</Text>
+      </Pressable>
 
       <QuickActions onRideRequested={refreshRides} />
       <SosButton onSent={refreshSos} />
@@ -235,6 +262,23 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   pinMarkerText: { fontSize: 16 },
+  mapTypeButton: {
+    position: 'absolute',
+    right: spacing.lg,
+    width: 44,
+    height: 44,
+    borderRadius: radius.full,
+    backgroundColor: colors.bg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 4,
+    zIndex: 5,
+  },
+  mapTypeButtonText: { fontSize: 20 },
   sosBannerWrap: { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10 },
   loadingOverlay: {
     position: 'absolute',

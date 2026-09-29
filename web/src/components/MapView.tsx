@@ -1,4 +1,4 @@
-import { MapContainer, TileLayer, Marker, Popup, Circle, Polyline, useMap } from 'react-leaflet'
+import { MapContainer, TileLayer, LayersControl, Marker, Popup, Circle, Polyline, useMap } from 'react-leaflet'
 import { useEffect } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
@@ -102,10 +102,22 @@ export function MapView({
 
   return (
     <MapContainer center={DEFAULT_CENTER} zoom={12} className="map-container">
-      <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-      />
+      {/* Esri's World Imagery is free and keyless, same as OpenStreetMap's
+          tiles — no Google Maps billing account needed for satellite view. */}
+      <LayersControl position="topright">
+        <LayersControl.BaseLayer checked name="Streets">
+          <TileLayer
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          />
+        </LayersControl.BaseLayer>
+        <LayersControl.BaseLayer name="Satellite">
+          <TileLayer
+            attribution="Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community"
+            url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+          />
+        </LayersControl.BaseLayer>
+      </LayersControl>
       <FitToMembers members={members} />
       <FitToHistory history={history} />
       {history.length > 1 && (

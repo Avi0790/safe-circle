@@ -111,6 +111,12 @@ if you haven't already.
   same ("This link has ended"). Routed before any sign-in logic in `App.tsx`;
   `vercel.json` rewrites every path to the SPA so deep links work once
   deployed.
+- **Satellite view** — a layer switcher (top-right of the map, Leaflet's
+  built-in `LayersControl`) between the default street map and satellite
+  imagery from Esri's World Imagery service, which — like the OpenStreetMap
+  tiles already in use — is free and keyless, so this needed no Google Maps
+  billing account. Verified by exercising the actual switcher in a browser
+  and confirming a real Esri tile request fired.
 - **Driving status and distance** — same as mobile's: shows
   "🚗 Driving NN mph" once a member's reported GPS speed clears a 15mph
   threshold (a rough vehicle signal, not real trip detection — see
