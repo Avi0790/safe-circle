@@ -417,7 +417,11 @@ development mode is also inherently slower than a real build, and running over
   jumps there immediately, independent of the circle data; if the map has
   already widened to fit everyone by the time the GPS fix returns, that
   fix is skipped rather than zooming back into just you. Also turned on
-  the native "my location" blue dot and (Android) a recenter button.
+  the native "my location" blue dot and (Android) a recenter button. If
+  location access was denied — including previously, since iOS/Android
+  don't re-show the system permission prompt once you've said no —
+  the screen used to just silently stay put with no explanation; it now
+  shows a banner explaining why, with a tap-through to Settings.
 
 ## Running locally
 

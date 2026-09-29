@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import MapView, { Marker, PROVIDER_DEFAULT } from 'react-native-maps';
 import type { MapType } from 'react-native-maps';
 import * as Location from 'expo-location';
-import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCircles } from '@/contexts/CircleContext';
@@ -193,6 +193,14 @@ export default function MapTab() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [located.length]);
 
+  // 'denied' vs 'unavailable' so the banner below can say something useful
+  // instead of the map just silently staying wherever it was — which is
+  // exactly what a previously-denied permission looks like: iOS/Android
+  // don't re-show the system prompt once you've said no once, so
+  // requestForegroundPermissionsAsync() quietly returns 'denied' forever
+  // after that, with nothing on screen to explain why nothing moved.
+  const [locationIssue, setLocationIssue] = useState<'denied' | 'unavailable' | null>(null);
+
   // The map used to open on a hardcoded San Francisco region and only
   // recenter once the circle's locations had loaded from the server — slow,
   // and it never moved at all if you hadn't shared yet. This asks the phone's
@@ -202,14 +210,26 @@ export default function MapTab() {
   useEffect(() => {
     let cancelled = false;
     (async () => {
+      let status: Location.PermissionStatus;
       try {
-        let { status } = await Location.getForegroundPermissionsAsync();
+        ({ status } = await Location.getForegroundPermissionsAsync());
         if (status !== 'granted') {
           ({ status } = await Location.requestForegroundPermissionsAsync());
         }
-        if (status !== 'granted' || cancelled) return;
+      } catch {
+        if (!cancelled) setLocationIssue('unavailable');
+        return;
+      }
+      if (cancelled) return;
+      if (status !== 'granted') {
+        setLocationIssue('denied');
+        return;
+      }
+      try {
         const position = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-        if (cancelled || !mapRef.current || hasFitToMembers.current) return;
+        if (cancelled) return;
+        setLocationIssue(null);
+        if (!mapRef.current || hasFitToMembers.current) return;
         mapRef.current.animateToRegion(
           {
             latitude: position.coords.latitude,
@@ -220,8 +240,10 @@ export default function MapTab() {
           400,
         );
       } catch {
-        // Permission denied, or the GPS didn't respond — the fit-to-members
-        // effect (or worst case, the hardcoded default region) still covers it.
+        // Permission is granted but the fix itself failed (GPS off, no
+        // signal indoors, timed out) — the fit-to-members effect still
+        // covers this if anyone else's location is known.
+        if (!cancelled) setLocationIssue('unavailable');
       }
     })();
     return () => {
@@ -238,6 +260,20 @@ export default function MapTab() {
         <WalkBanner walks={walks} onChanged={refreshWalks} />
         <SafetyTimerBanner timers={timers} onChanged={refreshTimers} />
         <RideBanner requests={rideRequests} onChanged={refreshRides} onAskEveryone={handleAskEveryone} />
+        {locationIssue === 'denied' && (
+          <Pressable style={styles.locationBanner} onPress={() => Linking.openSettings()}>
+            <Text style={styles.locationBannerText}>
+              📍 Location access is off, so the map can't center on you. Tap to open Settings.
+            </Text>
+          </Pressable>
+        )}
+        {locationIssue === 'unavailable' && (
+          <View style={styles.locationBanner}>
+            <Text style={styles.locationBannerText}>
+              📍 Couldn't get your location right now — try again outdoors or with a clearer signal.
+            </Text>
+          </View>
+        )}
       </View>
 
       <MapView
@@ -324,6 +360,14 @@ const styles = StyleSheet.create({
   },
   mapTypeButtonText: { fontSize: 20 },
   sosBannerWrap: { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10 },
+  locationBanner: {
+    marginHorizontal: spacing.sm,
+    marginBottom: spacing.sm,
+    backgroundColor: colors.stale,
+    borderRadius: radius.md,
+    padding: spacing.md,
+  },
+  locationBannerText: { color: '#fff', fontSize: 13, fontWeight: '600' },
   loadingOverlay: {
     position: 'absolute',
     top: spacing.md,
