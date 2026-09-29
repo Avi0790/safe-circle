@@ -67,6 +67,7 @@ module.exports = {
           motionPermission: 'Safe Circle uses motion data so you can shake your phone to send an SOS.',
         },
       ],
+      'expo-sharing',
     ],
     experiments: {
       typedRoutes: true,

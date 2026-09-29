@@ -376,8 +376,14 @@ events into one refetch; `hooks/useCircleMembers.ts` just reads it. Expo Go in
 development mode is also inherently slower than a real build, and running over
 `--tunnel` adds latency of its own.
 
-- **Your data** (Settings → Your data): **Download my data** shares the
-  export as a JSON document through the share sheet; **Delete my account**
+- **Your data** (Settings → Your data): **Download my data**
+  (`lib/dataExport.ts`) writes `export_my_data`'s result to a real
+  `safecircle-data-<date>.json` file (`expo-file-system`) and hands it to
+  the native share sheet (`expo-sharing`) — not React Native's plain
+  `Share.share({ message })`, which only ever offers to *send* the text
+  somewhere (Mail, Messages, copy). iOS only offers "Save to Files" for an
+  actual document, so the first version of this (plain-text share) could
+  never actually be saved to reopen later; this can. **Delete my account**
   (`app/(app)/delete-account.tsx`, type DELETE to confirm) removes the account,
   stopping location sharing and removing the profile photo first. Creators of
   shared circles hand them over automatically (see `backend/README.md`).

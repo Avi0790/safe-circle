@@ -33,6 +33,7 @@ import { SHARE_DURATIONS, startSharing, stopSharing } from '@/lib/sharingWindow'
 import { formatClockTime } from '@/lib/format';
 import { deregisterPushNotifications, registerForPushNotifications } from '@/lib/pushNotifications';
 import { clearMembersCache } from '@/lib/membersCache';
+import { exportDataToFile } from '@/lib/dataExport';
 
 export default function SettingsTab() {
   const router = useRouter();
@@ -52,15 +53,15 @@ export default function SettingsTab() {
   async function handleExportData() {
     setExporting(true);
     const { data, error: rpcError } = await supabase.rpc('export_my_data');
-    setExporting(false);
     if (rpcError || !data) {
+      setExporting(false);
       Alert.alert("Couldn't export your data", rpcError?.message ?? 'Try again in a moment.');
       return;
     }
-    try {
-      await Share.share({ message: JSON.stringify(data, null, 2), title: 'My Safe Circle data' });
-    } catch {
-      // Dismissing the share sheet isn't an error.
+    const result = await exportDataToFile(data);
+    setExporting(false);
+    if (!result.ok) {
+      Alert.alert("Couldn't export your data", result.error);
     }
   }
   const { circles, selectedCircle, setSelectedCircleId, refresh: refreshCircles } = useCircles();
