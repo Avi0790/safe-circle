@@ -808,6 +808,19 @@ export default function SettingsTab() {
           </View>
         )}
 
+        {/* This tab is only reachable once you have at least one circle
+            (see app/(app)/_layout.tsx's guard), so "more circles" always
+            applies here — the zero-circles case is circle-setup.tsx. */}
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>More circles</Text>
+          <Text style={typography.caption}>
+            You're not limited to one — create or join another circle for a different group of
+            people (a separate friend group, a study group, ...). You'll stay in every circle
+            you're already part of.
+          </Text>
+          <Button title="Add another circle" variant="secondary" onPress={() => router.push('/add-circle')} />
+        </View>
+
         {circles.length > 0 && (
           <View style={styles.section}>
             <Text style={styles.sectionLabel}>Circles</Text>

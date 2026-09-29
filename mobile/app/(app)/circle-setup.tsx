@@ -1,186 +1,22 @@
-import { useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Button } from '@/components/Button';
-import { TextField } from '@/components/TextField';
-import { useCircles } from '@/contexts/CircleContext';
-import { supabase } from '@/lib/supabase';
-import { colors, spacing, typography } from '@/lib/theme';
+import { CircleOnboarding } from '@/components/CircleOnboarding';
+import { colors } from '@/lib/theme';
 
-type Mode = 'choose' | 'create' | 'join' | 'created' | 'pending';
-
+// First-run only — reachable while you have zero circles (see the guard in
+// app/(app)/_layout.tsx). No `onDone`: becoming a member is itself what
+// flips that guard and takes you into the app, so there's nothing else to
+// navigate to from here. Once you have at least one circle, adding another
+// happens from Settings → app/(app)/add-circle.tsx instead, which shares
+// the same CircleOnboarding component.
 export default function CircleSetupScreen() {
-  const { refresh } = useCircles();
-  const [mode, setMode] = useState<Mode>('choose');
-  const [circleName, setCircleName] = useState('');
-  const [inviteCode, setInviteCode] = useState('');
-  const [createdCode, setCreatedCode] = useState('');
-  const [pendingCircleName, setPendingCircleName] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-
-  async function handleCreate() {
-    setError(null);
-    if (!circleName.trim()) {
-      setError('Give your circle a name.');
-      return;
-    }
-    setLoading(true);
-    const { data, error } = await supabase.rpc('create_circle', { circle_name: circleName.trim() });
-    setLoading(false);
-    if (error) {
-      setError(error.message);
-      return;
-    }
-    setCreatedCode(data?.[0]?.invite_code ?? '');
-    setMode('created');
-  }
-
-  async function handleJoin() {
-    setError(null);
-    if (!inviteCode.trim()) {
-      setError('Enter the invite code.');
-      return;
-    }
-    setLoading(true);
-    // join_with_code (migration ...000041_join_approval.sql) instead of
-    // redeem_invite_code: it also handles circles whose creator requires
-    // approval, returning 'pending' rather than joining instantly.
-    const { data, error } = await supabase.rpc('join_with_code', { code: inviteCode.trim() });
-    setLoading(false);
-    if (error) {
-      // e.g. rate-limited ("Too many invite code attempts...")
-      setError(error.message);
-      return;
-    }
-    const result = data as { status: 'joined' | 'pending' | 'invalid'; circle_name?: string } | null;
-    if (!result || result.status === 'invalid') {
-      // An invalid/expired code is a normal return value, not an exception,
-      // so the attempt still counts toward the rate limit.
-      setError('Invalid invite code.');
-      return;
-    }
-    if (result.status === 'pending') {
-      setPendingCircleName(result.circle_name ?? 'that circle');
-      setMode('pending');
-      return;
-    }
-    await refresh();
-  }
-
-  if (mode === 'choose') {
-    return (
-      <SafeAreaView style={styles.safeArea}>
-        <View style={styles.content}>
-          <Text style={typography.title}>Welcome</Text>
-          <Text style={typography.body}>
-            Create a family circle, or join one with an invite code.
-          </Text>
-          <View style={styles.form}>
-            <Button title="Create a circle" onPress={() => setMode('create')} />
-            <Button title="Join a circle" variant="secondary" onPress={() => setMode('join')} />
-          </View>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  if (mode === 'create') {
-    return (
-      <SafeAreaView style={styles.safeArea}>
-        <View style={styles.content}>
-          <Text style={typography.title}>Create a circle</Text>
-          <View style={styles.form}>
-            <TextField
-              label="Circle name"
-              placeholder="The Smiths"
-              value={circleName}
-              onChangeText={setCircleName}
-              autoCapitalize="words"
-            />
-            {error && <Text style={styles.error}>{error}</Text>}
-            <Button title="Create" onPress={handleCreate} loading={loading} />
-            <Button title="Back" variant="secondary" onPress={() => setMode('choose')} />
-          </View>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  if (mode === 'pending') {
-    return (
-      <SafeAreaView style={styles.safeArea}>
-        <View style={styles.content}>
-          <Text style={typography.title}>Request sent</Text>
-          <Text style={typography.body}>
-            {pendingCircleName} asks its creator to approve new members. You'll get a
-            notification when they decide — or tap below to check.
-          </Text>
-          <View style={styles.form}>
-            <Button title="Check again" onPress={refresh} />
-            <Button title="Back" variant="secondary" onPress={() => setMode('choose')} />
-          </View>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  if (mode === 'created') {
-    return (
-      <SafeAreaView style={styles.safeArea}>
-        <View style={styles.content}>
-          <Text style={typography.title}>Circle created!</Text>
-          <Text style={typography.body}>
-            Share this code with the people you want in your circle. It's shown only once, so
-            save it now.
-          </Text>
-          <Text selectable style={styles.code}>
-            {createdCode}
-          </Text>
-          <Button title="Done" onPress={refresh} />
-        </View>
-      </SafeAreaView>
-    );
-  }
-
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.content}>
-        <Text style={typography.title}>Join a circle</Text>
-        <View style={styles.form}>
-          <TextField
-            label="Invite code"
-            placeholder="AB12CD"
-            value={inviteCode}
-            onChangeText={(text) => setInviteCode(text.toUpperCase())}
-            autoCapitalize="characters"
-            maxLength={6}
-          />
-          {error && <Text style={styles.error}>{error}</Text>}
-          <Button title="Join" onPress={handleJoin} loading={loading} />
-          <Button title="Back" variant="secondary" onPress={() => setMode('choose')} />
-        </View>
-      </View>
+      <CircleOnboarding />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.bg },
-  content: {
-    flex: 1,
-    justifyContent: 'center',
-    paddingHorizontal: spacing.lg,
-    gap: spacing.lg,
-  },
-  form: { gap: spacing.md },
-  error: { color: colors.danger, fontSize: 14 },
-  code: {
-    fontSize: 40,
-    fontWeight: '700',
-    letterSpacing: 4,
-    textAlign: 'center',
-    color: colors.accent,
-    paddingVertical: spacing.lg,
-  },
 });

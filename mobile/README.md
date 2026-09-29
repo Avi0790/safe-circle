@@ -26,7 +26,15 @@ the Supabase backend in [`../backend`](../backend).
   -link-back-into-the-app half needs a real device + a real inbox to
   fully verify, which wasn't available this session.
 - Circle onboarding: create a circle (shows the invite code once) or join
-  one with a code.
+  one with a code. **Belonging to more than one circle already worked
+  end to end** — `CircleContext` always held a list plus a selection, and
+  nothing on the backend assumes a single circle (SOS/ride requests scope
+  by "shares *any* circle with you," not one active circle) — but the
+  create-or-join screen (`circle-setup.tsx`) was only ever reachable while
+  you had zero circles, so there was no way to add a *second* one. That
+  screen's flow is now `components/CircleOnboarding.tsx`, shared with the
+  new Settings → **Add another circle** (`app/(app)/add-circle.tsx`),
+  reachable any time.
 - Live map + member list, sourced from the same `latest_locations` view
   and realtime subscription the web dashboard uses (roster changes —
   someone joining, leaving, or being removed — are live too, via a

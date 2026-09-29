@@ -49,6 +49,7 @@ function AppNavigator() {
           <Stack.Protected guard={hasCircle}>
             <Stack.Screen name="(tabs)" />
             <Stack.Screen name="places" options={{ headerShown: true }} />
+            <Stack.Screen name="add-circle" options={{ headerShown: true }} />
             <Stack.Screen name="walk" options={{ headerShown: true }} />
             <Stack.Screen name="safety-timer" options={{ headerShown: true }} />
             <Stack.Screen name="location-views" options={{ headerShown: true }} />
