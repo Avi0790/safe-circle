@@ -435,6 +435,20 @@ development mode is also inherently slower than a real build, and running over
   — including previously, since iOS/Android don't re-show the system
   permission prompt once you've said no — a banner explains why, with a
   tap-through to Settings, instead of the screen just silently staying put.
+- **In-app AI help** (⋯ Quick actions → ❓ Help, `app/(app)/ai-help.tsx`,
+  `lib/aiHelp.ts`) — a chatbot for "how do I..." questions about the app
+  itself ("what does Ghost Mode do?"), not for emergencies; its system
+  prompt explicitly redirects anything describing a real emergency to the
+  SOS button instead of trying to help. The one feature in this app with a
+  real per-message cost (Anthropic's API) rather than a free service — see
+  `backend/README.md` for the one-time setup step. Chat history is kept in
+  memory only for the length of the screen visit, never saved. Caught a
+  real bug while wiring this up: `supabase-js` puts a generic message on a
+  failed function call's `error.message` and the actual response body on
+  `error.context` (the raw `Response`) — reading `error.message` directly
+  would have shown "Edge Function returned a non-2xx status code" instead
+  of "Too many questions this hour," tested directly in
+  `lib/__tests__/aiHelp.test.ts`.
 
 ## Running locally
 

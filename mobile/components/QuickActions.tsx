@@ -14,7 +14,7 @@ export function QuickActions({ onRideRequested }: { onRideRequested: () => void 
   const [open, setOpen] = useState(false);
   const [requesting, setRequesting] = useState(false);
 
-  function go(path: '/walk' | '/drop-pin' | '/safety-timer' | '/text-for-help') {
+  function go(path: '/walk' | '/drop-pin' | '/safety-timer' | '/text-for-help' | '/ai-help') {
     setOpen(false);
     router.push(path);
   }
@@ -64,7 +64,8 @@ export function QuickActions({ onRideRequested }: { onRideRequested: () => void 
             right={requesting ? <ActivityIndicator size="small" color={colors.accent} /> : undefined}
           />
           <MenuRow label="📍 Drop a pin" onPress={() => go('/drop-pin')} />
-          <MenuRow label="📲 Text for help" onPress={() => go('/text-for-help')} last />
+          <MenuRow label="📲 Text for help" onPress={() => go('/text-for-help')} />
+          <MenuRow label="❓ Help" onPress={() => go('/ai-help')} last />
         </View>
       )}
       <Pressable style={styles.pill} onPress={() => setOpen((v) => !v)}>

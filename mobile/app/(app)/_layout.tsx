@@ -63,6 +63,7 @@ function AppNavigator() {
             <Stack.Screen name="share-link" options={{ headerShown: true }} />
             <Stack.Screen name="backup-contacts" options={{ headerShown: true }} />
             <Stack.Screen name="text-for-help" options={{ headerShown: true, presentation: 'modal' }} />
+            <Stack.Screen name="ai-help" options={{ headerShown: true, presentation: 'modal' }} />
             <Stack.Screen name="member/[userId]" options={{ headerShown: true }} />
           </Stack.Protected>
 

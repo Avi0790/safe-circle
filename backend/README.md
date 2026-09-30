@@ -219,6 +219,43 @@ Verified in a rolled-back transaction, including both traps: a member who had
 resolved an SOS deletes cleanly, and a creator's deletion leaves the shared
 circle alive under the next-oldest member while a solo circle is removed.
 
+### In-app AI help (migration `...000046`, `send-ai-help`)
+
+A chatbot for "how do I..." questions about Safe Circle itself — not an
+emergency service, and the system prompt explicitly tells it to redirect
+anything describing a real emergency to the SOS button / 911 rather than
+try to help. The one Edge Function in this project called directly by the
+signed-in client instead of by a database trigger, so it relies on
+Supabase's ordinary JWT verification (the caller's own session) rather than
+the `X-Webhook-Secret` pattern the trigger-invoked functions use.
+
+**Setup, and the one real cost in this whole project:** everything else here
+(OpenStreetMap, Esri satellite tiles, Open-Meteo weather, Supabase's free
+tier) is free. This isn't — it calls Anthropic's API, which needs an account
+at [console.anthropic.com](https://console.anthropic.com) and has a small
+real cost per question. That account has to be created by whoever owns it;
+it isn't something set up as part of this repo. Once you have a key:
+
+```bash
+supabase secrets set ANTHROPIC_API_KEY=sk-ant-...
+supabase functions deploy send-ai-help
+```
+
+Until that secret is set, the function returns a clear "AI help hasn't been
+set up for this project yet" (503) rather than failing confusingly — verified
+directly against the live function.
+
+Rate-limited to 20 questions/hour per user (`ai_help_usage`, one counter row
+per user on a rolling window — simpler than the invite-code/SOS limits since
+this can be called far more often than either) to bound cost if something
+calls it in a loop. Chat history is never stored — the client keeps it in
+memory for the length of one screen visit and sends the last few turns back
+with each question for context; nothing is written to the database.
+
+Verified against the live function: no `Authorization` header → 401; the
+anon key alone (not a real signed-in session) → also 401, since it isn't a
+user JWT.
+
 ## How access control works
 
 Row-level security is the enforcement point, not application code:
