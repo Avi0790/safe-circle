@@ -1,6 +1,5 @@
 import { useRef, useState } from 'react';
 import {
-  ActivityIndicator,
   FlatList,
   KeyboardAvoidingView,
   Platform,
@@ -12,44 +11,39 @@ import {
 } from 'react-native';
 import { Stack } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { askHelp, type ChatTurn } from '@/lib/aiHelp';
+import { findFaqAnswer, HELP_FAQ, HELP_FALLBACK_ANSWER } from '@/lib/helpFaq';
 import { colors, radius, spacing, typography } from '@/lib/theme';
 
-interface DisplayTurn extends ChatTurn {
+interface DisplayTurn {
   id: string;
+  role: 'user' | 'assistant';
+  content: string;
 }
 
-const STARTER_QUESTIONS = ['What does Ghost Mode do?', 'How does Walk me home work?', 'How do I set a curfew?'];
+const STARTER_QUESTIONS = HELP_FAQ.slice(0, 4).map((entry) => entry.question);
 
-// An in-app help chatbot — for "how do I..." questions about Safe Circle
-// itself, not a substitute for the SOS button. Backed by
-// backend/supabase/functions/send-ai-help, the only Edge Function in this
-// app called directly by the client rather than by a database trigger.
-// Chat history is kept in memory only (not saved anywhere) — this is a
-// stateless FAQ helper, not something that needs to persist between visits.
+// In-app help — for "how do I..." questions about Safe Circle itself, not a
+// substitute for the SOS button. This is a free, fully offline keyword
+// matcher (lib/helpFaq.ts), not a live AI model: an earlier version called
+// Anthropic's API (still in backend/supabase/functions/send-ai-help, unused
+// by this screen for now), but a real per-question cost isn't worth it for
+// a capstone demo someone could forget to keep funded before presenting.
+// Chat history is kept in memory only — nothing is saved anywhere.
 export default function AiHelpScreen() {
   const [turns, setTurns] = useState<DisplayTurn[]>([]);
   const [draft, setDraft] = useState('');
-  const [sending, setSending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const listRef = useRef<FlatList>(null);
 
-  async function send(question: string) {
-    if (!question.trim() || sending) return;
-    setError(null);
-    setSending(true);
-    const userTurn: DisplayTurn = { id: `u-${Date.now()}`, role: 'user', content: question.trim() };
-    const history = turns.map(({ role, content }) => ({ role, content }));
-    setTurns((prev) => [...prev, userTurn]);
+  function send(question: string) {
+    const trimmed = question.trim();
+    if (!trimmed) return;
+    const answer = findFaqAnswer(trimmed) ?? HELP_FALLBACK_ANSWER;
+    setTurns((prev) => [
+      ...prev,
+      { id: `u-${Date.now()}`, role: 'user', content: trimmed },
+      { id: `a-${Date.now() + 1}`, role: 'assistant', content: answer },
+    ]);
     setDraft('');
-
-    const result = await askHelp(question, history);
-    setSending(false);
-    if (!result.ok) {
-      setError(result.error);
-      return;
-    }
-    setTurns((prev) => [...prev, { id: `a-${Date.now()}`, role: 'assistant', content: result.answer }]);
     requestAnimationFrame(() => listRef.current?.scrollToEnd({ animated: true }));
   }
 
@@ -76,8 +70,9 @@ export default function AiHelpScreen() {
           ListHeaderComponent={
             <View style={styles.intro}>
               <Text style={typography.body}>
-                Ask how something in Safe Circle works. This isn't monitored by your circle and
-                isn't for emergencies — use the SOS button for those.
+                Ask how something in Safe Circle works — free and built into the app, no internet
+                needed. This isn't monitored by your circle and isn't for emergencies — use the SOS
+                button for those.
               </Text>
               {turns.length === 0 && (
                 <View style={styles.starters}>
@@ -90,16 +85,7 @@ export default function AiHelpScreen() {
               )}
             </View>
           }
-          ListFooterComponent={
-            sending ? (
-              <View style={[styles.bubble, styles.bubbleTheirs]}>
-                <ActivityIndicator size="small" color={colors.accent} />
-              </View>
-            ) : null
-          }
         />
-
-        {error && <Text style={styles.error}>{error}</Text>}
 
         <View style={styles.composer}>
           <TextInput
@@ -109,12 +95,12 @@ export default function AiHelpScreen() {
             placeholder="Ask a question…"
             placeholderTextColor={colors.offline}
             multiline
-            maxLength={500}
+            maxLength={200}
           />
           <Pressable
-            style={[styles.sendButton, (!draft.trim() || sending) && styles.sendButtonDisabled]}
+            style={[styles.sendButton, !draft.trim() && styles.sendButtonDisabled]}
             onPress={() => send(draft)}
-            disabled={!draft.trim() || sending}
+            disabled={!draft.trim()}
           >
             <Text style={styles.sendButtonText}>Send</Text>
           </Pressable>
@@ -171,5 +157,4 @@ const styles = StyleSheet.create({
   },
   sendButtonDisabled: { opacity: 0.5 },
   sendButtonText: { color: '#fff', fontWeight: '600', fontSize: 15 },
-  error: { color: colors.danger, fontSize: 13, paddingHorizontal: spacing.lg, paddingBottom: spacing.xs },
 });

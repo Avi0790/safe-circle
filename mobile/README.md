@@ -435,20 +435,29 @@ development mode is also inherently slower than a real build, and running over
   — including previously, since iOS/Android don't re-show the system
   permission prompt once you've said no — a banner explains why, with a
   tap-through to Settings, instead of the screen just silently staying put.
-- **In-app AI help** (⋯ Quick actions → ❓ Help, `app/(app)/ai-help.tsx`,
-  `lib/aiHelp.ts`) — a chatbot for "how do I..." questions about the app
-  itself ("what does Ghost Mode do?"), not for emergencies; its system
-  prompt explicitly redirects anything describing a real emergency to the
-  SOS button instead of trying to help. The one feature in this app with a
-  real per-message cost (Anthropic's API) rather than a free service — see
-  `backend/README.md` for the one-time setup step. Chat history is kept in
-  memory only for the length of the screen visit, never saved. Caught a
-  real bug while wiring this up: `supabase-js` puts a generic message on a
-  failed function call's `error.message` and the actual response body on
-  `error.context` (the raw `Response`) — reading `error.message` directly
-  would have shown "Edge Function returned a non-2xx status code" instead
-  of "Too many questions this hour," tested directly in
-  `lib/__tests__/aiHelp.test.ts`.
+- **In-app help** (⋯ Quick actions → ❓ Help, `app/(app)/ai-help.tsx`,
+  `lib/helpFaq.ts`) — answers "how do I..." questions about the app itself
+  ("what does Ghost Mode do?"), not for emergencies; the intro text points
+  anywhere else to the SOS button instead. **Free and fully offline**: a
+  ~25-entry keyword matcher (`findFaqAnswer()`) with no backend call, no
+  API key, no per-question cost, works with no signal — every other
+  "smart" feature here already runs on a free service (OpenStreetMap, Esri,
+  Open-Meteo), and a real LLM API's per-question cost isn't worth it for a
+  capstone demo someone could forget to keep funded. An earlier version
+  called Anthropic's API from an Edge Function instead
+  (`backend/supabase/functions/send-ai-help`); that function and its client
+  side (`lib/aiHelp.ts`, still passing its own tests) are kept as a ready
+  optional upgrade rather than deleted — see `backend/README.md` for how to
+  switch to it. `lib/__tests__/helpFaq.test.ts` checks every entry's own
+  canonical question actually routes back to itself, which caught six real
+  gaps where a keyword list didn't cover its own question's natural
+  phrasing (e.g. "How do I lock the app?" not matching the `app-lock`
+  entry) before this shipped. `lib/__tests__/aiHelp.test.ts` separately
+  caught a real bug in the now-unused network path: `supabase-js` puts a
+  generic message on a failed function call's `error.message` and the
+  actual response body on `error.context` (the raw `Response`) — reading
+  `error.message` directly would have shown "Edge Function returned a
+  non-2xx status code" instead of "Too many questions this hour."
 
 ## Running locally
 

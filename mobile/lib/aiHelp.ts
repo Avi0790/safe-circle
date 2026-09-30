@@ -9,6 +9,14 @@ export type AskHelpResult = { ok: true; answer: string } | { ok: false; error: s
 
 const MAX_QUESTION_LENGTH = 500;
 
+// NOTE: not currently used by app/(app)/ai-help.tsx — that screen uses the
+// free, offline lib/helpFaq.ts matcher instead, since a real per-question
+// API cost isn't worth it for a capstone demo someone could forget to keep
+// funded. Kept as the ready-to-go client side of an optional upgrade: if
+// this project's ANTHROPIC_API_KEY secret is ever set (see
+// backend/README.md), swapping ai-help.tsx to call askHelp() here instead
+// of findFaqAnswer() turns the same screen into a real LLM-backed assistant.
+//
 // The in-app help chatbot — the only Edge Function in this app called
 // directly by the client rather than by a database trigger (see
 // backend/supabase/functions/send-ai-help). It answers questions about how
