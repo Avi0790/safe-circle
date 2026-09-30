@@ -255,6 +255,37 @@ Verified against the live function: no `Authorization` header → 401; the
 anon key alone (not a real signed-in session) → also 401, since it isn't a
 user JWT.
 
+### Drive reports (migration `...000047`)
+
+Real trips — not just the live "🚗 Driving NN mph" status that already
+existed — going beyond Life360's paywalled Driver Reports for free.
+`get_trips(p_user_id, p_days, p_limit)` groups a user's `locations` pings
+into sessions with a classic SQL "gaps and islands" query: a gap of more
+than 15 minutes between consecutive pings starts a new session (a smaller
+gap doesn't split a trip — slowing down in traffic or at a light doesn't
+stop pings, only an actual break in tracking does). Sessions with at least
+one driving-speed ping (`speed >= 6.7` m/s / 15 mph, the same constant
+`ride_requests` already uses) are kept and aggregated into a trip: start/end
+time, duration, distance (summed via the same `haversine_meters()` used
+elsewhere), and max/avg speed.
+
+It's a `security definer` function reading `locations` directly, bypassing
+that table's RLS — so it re-implements
+`locations_select_self_or_circlemate`'s exact visibility rule by hand rather
+than inventing a separate one: your own trips are always visible, and
+someone else's only if you share a circle with them, they're still sharing,
+and they haven't hidden from you (Ghost Mode). Getting that check wrong here
+would silently leak trip history through a door the map and location-history
+screen don't have.
+
+Verified in a rolled-back transaction: a driver with two real trips
+(separated by a >15 min gap) plus one purely-stationary session — the
+stationary one correctly produces zero trips, viewed as self or a
+sharing circle-mate both return the 2 real trips with correct
+duration/distance/speed, an outsider with no shared circle gets zero, and
+Ghost Mode / an ended sharing window each correctly drop it back to zero
+(restored once undone).
+
 ## How access control works
 
 Row-level security is the enforcement point, not application code:

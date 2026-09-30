@@ -118,6 +118,26 @@ the Supabase backend in [`../backend`](../backend).
   per-ping speed on any point where it clears the driving threshold.
   Same web-unsupported-map pattern
   as the Map tab: `[userId].web.tsx` is a list-only fallback.
+- **Drive reports** (🚗 Recent drives, on the same location-history screen)
+  — actual trips, not just a live "driving" status: start time, duration,
+  distance, and top speed, going beyond Life360's paywalled Driver
+  Reports for free. `lib/trips.ts`'s `fetchTrips()` calls the backend's
+  `get_trips()` RPC (`backend/supabase/migrations/...000047_drive_reports.sql`),
+  which groups a user's `locations` pings into sessions via a classic SQL
+  "gaps and islands" query — a >15 min gap between pings starts a new
+  session — keeps only sessions containing at least one driving-speed
+  ping, and aggregates each into a trip (distance summed via the same
+  `haversine_meters()` the backend already uses for nearby-alerts).
+  Being a `security definer` function that reads `locations` directly, it
+  re-implements the table's own RLS visibility check by hand (self, or a
+  circle-mate who's still sharing and hasn't hidden you — see
+  `locations_select_self_or_circlemate`) so it can't leak a Ghost-Mode
+  -hidden or stopped-sharing person's trip history through a side door;
+  verified in a rolled-back transaction (two-trip + one-stationary-session
+  fixture; self, circle-mate, outsider, hidden, and share-ended access all
+  checked). Like the live driving status, this is a rough vehicle signal
+  from GPS speed, not real trip/crash detection — slowing down in traffic
+  doesn't split a trip, only an actual gap in pings does.
 - **SOS button** (`components/SosButton.tsx` + `SosBanner.tsx`, on the Map
   tab) — the proposal's last stretch goal. One tap (after a confirm
   dialog, to avoid accidental fires) shares your current location as an

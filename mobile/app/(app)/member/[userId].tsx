@@ -5,8 +5,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import MapView, { Marker, Polyline, PROVIDER_DEFAULT } from 'react-native-maps';
 import { supabase } from '@/lib/supabase';
 import { isDriving, speedToMph, timeAgo } from '@/lib/format';
+import { formatDistanceMiles } from '@/lib/geo';
+import { fetchTrips, formatTripDate, formatTripDuration, type Trip } from '@/lib/trips';
 import { fetchWeather, type Weather } from '@/lib/weather';
-import { colors, spacing, typography } from '@/lib/theme';
+import { colors, radius, spacing, typography } from '@/lib/theme';
 
 interface HistoryPing {
   id: number;
@@ -25,6 +27,7 @@ export default function MemberHistoryScreen() {
   const { userId } = useLocalSearchParams<{ userId: string }>();
   const [fullName, setFullName] = useState('');
   const [pings, setPings] = useState<HistoryPing[]>([]);
+  const [trips, setTrips] = useState<Trip[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [weather, setWeather] = useState<Weather | null>(null);
 
@@ -33,7 +36,7 @@ export default function MemberHistoryScreen() {
     let cancelled = false;
 
     async function load() {
-      const [{ data: profile }, { data: locations }] = await Promise.all([
+      const [{ data: profile }, { data: locations }, tripRows] = await Promise.all([
         supabase.from('profiles').select('full_name').eq('id', userId).single(),
         supabase
           .from('locations')
@@ -41,11 +44,13 @@ export default function MemberHistoryScreen() {
           .eq('user_id', userId)
           .order('recorded_at', { ascending: false })
           .limit(HISTORY_LIMIT),
+        fetchTrips(userId),
       ]);
       if (cancelled) return;
       setFullName(profile?.full_name ?? 'Member');
       const rows = (locations as HistoryPing[]) ?? [];
       setPings(rows);
+      setTrips(tripRows);
       setIsLoading(false);
 
       // Most recent ping (rows come back newest-first) — a nice-to-have,
@@ -126,6 +131,22 @@ export default function MemberHistoryScreen() {
                 {weather.emoji} {weather.tempF}°F, {weather.description} where they are
               </Text>
             )}
+            {trips.length > 0 && (
+              <View style={styles.trips}>
+                <Text style={styles.sectionLabel}>🚗 Recent drives</Text>
+                {trips.map((trip) => (
+                  <View key={trip.tripId} style={styles.tripCard}>
+                    <Text style={typography.body}>{formatTripDate(trip.startedAt)}</Text>
+                    <Text style={typography.caption}>
+                      {formatTripDuration(trip.durationSeconds)} · {formatDistanceMiles(trip.distanceMeters)}
+                      {trip.maxSpeedMps != null
+                        ? ` · top ${Math.round(speedToMph(trip.maxSpeedMps)!)} mph`
+                        : ''}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            )}
           </View>
         }
         renderItem={({ item }) => (
@@ -154,6 +175,14 @@ const styles = StyleSheet.create({
   list: { flex: 1 },
   listContent: { padding: spacing.lg, gap: spacing.xs },
   header: { gap: 2, marginBottom: spacing.xs },
+  trips: { gap: spacing.xs, marginTop: spacing.sm },
+  tripCard: {
+    backgroundColor: colors.bgElevated,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.sm + 4,
+    paddingVertical: spacing.sm,
+    gap: 2,
+  },
   sectionLabel: {
     ...typography.caption,
     color: colors.textHeading,
