@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
-import { FlatList, StyleSheet, Text, View } from 'react-native';
+import { Alert, FlatList, StyleSheet, Text, View } from 'react-native';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import MapView, { Marker, Polyline, PROVIDER_DEFAULT } from 'react-native-maps';
+import { Button } from '@/components/Button';
 import { supabase } from '@/lib/supabase';
 import { isDriving, speedToMph, timeAgo } from '@/lib/format';
 import { formatDistanceMiles } from '@/lib/geo';
+import { shareLocationReport } from '@/lib/locationReport';
 import { fetchTrips, formatTripDate, formatTripDuration, type Trip } from '@/lib/trips';
 import { fetchWeather, type Weather } from '@/lib/weather';
 import { colors, radius, spacing, typography } from '@/lib/theme';
@@ -30,6 +32,7 @@ export default function MemberHistoryScreen() {
   const [trips, setTrips] = useState<Trip[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [weather, setWeather] = useState<Weather | null>(null);
+  const [sharingReport, setSharingReport] = useState(false);
 
   useEffect(() => {
     if (!userId) return;
@@ -78,6 +81,15 @@ export default function MemberHistoryScreen() {
     if (mph == null) return max;
     return max == null || mph > max ? mph : max;
   }, null);
+
+  async function handleShareReport() {
+    setSharingReport(true);
+    const result = await shareLocationReport(fullName || 'Member', pings, trips);
+    setSharingReport(false);
+    if (!result.ok) {
+      Alert.alert("Couldn't create the report", result.error);
+    }
+  }
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['bottom']}>
@@ -147,6 +159,16 @@ export default function MemberHistoryScreen() {
                 ))}
               </View>
             )}
+            {pings.length > 0 && (
+              <View style={styles.shareReport}>
+                <Button
+                  title="📤 Share location & driving report"
+                  variant="secondary"
+                  onPress={handleShareReport}
+                  loading={sharingReport}
+                />
+              </View>
+            )}
           </View>
         }
         renderItem={({ item }) => (
@@ -176,6 +198,7 @@ const styles = StyleSheet.create({
   listContent: { padding: spacing.lg, gap: spacing.xs },
   header: { gap: 2, marginBottom: spacing.xs },
   trips: { gap: spacing.xs, marginTop: spacing.sm },
+  shareReport: { marginTop: spacing.sm },
   tripCard: {
     backgroundColor: colors.bgElevated,
     borderRadius: radius.md,

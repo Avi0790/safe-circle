@@ -415,6 +415,19 @@ development mode is also inherently slower than a real build, and running over
   (`app/(app)/delete-account.tsx`, type DELETE to confirm) removes the account,
   stopping location sharing and removing the profile photo first. Creators of
   shared circles hand them over automatically (see `backend/README.md`).
+- **Share location & driving report** (location-history screen,
+  `lib/locationReport.ts`) — the raw JSON export is complete but not
+  something anyone wants to actually read on a phone. This builds a
+  self-contained `.html` file instead: an actual Leaflet + OpenStreetMap
+  trail of recent pings (same free/keyless tiles used everywhere else in
+  the app) plus a drive-report table, from data the screen already has in
+  memory — no extra backend call. Shared through the same real-file +
+  native-share-sheet path as data export (factored out into
+  `lib/shareFile.ts`, now shared by both), so it can be saved via Files/
+  AirDrop and reopened later — double-tapping it in Files opens it right
+  in Safari with a real rendered map, not a data dump. Mobile only:
+  `expo-sharing` has no real share sheet on web, so this isn't on the web
+  fallback screen.
 - **Transfer ownership** (Members tab → Make owner, creators only) — so a
   creator can finally leave their own circle.
 - **Lock the app** (Settings → Lock the app, `contexts/AppLockContext.tsx`,

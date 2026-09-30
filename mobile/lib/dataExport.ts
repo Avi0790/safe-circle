@@ -1,7 +1,6 @@
-import * as FileSystem from 'expo-file-system/legacy';
-import * as Sharing from 'expo-sharing';
+import { shareTextFile, type ShareFileResult } from '@/lib/shareFile';
 
-export type ExportResult = { ok: true } | { ok: false; error: string };
+export type ExportResult = ShareFileResult;
 
 // Writes the export to a real .json file, then hands it to the native share
 // sheet — not React Native's plain Share.share({ message }), which only
@@ -10,26 +9,11 @@ export type ExportResult = { ok: true } | { ok: false; error: string };
 // plain-text share can never be saved as a file to open again later. A
 // real file on disk gets that option, on both iOS and Android.
 export async function exportDataToFile(data: unknown): Promise<ExportResult> {
-  try {
-    const available = await Sharing.isAvailableAsync();
-    if (!available) {
-      return { ok: false, error: 'Sharing is not available on this device.' };
-    }
-
-    // Dated filename so saving more than one export doesn't silently
-    // overwrite the last one.
-    const date = new Date().toISOString().slice(0, 10);
-    const fileUri = `${FileSystem.cacheDirectory}safecircle-data-${date}.json`;
-    await FileSystem.writeAsStringAsync(fileUri, JSON.stringify(data, null, 2), {
-      encoding: FileSystem.EncodingType.UTF8,
-    });
-
-    await Sharing.shareAsync(fileUri, {
-      mimeType: 'application/json',
-      dialogTitle: 'Save your Safe Circle data',
-    });
-    return { ok: true };
-  } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : 'Could not export your data.' };
-  }
+  const date = new Date().toISOString().slice(0, 10);
+  return shareTextFile(
+    `safecircle-data-${date}.json`,
+    JSON.stringify(data, null, 2),
+    'application/json',
+    'Save your Safe Circle data',
+  );
 }
