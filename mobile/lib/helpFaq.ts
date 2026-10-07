@@ -214,6 +214,13 @@ export const HELP_FAQ: FaqEntry[] = [
     answer:
       "The circle gets a push the moment someone's phone first drops to 20% or below, so people know sharing might stop soon — not repeated on every low-battery ping after that.",
   },
+  {
+    id: 'privacy-overview',
+    keywords: ['how is my privacy', 'is my location private', 'who can see my location', 'privacy'],
+    question: 'How is my privacy protected?',
+    answer:
+      "Only people in a circle with you can see your location, and that's enforced by the database, not just the app. You can hide from specific people (Ghost mode), share for a limited time, require approval for new members, choose how long history is kept, and see who's checked on you. For the full tour, open Settings → Privacy → How your privacy works.",
+  },
 ];
 
 export const HELP_FALLBACK_ANSWER =

@@ -415,6 +415,17 @@ development mode is also inherently slower than a real build, and running over
   (`app/(app)/delete-account.tsx`, type DELETE to confirm) removes the account,
   stopping location sharing and removing the profile photo first. Creators of
   shared circles hand them over automatically (see `backend/README.md`).
+- **How your privacy works** (Settings → Privacy, `app/(app)/privacy.tsx`,
+  content in `lib/privacyInfo.ts`) — a plain-language tour of what protects
+  you (circle-only visibility enforced by row-level security, Ghost mode,
+  time windows, join approval, who-checked log, auto-delete, guest-link
+  limits, medical card only during SOS, app lock, data export/deletion),
+  each with a button to the screen that controls it, plus an "honest
+  limits" list (circle-mates see you while sharing; join approval is off by
+  default; map/weather come from public services). Every claim was checked
+  against the migrations when written, and a test asserts every button's
+  route exists and is registered so the screen can't point at nothing. The
+  in-app Help also answers "how is my privacy protected?".
 - **Share location & driving report** (location-history screen,
   `lib/locationReport.ts`) — the raw JSON export is complete but not
   something anyone wants to actually read on a phone. This builds a

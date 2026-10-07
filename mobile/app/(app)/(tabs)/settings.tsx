@@ -763,6 +763,11 @@ export default function SettingsTab() {
             hide your location from specific people if you'd rather not share with everyone.
           </Text>
           <Button
+            title="How your privacy works"
+            variant="secondary"
+            onPress={() => router.push('/privacy')}
+          />
+          <Button
             title="Who's checked on me"
             variant="secondary"
             onPress={() => router.push('/location-views')}
