@@ -458,9 +458,22 @@ development mode is also inherently slower than a real build, and running over
   `org_shifts`, so each look is logged for the worker to read, and the screen
   tells the manager so. The map mounts only once there's something to frame
   (same race fix as the Map tab); web gets the list without a map, since
-  `react-native-maps` has no web renderer. Not yet built: creating teams and
-  assigning leads from the app (the backend supports it), SOS to managers,
-  and the web dashboard version.
+  `react-native-maps` has no web renderer. **Manage people & teams**
+  (`app/(app)/crew-manage.tsx`, `lib/teams.ts`, owners and admins, from the
+  Work tab): everyone in the organization with their role (tap to change it
+  or remove them), plus creating teams, adding people, making a manager a
+  team's lead, taking people off, and deleting teams. The buttons mirror the
+  database's rules (owners can change anyone's role and remove anyone; admins
+  move workers and managers between those two roles and remove only those),
+  and the database is what actually refuses anything else. A manager only sees
+  workers on a team they lead, so the setup is: make someone a manager, add
+  them to a team as lead, add their workers. Verified against the live
+  database in a rolled-back transaction using the exact calls the screen
+  makes: an admin reads teams and members, a lead manager sees the team's
+  members and the clocked-in workers on it (not clocked-in workers on no
+  team), a worker sees only their own team row, an outsider sees nothing,
+  and taking someone off a team immediately hides them from that manager.
+  Not yet built: SOS to managers and the web dashboard version.
 - **How your privacy works** (Settings → Privacy, `app/(app)/privacy.tsx`,
   content in `lib/privacyInfo.ts`) — a plain-language tour of what protects
   you (circle-only visibility enforced by row-level security, Ghost mode,

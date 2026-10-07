@@ -208,6 +208,15 @@ export default function WorkScreen() {
                       router.push({ pathname: '/crew', params: { orgId: org.org_id, orgName: org.name } })
                     }
                   />
+                  {isAdmin && (
+                    <Button
+                      title="Manage people & teams"
+                      variant="secondary"
+                      onPress={() =>
+                        router.push({ pathname: '/crew-manage', params: { orgId: org.org_id, orgName: org.name } })
+                      }
+                    />
+                  )}
                 </>
               )}
 
