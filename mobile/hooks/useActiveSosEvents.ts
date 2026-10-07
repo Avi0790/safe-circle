@@ -1,12 +1,16 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { eventsMissingNames, fillSosNames, type SosDetailRow } from '@/lib/sosNames';
 import { supabase } from '@/lib/supabase';
 import type { SosEvent } from '@/lib/types';
 
 // Unresolved SOS events visible to the caller — RLS already scopes this to
 // "yourself, or anyone you share a circle with" (same rule as locations),
-// so no circle filtering needed here.
+// so no circle filtering needed here. Called from more than one mounted
+// screen (Map, Work, Crew), hence the per-instance channel suffix: supabase-js
+// returns the SAME channel for the same name, and adding listeners to one
+// that's already subscribed throws (see useActiveWalks).
 export function useActiveSosEvents() {
+  const instanceId = useRef(Math.random().toString(36).slice(2, 10)).current;
   const [events, setEvents] = useState<SosEvent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -43,7 +47,7 @@ export function useActiveSosEvents() {
 
   useEffect(() => {
     const channel = supabase
-      .channel('sos-events')
+      .channel(`sos-events-${instanceId}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'sos_events' }, () => load())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'sos_acknowledgements' }, () =>
         load(),
@@ -52,7 +56,7 @@ export function useActiveSosEvents() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [load]);
+  }, [load, instanceId]);
 
   return { events, isLoading, refresh: load };
 }
