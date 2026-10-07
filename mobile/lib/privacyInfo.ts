@@ -70,6 +70,13 @@ export const PRIVACY_SECTIONS: PrivacySection[] = [
     action: { label: 'Guest tracking link', route: '/share-link' },
   },
   {
+    id: 'work-shifts',
+    emoji: '🦺',
+    title: 'At work, only while you’re clocked in',
+    body:
+      "If you belong to a work organization, its admins and managers can see you only while you're clocked in, and only the positions recorded during that shift — never before you clock in or after you clock out. A shift also ends by itself after 14 hours, other workers can't see you, and your Work tab lists every look at your location.",
+  },
+  {
     id: 'medical-card',
     emoji: '🩺',
     title: 'Medical card stays private until SOS',
@@ -99,6 +106,7 @@ export const PRIVACY_SECTIONS: PrivacySection[] = [
 export const PRIVACY_LIMITS: string[] = [
   "Everyone in your circle can see your live location while you're sharing. That's the point of the app — use Ghost mode or a time window when you want a break.",
   'Drive reports and speed are visible to the same people who can see your location.',
+  "At work, your managers and admins can see your location while you're clocked in — that's what clocking in means. Clock out and it stops.",
   "If an invite code leaks and join approval is off, whoever has it can join. Turn approval on for circles that matter.",
   "Map tiles (OpenStreetMap) and weather (Open-Meteo) come from free public services, which see the map area or coordinates requested — not your name or account.",
 ];

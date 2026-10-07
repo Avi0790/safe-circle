@@ -1,6 +1,7 @@
 import { Tabs } from 'expo-router';
 import { Text } from 'react-native';
 import type { ColorValue } from 'react-native';
+import { useAccount } from '@/contexts/AccountContext';
 import { useCircles } from '@/contexts/CircleContext';
 import { ChatReadProvider, useChatRead } from '@/contexts/ChatReadContext';
 import { colors } from '@/lib/theme';
@@ -23,9 +24,12 @@ export default function TabsLayout() {
 // *inside* the provider, not the component establishing it.
 function TabsWithChatBadge() {
   const { unreadCount } = useChatRead();
+  const { accountType, hasActiveOrg } = useAccount();
 
   return (
     <Tabs
+      // Work-crew members open on the Work tab; everyone else on the map.
+      initialRouteName={accountType === 'industry' && hasActiveOrg ? 'work' : 'index'}
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: colors.accent,
@@ -37,6 +41,15 @@ function TabsWithChatBadge() {
         options={{
           title: 'Map',
           tabBarIcon: ({ color }) => <TabIcon symbol="📍" color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="work"
+        options={{
+          title: 'Work',
+          // Only for people who belong to an organization.
+          href: hasActiveOrg ? undefined : null,
+          tabBarIcon: ({ color }) => <TabIcon symbol="🦺" color={color} />,
         }}
       />
       <Tabs.Screen

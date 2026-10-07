@@ -331,6 +331,12 @@ leaving, and both account-deletion cases.
 transaction: industry and individual are stored, a missing or invalid value
 falls back to `family`, and no existing account changed.
 
+`org_my_views` (migration `...000050`) lets a worker read who looked at them
+(viewer name and role, what they did, when) — profiles are only readable
+between circle-mates, so the names need a function. Verified in a rolled-back
+transaction: the worker sees both looks by name, a different worker sees none,
+and an admin sees no rows about themselves.
+
 Not yet built: SOS and check-in alerts to managers, work-site geofences,
 including org data in `export_my_data`, and the client screens.
 

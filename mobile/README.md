@@ -428,9 +428,22 @@ development mode is also inherently slower than a real build, and running over
   moved from "has a circle" to `canEnterApp()` (circle, active organization
   membership, or an individual account). It is a routing preference, not a
   security boundary — what anyone can see is still decided only by the
-  circle and organization rules. Settings now handles having no circle. Not
-  yet built: the worker clock-in screen and the manager roster, so a
-  work-crew member currently lands in the standard tabs.
+  circle and organization rules. Settings now handles having no circle. See the
+  Work tab entry below for the clock-in side.
+- **Work tab and clock-in** (`app/(app)/(tabs)/work.tsx`, `lib/clockIn.ts`,
+  `lib/shift.ts`) — shown only to people who belong to an organization
+  (work-crew accounts open on it). A worker sees a clear On shift / Off
+  shift status, a big Clock in / Clock out button (clocking in confirms
+  first: "your admins and managers can see your location until you clock
+  out"), the time the shift auto-ends (14 h), and **who's looked at you**
+  (admin/manager name, role, what they did, when — from `org_my_views`).
+  Clocking in starts location sharing and clocking out stops it, *but only
+  if clocking in is what started it*, so a worker's own always-on sharing
+  isn't switched off at the end of a shift; sharing is stopped on the phone
+  before the clock-out is recorded, so it ends even with no signal. In Expo
+  Go sharing is foreground-only, and the screen says so ("keep Safe Circle
+  open during your shift"). Owners and admins can also get a new crew invite
+  code here. Managers and admins don't get the live crew view yet.
 - **How your privacy works** (Settings → Privacy, `app/(app)/privacy.tsx`,
   content in `lib/privacyInfo.ts`) — a plain-language tour of what protects
   you (circle-only visibility enforced by row-level security, Ghost mode,
