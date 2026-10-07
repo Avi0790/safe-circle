@@ -443,7 +443,24 @@ development mode is also inherently slower than a real build, and running over
   before the clock-out is recorded, so it ends even with no signal. In Expo
   Go sharing is foreground-only, and the screen says so ("keep Safe Circle
   open during your shift"). Owners and admins can also get a new crew invite
-  code here. Managers and admins don't get the live crew view yet.
+  code here.
+- **Crew view for owners, admins and managers** (`app/(app)/crew.tsx`,
+  `crew-worker.tsx`, `components/CrewMap.tsx`, `lib/crew.ts`) — opened from
+  the Work tab. A live map and list of who's clocked in, refreshed every 30 s
+  while the screen is open: last heard from, a "may be offline" warning when
+  a clocked-in phone has gone quiet for 15 min, low battery, and driving
+  speed. Off-shift workers are listed by name only (no location exists to
+  show) and workers who haven't accepted the disclosure appear as "waiting to
+  accept". Tapping a worker shows their last 24 hours of **on-shift** path and
+  their recent shifts. Admins see everyone; a manager sees only workers on
+  teams they lead (enforced in the database, not the screen). Every read goes
+  through `org_roster` / `org_live_roster` / `org_worker_track` /
+  `org_shifts`, so each look is logged for the worker to read, and the screen
+  tells the manager so. The map mounts only once there's something to frame
+  (same race fix as the Map tab); web gets the list without a map, since
+  `react-native-maps` has no web renderer. Not yet built: creating teams and
+  assigning leads from the app (the backend supports it), SOS to managers,
+  and the web dashboard version.
 - **How your privacy works** (Settings → Privacy, `app/(app)/privacy.tsx`,
   content in `lib/privacyInfo.ts`) — a plain-language tour of what protects
   you (circle-only visibility enforced by row-level security, Ghost mode,

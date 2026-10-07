@@ -196,10 +196,19 @@ export default function WorkScreen() {
               )}
 
               {!isWorker && (
-                <Text style={typography.body}>
-                  The live crew view for {isAdmin ? 'admins' : 'managers'} is coming next. Workers
-                  you oversee will appear here once they clock in.
-                </Text>
+                <>
+                  <Text style={typography.body}>
+                    {isAdmin
+                      ? 'See everyone on your crew who is clocked in.'
+                      : 'See the workers on the teams you lead who are clocked in.'}
+                  </Text>
+                  <Button
+                    title="Open crew view"
+                    onPress={() =>
+                      router.push({ pathname: '/crew', params: { orgId: org.org_id, orgName: org.name } })
+                    }
+                  />
+                </>
               )}
 
               {isAdmin && (
