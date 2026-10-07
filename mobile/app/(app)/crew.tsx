@@ -3,6 +3,8 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CrewMap, type CrewMapMarker } from '@/components/CrewMap';
+import { SosBanner } from '@/components/SosBanner';
+import { useActiveSosEvents } from '@/hooks/useActiveSosEvents';
 import {
   crewSummary,
   hasPosition,
@@ -25,6 +27,7 @@ const POLL_MS = 30_000;
 export default function CrewScreen() {
   const router = useRouter();
   const { orgId, orgName } = useLocalSearchParams<{ orgId: string; orgName?: string }>();
+  const { events: sosEvents, refresh: refreshSos } = useActiveSosEvents();
   const [roster, setRoster] = useState<RosterMember[]>([]);
   const [live, setLive] = useState<LiveWorker[]>([]);
   const [loaded, setLoaded] = useState(false);
@@ -71,6 +74,7 @@ export default function CrewScreen() {
   return (
     <SafeAreaView style={styles.safeArea} edges={['bottom']}>
       <Stack.Screen options={{ title: orgName ? String(orgName) : 'Crew' }} />
+      <SosBanner events={sosEvents} onChanged={refreshSos} />
       <ScrollView>
         <CrewMap markers={markers} />
 

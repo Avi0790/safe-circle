@@ -337,7 +337,27 @@ between circle-mates, so the names need a function. Verified in a rolled-back
 transaction: the worker sees both looks by name, a different worker sees none,
 and an admin sees no rows about themselves.
 
-Not yet built: SOS and check-in alerts to managers, work-site geofences,
+**SOS for work crews** (migration `...000051`): a worker's SOS now also alerts
+their organization's overseers (owners and admins, plus managers leading a team
+the worker is on) and lets them see, acknowledge, resolve and be re-alerted
+about it, but **only if the worker was clocked in when they sent it**. An SOS
+sent from home on a day off still goes to circles only, so the "nobody at work
+sees you off shift" promise holds. A manager who is also in the worker's family
+circle gets the circle alert and isn't pushed twice. The first alert is a
+separate trigger that swallows its own errors, so an organization problem can
+never stop the SOS itself being recorded. The sos policies, `acknowledge_sos`
+and the escalation job were widened by exactly this rule. Verified in a
+rolled-back transaction (22 checks), reading the recipients straight out of
+the queued push requests: on-shift SOS reaches owner, admin and lead manager
+only; off-shift reaches nobody at work; another team's manager can't see,
+acknowledge or resolve it; escalation reaches the same people; a circle-mate
+manager isn't doubled; an on-shift SOS stays visible after clock-out.
+Workers who consented before this migration agreed to a disclosure that didn't
+mention SOS; pre-launch that's fine, but a real deployment would re-ask.
+Deliberately not widened: the medical card, which circle-mates can read during
+an SOS but organization overseers still can't.
+
+Not yet built: check-in alerts to managers, work-site geofences,
 including org data in `export_my_data`, and the client screens.
 
 ## How access control works

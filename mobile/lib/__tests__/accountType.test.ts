@@ -75,5 +75,7 @@ describe('organization memberships', () => {
     expect(ORG_DISCLOSURE.length).toBeGreaterThan(3);
     expect(ORG_DISCLOSURE.join(' ')).toMatch(/only while you are clocked in/i);
     expect(ORG_DISCLOSURE.join(' ')).toMatch(/recorded/i);
+    expect(ORG_DISCLOSURE.join(' ')).toMatch(/SOS while clocked in/i);
+    expect(ORG_DISCLOSURE.join(' ')).toMatch(/off shift does not reach/i);
   });
 });

@@ -442,8 +442,11 @@ development mode is also inherently slower than a real build, and running over
   isn't switched off at the end of a shift; sharing is stopped on the phone
   before the clock-out is recorded, so it ends even with no signal. In Expo
   Go sharing is foreground-only, and the screen says so ("keep Safe Circle
-  open during your shift"). Owners and admins can also get a new crew invite
-  code here.
+  open during your shift"). Workers get the SOS button on this tab, and
+  everyone who oversees a worker sees their active SOS banner here and on the
+  Crew screen (with the same "on my way" and resolve actions); it reaches
+  managers only if the worker was clocked in when they sent it. Owners and
+  admins can also get a new crew invite code here.
 - **Crew view for owners, admins and managers** (`app/(app)/crew.tsx`,
   `crew-worker.tsx`, `components/CrewMap.tsx`, `lib/crew.ts`) — opened from
   the Work tab. A live map and list of who's clocked in, refreshed every 30 s

@@ -3,8 +3,11 @@ import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '@/components/Button';
+import { SosBanner } from '@/components/SosBanner';
+import { SosButton } from '@/components/SosButton';
 import { useAccount } from '@/contexts/AccountContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useActiveSosEvents } from '@/hooks/useActiveSosEvents';
 import { clockInTo, clockOutOf } from '@/lib/clockIn';
 import { formatClockTime, timeAgo } from '@/lib/format';
 import { activeOrgs, type OrgMembership } from '@/lib/orgInfo';
@@ -28,6 +31,7 @@ export default function WorkScreen() {
   const router = useRouter();
   const { session } = useAuth();
   const { orgs, refresh } = useAccount();
+  const { events: sosEvents, refresh: refreshSos } = useActiveSosEvents();
   const [busyOrg, setBusyOrg] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -121,6 +125,7 @@ export default function WorkScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
+      <SosBanner events={sosEvents} onChanged={refreshSos} />
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={typography.title}>Work</Text>
 
@@ -249,6 +254,7 @@ export default function WorkScreen() {
           onPress={() => router.push('/privacy')}
         />
       </ScrollView>
+      {mine.some((o) => o.role === 'worker') && <SosButton onSent={refreshSos} />}
     </SafeAreaView>
   );
 }
