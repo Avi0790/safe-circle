@@ -325,6 +325,12 @@ scoping (pings 1, 4 and 5 are personal time and never returned), audit
 visibility and deduping, stale shifts, role-escalation guards, demotion,
 leaving, and both account-deletion cases.
 
+`profiles.account_type` (`individual` | `family` | `industry`, migration
+`...000049`) records the signup choice that routes onboarding; it defaults to
+`family` and is a routing preference only. Verified in a rolled-back
+transaction: industry and individual are stored, a missing or invalid value
+falls back to `family`, and no existing account changed.
+
 Not yet built: SOS and check-in alerts to managers, work-site geofences,
 including org data in `export_my_data`, and the client screens.
 

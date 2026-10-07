@@ -1,18 +1,21 @@
 import { StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CircleOnboarding } from '@/components/CircleOnboarding';
+import { OrgOnboarding } from '@/components/OrgOnboarding';
+import { useAccount } from '@/contexts/AccountContext';
 import { colors } from '@/lib/theme';
 
-// First-run only — reachable while you have zero circles (see the guard in
-// app/(app)/_layout.tsx). No `onDone`: becoming a member is itself what
-// flips that guard and takes you into the app, so there's nothing else to
-// navigate to from here. Once you have at least one circle, adding another
-// happens from Settings → app/(app)/add-circle.tsx instead, which shares
-// the same CircleOnboarding component.
+// First-run only — reachable while the app's entry rule isn't met yet (see
+// the guard in app/(app)/_layout.tsx): family accounts with no circle, or
+// work-crew accounts with no active organization. Individuals never land
+// here. No `onDone`: joining is itself what flips the guard and takes you
+// into the app. Once you're in, adding another circle happens from
+// Settings → app/(app)/add-circle.tsx, which shares CircleOnboarding.
 export default function CircleSetupScreen() {
+  const { accountType } = useAccount();
   return (
     <SafeAreaView style={styles.safeArea}>
-      <CircleOnboarding />
+      {accountType === 'industry' ? <OrgOnboarding /> : <CircleOnboarding />}
     </SafeAreaView>
   );
 }

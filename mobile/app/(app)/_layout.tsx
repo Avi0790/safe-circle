@@ -2,23 +2,27 @@ import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { Stack, useRouter } from 'expo-router';
 import { ActivityIndicator, Alert, View } from 'react-native';
+import { AccountProvider, useAccount } from '@/contexts/AccountContext';
 import { AppLockProvider } from '@/contexts/AppLockContext';
 import { CircleProvider, useCircles } from '@/contexts/CircleContext';
 import { CircleMembersProvider } from '@/contexts/CircleMembersContext';
 import { ShakeSettingsProvider, useShakeSettings } from '@/contexts/ShakeSettingsContext';
 import { useShakeToSos } from '@/hooks/useShakeToSos';
+import { canEnterApp } from '@/lib/accountType';
 import { offerTextForHelp, sendSos } from '@/lib/sos';
 
 export default function AppLayout() {
   return (
     <AppLockProvider>
-      <CircleProvider>
-        <ShakeSettingsProvider>
-          <MembersScope>
-            <AppNavigator />
-          </MembersScope>
-        </ShakeSettingsProvider>
-      </CircleProvider>
+      <AccountProvider>
+        <CircleProvider>
+          <ShakeSettingsProvider>
+            <MembersScope>
+              <AppNavigator />
+            </MembersScope>
+          </ShakeSettingsProvider>
+        </CircleProvider>
+      </AccountProvider>
     </AppLockProvider>
   );
 }
@@ -31,8 +35,13 @@ function MembersScope({ children }: { children: ReactNode }) {
 }
 
 function AppNavigator() {
-  const { circles, isLoading } = useCircles();
+  const { circles, isLoading: circlesLoading } = useCircles();
+  const { accountType, hasActiveOrg, isLoading: accountLoading } = useAccount();
+  const isLoading = circlesLoading || accountLoading;
   const hasCircle = circles.length > 0;
+  // Family accounts still need a circle; individuals need nothing; work-crew
+  // members get in once they've accepted an organization's disclosure.
+  const canEnter = canEnterApp({ hasCircle, hasActiveOrg, accountType });
 
   // Mounted for the lifetime of the signed-in app regardless of loading
   // state or which screen is in front, so a shake works from any tab —
@@ -46,7 +55,7 @@ function AppNavigator() {
         </View>
       ) : (
         <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Protected guard={hasCircle}>
+          <Stack.Protected guard={canEnter}>
             <Stack.Screen name="(tabs)" />
             <Stack.Screen name="places" options={{ headerShown: true }} />
             <Stack.Screen name="add-circle" options={{ headerShown: true }} />
@@ -68,7 +77,7 @@ function AppNavigator() {
             <Stack.Screen name="member/[userId]" options={{ headerShown: true }} />
           </Stack.Protected>
 
-          <Stack.Protected guard={!hasCircle}>
+          <Stack.Protected guard={!canEnter}>
             <Stack.Screen name="circle-setup" />
           </Stack.Protected>
         </Stack>

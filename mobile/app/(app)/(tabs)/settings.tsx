@@ -813,17 +813,21 @@ export default function SettingsTab() {
           </View>
         )}
 
-        {/* This tab is only reachable once you have at least one circle
-            (see app/(app)/_layout.tsx's guard), so "more circles" always
-            applies here — the zero-circles case is circle-setup.tsx. */}
+        {/* Individuals and work-crew members can be in the app with no
+            circle at all (see canEnterApp in lib/accountType.ts), so this
+            section covers both "your first circle" and "another one". */}
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>More circles</Text>
+          <Text style={styles.sectionLabel}>{circles.length === 0 ? 'Circles' : 'More circles'}</Text>
           <Text style={typography.caption}>
-            You're not limited to one — create or join another circle for a different group of
-            people (a separate friend group, a study group, ...). You'll stay in every circle
-            you're already part of.
+            {circles.length === 0
+              ? "You're not in a circle yet. Create or join one to share your location with family or friends."
+              : "You're not limited to one — create or join another circle for a different group of people (a separate friend group, a study group, ...). You'll stay in every circle you're already part of."}
           </Text>
-          <Button title="Add another circle" variant="secondary" onPress={() => router.push('/add-circle')} />
+          <Button
+            title={circles.length === 0 ? 'Create or join a circle' : 'Add another circle'}
+            variant="secondary"
+            onPress={() => router.push('/add-circle')}
+          />
         </View>
 
         {circles.length > 0 && (
@@ -906,8 +910,9 @@ export default function SettingsTab() {
           </View>
         )}
 
+        {selectedCircle && (
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Invite someone to {selectedCircle?.name}</Text>
+          <Text style={styles.sectionLabel}>Invite someone to {selectedCircle.name}</Text>
           {inviteCode ? (
             <Text selectable style={styles.code}>
               {inviteCode}
@@ -923,6 +928,7 @@ export default function SettingsTab() {
             <Button title="Share invite" variant="secondary" onPress={handleShareInvite} />
           )}
         </View>
+        )}
 
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>Your data</Text>

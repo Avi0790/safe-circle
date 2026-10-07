@@ -1,13 +1,16 @@
 import { useState } from 'react';
 import { Link } from 'expo-router';
-import { KeyboardAvoidingView, Platform, StyleSheet, Text, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { AccountTypePicker } from '@/components/AccountTypePicker';
 import { Button } from '@/components/Button';
 import { TextField } from '@/components/TextField';
+import { DEFAULT_ACCOUNT_TYPE, type AccountType } from '@/lib/accountType';
 import { supabase } from '@/lib/supabase';
 import { colors, spacing, typography } from '@/lib/theme';
 
 export default function SignupScreen() {
+  const [accountType, setAccountType] = useState<AccountType>(DEFAULT_ACCOUNT_TYPE);
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -25,7 +28,7 @@ export default function SignupScreen() {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { full_name: fullName.trim() } },
+      options: { data: { full_name: fullName.trim(), account_type: accountType } },
     });
     setLoading(false);
     if (error) {
@@ -63,8 +66,10 @@ export default function SignupScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.flex}
       >
-        <View style={styles.content}>
+        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           <Text style={typography.title}>Create account</Text>
+
+          <AccountTypePicker value={accountType} onChange={setAccountType} />
 
           <View style={styles.form}>
             <TextField label="Name" value={fullName} onChangeText={setFullName} autoCapitalize="words" />
@@ -96,7 +101,7 @@ export default function SignupScreen() {
               Sign in
             </Link>
           </View>
-        </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -106,7 +111,7 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.bg },
   flex: { flex: 1 },
   content: {
-    flex: 1,
+    flexGrow: 1,
     justifyContent: 'center',
     paddingHorizontal: spacing.lg,
     gap: spacing.lg,

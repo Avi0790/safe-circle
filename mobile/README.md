@@ -415,6 +415,22 @@ development mode is also inherently slower than a real build, and running over
   (`app/(app)/delete-account.tsx`, type DELETE to confirm) removes the account,
   stopping location sharing and removing the profile photo first. Creators of
   shared circles hand them over automatically (see `backend/README.md`).
+- **Account type at signup** (`components/AccountTypePicker.tsx`,
+  `lib/accountType.ts`, `contexts/AccountContext.tsx`) — a three-way choice:
+  *Just me*, *Family & friends* or *Work crew*, stored as
+  `profiles.account_type` (set from the signup metadata by the profile
+  trigger; anything missing or unrecognised becomes `family`, so existing
+  accounts behave exactly as before). It decides first-run routing:
+  family → create/join a circle (unchanged); work crew → create an
+  organization or join with a code and accept the disclosure
+  (`components/OrgOnboarding.tsx`, backed by the organizations migration);
+  individual → straight into the app with no circle. The app's entry rule
+  moved from "has a circle" to `canEnterApp()` (circle, active organization
+  membership, or an individual account). It is a routing preference, not a
+  security boundary — what anyone can see is still decided only by the
+  circle and organization rules. Settings now handles having no circle. Not
+  yet built: the worker clock-in screen and the manager roster, so a
+  work-crew member currently lands in the standard tabs.
 - **How your privacy works** (Settings → Privacy, `app/(app)/privacy.tsx`,
   content in `lib/privacyInfo.ts`) — a plain-language tour of what protects
   you (circle-only visibility enforced by row-level security, Ghost mode,
