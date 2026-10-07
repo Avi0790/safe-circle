@@ -357,7 +357,44 @@ mention SOS; pre-launch that's fine, but a real deployment would re-ask.
 Deliberately not widened: the medical card, which circle-mates can read during
 an SOS but organization overseers still can't.
 
-Not yet built: check-in alerts to managers, work-site geofences,
+**Re-consent** (migration `...000052`): a worker's consent now records which
+disclosure version they accepted (`org_members.consent_version`;
+`org_disclosure_version()` is the current one, 2 = adds SOS and check-ins).
+Anyone on an older version is invisible to managers, excluded from SOS
+recipients, refused at clock-in, and shown to admins as waiting to accept, until
+they re-accept in the app (`accept_org_consent` handles both first-time
+invitations and re-acceptance, and logs the difference). Bump the function in
+the same change as the disclosure text in `mobile/lib/orgInfo.ts`.
+
+**Lone-worker check-ins** (migration `...000053`): at clock-in a worker can opt
+into check-ins every 15 min to 4 h (`clock_in(p_org, p_checkin_minutes)`; the
+old one-argument function was dropped, since two overloads would be ambiguous
+to the API). A cron job every minute alerts on a check-in more than 2 minutes
+overdue on a still-open shift, once per miss: it raises an SOS at the last
+on-shift location (so it uses the same banner, acknowledgement and escalation,
+and reaches the same overseers, never anyone when the worker is off shift),
+falling back to a plain push when there is no on-shift location rather than
+inventing one. `shift_check_in()` ("I'm OK") re-arms the next interval,
+resolves the alert and tells the overseers. It can't use the circle "check on
+me" timer, which is tied to a circle a crew member may not have. A missed
+check-in is an SOS, so, like that timer, it also reaches the worker's circles.
+`my_orgs()` now also returns `needs_reconsent` and the check-in schedule.
+
+**Export** (migration `...000054`): `export_my_data()` now includes the
+organizations you belong to (role, teams, accepted disclosure version), your
+shifts and check-in settings, and who at work looked at your location.
+
+Verified in a rolled-back transaction (33 checks), and every earlier test
+(46 organization, 22 SOS, teams, views) was rerun against the new migrations
+with identical results: re-consent hides a worker until they re-accept
+(roster, SOS recipients, clock-in, audit entry), check-ins alert only when
+overdue, once, on an open shift, the no-location fallback, "I'm OK"
+resolving and re-arming, a finished shift never alerting, and the export
+containing the organization data and only the caller's own.
+
+Not yet built: a "phone has gone quiet" alert for a clocked-in worker who
+hasn't opted into check-ins (managers can already see "may be offline" on the
+crew view, but nothing pushes), work-site geofences,
 including org data in `export_my_data`, and the client screens.
 
 ## How access control works

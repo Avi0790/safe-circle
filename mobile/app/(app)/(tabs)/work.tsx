@@ -8,12 +8,21 @@ import { SosButton } from '@/components/SosButton';
 import { useAccount } from '@/contexts/AccountContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useActiveSosEvents } from '@/hooks/useActiveSosEvents';
-import { clockInTo, clockOutOf } from '@/lib/clockIn';
+import { checkInNow, clockInTo, clockOutOf } from '@/lib/clockIn';
 import { formatClockTime, timeAgo } from '@/lib/format';
-import { activeOrgs, type OrgMembership } from '@/lib/orgInfo';
+import { activeOrgs, ORG_DISCLOSURE, type OrgMembership } from '@/lib/orgInfo';
 import { describeOrgAudit, formatShiftElapsed, shiftAutoEndsAt } from '@/lib/shift';
 import { supabase } from '@/lib/supabase';
 import { colors, radius, spacing, typography } from '@/lib/theme';
+
+// How often a lone worker wants to be asked "are you OK?" — and the people
+// who oversee them alerted if they don't answer (migration ...000053).
+const CHECKIN_OPTIONS: { label: string; minutes: number | null }[] = [
+  { label: 'No check-ins', minutes: null },
+  { label: 'Every 30 min', minutes: 30 },
+  { label: 'Every hour', minutes: 60 },
+  { label: 'Every 2 hours', minutes: 120 },
+];
 
 interface ViewRow {
   viewer_name: string;
@@ -38,6 +47,7 @@ export default function WorkScreen() {
   const [views, setViews] = useState<Record<string, ViewRow[]>>({});
   const [newCode, setNewCode] = useState<Record<string, string>>({});
   const [now, setNow] = useState(Date.now());
+  const [checkinChoice, setCheckinChoice] = useState<number | null>(null);
 
   const mine = activeOrgs(orgs);
   const onShiftElsewhere = (orgId: string) =>
@@ -70,7 +80,7 @@ export default function WorkScreen() {
     setError(null);
     setNotice(null);
     setBusyOrg(org.org_id);
-    const result = await clockInTo(org.org_id, session.user.id);
+    const result = await clockInTo(org.org_id, session.user.id, checkinChoice);
     setBusyOrg(null);
     if (!result.ok) {
       setError(result.reason);
@@ -87,7 +97,10 @@ export default function WorkScreen() {
   function handleClockIn(org: OrgMembership) {
     Alert.alert(
       `Clock in to ${org.name}?`,
-      'Your admins and managers can see your location until you clock out. Nobody can see you off shift.',
+      'Your admins and managers can see your location until you clock out. Nobody can see you off shift.' +
+        (checkinChoice != null
+          ? ` If you miss a check-in (every ${checkinChoice} min), they're alerted with your last location.`
+          : ''),
       [
         { text: 'Cancel', style: 'cancel' },
         { text: 'Clock in', onPress: () => doClockIn(org) },
@@ -109,6 +122,30 @@ export default function WorkScreen() {
     }
     await refresh();
     loadViews();
+  }
+
+  async function handleAcceptUpdate(org: OrgMembership) {
+    setError(null);
+    setBusyOrg(org.org_id);
+    const { error: rpcError } = await supabase.rpc('accept_org_consent', { p_org: org.org_id });
+    setBusyOrg(null);
+    if (rpcError) {
+      setError(rpcError.message);
+      return;
+    }
+    await refresh();
+  }
+
+  async function handleCheckIn(org: OrgMembership) {
+    setError(null);
+    setBusyOrg(org.org_id);
+    const result = await checkInNow();
+    setBusyOrg(null);
+    if (!result.ok) {
+      setError(result.reason);
+    }
+    await refresh();
+    refreshSos();
   }
 
   async function handleNewCode(org: OrgMembership) {
@@ -139,7 +176,28 @@ export default function WorkScreen() {
               <Text style={styles.orgName}>{org.name}</Text>
               <Text style={typography.caption}>You are {org.role === 'admin' ? 'an admin' : `a${org.role === 'owner' ? 'n' : ''} ${org.role}`}</Text>
 
-              {isWorker && (
+              {isWorker && org.needs_reconsent && (
+                <>
+                  <Text style={typography.body}>
+                    What {org.name} can see about you has changed. Until you review and accept it,
+                    you can't clock in and nobody at work can see you.
+                  </Text>
+                  <View style={styles.views}>
+                    {ORG_DISCLOSURE.map((line) => (
+                      <Text key={line} style={typography.body}>
+                        • {line}
+                      </Text>
+                    ))}
+                  </View>
+                  <Button
+                    title="I understand — keep working here"
+                    onPress={() => handleAcceptUpdate(org)}
+                    loading={busy}
+                  />
+                </>
+              )}
+
+              {isWorker && !org.needs_reconsent && (
                 <>
                   <View style={[styles.status, org.on_shift ? styles.statusOn : styles.statusOff]}>
                     <Text style={styles.statusTitle}>
@@ -162,6 +220,45 @@ export default function WorkScreen() {
                         ? ` If you forget, this shift ends by itself at ${formatClockTime(shiftAutoEndsAt(org.shift_started_at))}.`
                         : ''}
                     </Text>
+                  )}
+
+                  {org.on_shift && org.checkin_minutes != null && org.next_checkin_due && (
+                    <View style={styles.checkin}>
+                      <Text
+                        style={
+                          new Date(org.next_checkin_due).getTime() < now ? styles.checkinOverdue : typography.body
+                        }
+                      >
+                        {new Date(org.next_checkin_due).getTime() < now
+                          ? 'Check-in overdue — tap I\'m OK now.'
+                          : `Next check-in due at ${formatClockTime(org.next_checkin_due)}.`}
+                      </Text>
+                      <Button
+                        title="I'm OK"
+                        onPress={() => handleCheckIn(org)}
+                        loading={busy}
+                      />
+                    </View>
+                  )}
+
+                  {!org.on_shift && (
+                    <View style={styles.checkin}>
+                      <Text style={styles.sectionLabel}>Check-in reminders</Text>
+                      <Text style={typography.caption}>
+                        Working alone? Choose how often to check in. Miss one and your admins and
+                        managers are alerted with your last location.
+                      </Text>
+                      <View style={styles.chips}>
+                        {CHECKIN_OPTIONS.map((o) => (
+                          <Button
+                            key={o.label}
+                            title={o.label}
+                            variant={checkinChoice === o.minutes ? 'primary' : 'secondary'}
+                            onPress={() => setCheckinChoice(o.minutes)}
+                          />
+                        ))}
+                      </View>
+                    </View>
                   )}
 
                   {org.on_shift ? (
@@ -276,6 +373,9 @@ const styles = StyleSheet.create({
   statusOff: { backgroundColor: colors.bg, borderWidth: 1, borderColor: colors.border },
   statusTitle: { fontSize: 18, fontWeight: '700', color: colors.textHeading },
   views: { gap: spacing.xs, marginTop: spacing.sm },
+  checkin: { gap: spacing.sm },
+  checkinOverdue: { fontSize: 15, fontWeight: '700', color: colors.danger },
+  chips: { gap: spacing.xs },
   sectionLabel: {
     ...typography.caption,
     color: colors.textHeading,

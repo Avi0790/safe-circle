@@ -58,6 +58,9 @@ describe('organization memberships', () => {
     consented_at: status === 'active' ? '2026-10-06T00:00:00Z' : null,
     on_shift: false,
     shift_started_at: null,
+    needs_reconsent: false,
+    checkin_minutes: null,
+    next_checkin_due: null,
   });
 
   it('separates active memberships from a pending invitation', () => {
@@ -77,5 +80,6 @@ describe('organization memberships', () => {
     expect(ORG_DISCLOSURE.join(' ')).toMatch(/recorded/i);
     expect(ORG_DISCLOSURE.join(' ')).toMatch(/SOS while clocked in/i);
     expect(ORG_DISCLOSURE.join(' ')).toMatch(/off shift does not reach/i);
+    expect(ORG_DISCLOSURE.join(' ')).toMatch(/check-in reminders/i);
   });
 });

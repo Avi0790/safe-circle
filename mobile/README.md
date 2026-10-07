@@ -442,7 +442,15 @@ development mode is also inherently slower than a real build, and running over
   isn't switched off at the end of a shift; sharing is stopped on the phone
   before the clock-out is recorded, so it ends even with no signal. In Expo
   Go sharing is foreground-only, and the screen says so ("keep Safe Circle
-  open during your shift"). Workers get the SOS button on this tab, and
+  open during your shift"). Workers who changed what they've agreed to see an
+  **updated-disclosure card** (review and accept; until then they can't clock
+  in and nobody can see them). **Check-in reminders** (`lib/clockIn.ts`,
+  `lib/checkinReminder.ts`): choose No check-ins / every 30 min / hour / 2 hours
+  before clocking in; the tab then shows when the next one is due and an
+  **I'm OK** button, an on-device notification fires 5 minutes before it's due
+  (so it works with no signal), and a missed one alerts the people who oversee
+  you with your last location. "Download my data" now includes your work
+  history. Workers get the SOS button on this tab, and
   everyone who oversees a worker sees their active SOS banner here and on the
   Crew screen (with the same "on my way" and resolve actions); it reaches
   managers only if the worker was clocked in when they sent it. Owners and

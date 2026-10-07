@@ -3,11 +3,17 @@ const mockIsTracking = jest.fn();
 const mockIsBackground = jest.fn();
 const mockEnsure = jest.fn();
 const mockStop = jest.fn();
+const mockSchedule = jest.fn();
+const mockCancel = jest.fn();
 
 jest.mock('@/lib/supabase', () => ({ supabase: { rpc: (...args: unknown[]) => mockRpc(...args) } }));
 jest.mock('@/lib/locationTracking', () => ({
   isTrackingActive: () => mockIsTracking(),
   isBackgroundTaskActive: () => mockIsBackground(),
+}));
+jest.mock('@/lib/checkinReminder', () => ({
+  scheduleCheckinReminder: (...args: unknown[]) => mockSchedule(...args),
+  cancelCheckinReminder: () => mockCancel(),
 }));
 jest.mock('@/lib/sharingWindow', () => ({
   ensureSharingFor: (...args: unknown[]) => mockEnsure(...args),
@@ -15,7 +21,7 @@ jest.mock('@/lib/sharingWindow', () => ({
 }));
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { clockInTo, clockOutOf } from '../clockIn';
+import { checkInNow, clockInTo, clockOutOf } from '../clockIn';
 import { describeOrgAudit, formatShiftElapsed, MAX_SHIFT_MINUTES, shiftAutoEndsAt } from '../shift';
 
 beforeEach(async () => {
@@ -25,6 +31,8 @@ beforeEach(async () => {
   mockStop.mockResolvedValue(undefined);
   mockIsBackground.mockResolvedValue(false);
   mockRpc.mockResolvedValue({ error: null });
+  mockSchedule.mockResolvedValue(undefined);
+  mockCancel.mockResolvedValue(undefined);
 });
 
 describe('clockInTo', () => {
@@ -33,7 +41,8 @@ describe('clockInTo', () => {
     const result = await clockInTo('org1', 'u1');
     expect(result).toEqual({ ok: true, background: false });
     expect(mockEnsure).toHaveBeenCalledWith(MAX_SHIFT_MINUTES);
-    expect(mockRpc).toHaveBeenCalledWith('clock_in', { p_org: 'org1' });
+    expect(mockRpc).toHaveBeenCalledWith('clock_in', { p_org: 'org1', p_checkin_minutes: null });
+    expect(mockSchedule).not.toHaveBeenCalled();
   });
 
   it('does not clock in if sharing could not start', async () => {
@@ -57,6 +66,45 @@ describe('clockInTo', () => {
     mockRpc.mockResolvedValue({ error: { message: 'nope' } });
     await clockInTo('org1', 'u1');
     expect(mockStop).not.toHaveBeenCalled();
+  });
+});
+
+describe('check-ins', () => {
+  it('passes the interval to the server and schedules an on-device reminder', async () => {
+    mockIsTracking.mockResolvedValue(false);
+    await clockInTo('org1', 'u1', 30);
+    expect(mockRpc).toHaveBeenCalledWith('clock_in', { p_org: 'org1', p_checkin_minutes: 30 });
+    expect(mockSchedule).toHaveBeenCalledTimes(1);
+    const due = mockSchedule.mock.calls[0][0] as Date;
+    expect(Math.round((due.getTime() - Date.now()) / 60000)).toBe(30);
+  });
+
+  it('does not schedule a reminder if the clock-in is refused', async () => {
+    mockIsTracking.mockResolvedValue(false);
+    mockRpc.mockResolvedValue({ error: { message: 'nope' } });
+    await clockInTo('org1', 'u1', 30);
+    expect(mockSchedule).not.toHaveBeenCalled();
+  });
+
+  it('cancels the reminder at clock-out', async () => {
+    await clockOutOf('u1');
+    expect(mockCancel).toHaveBeenCalledTimes(1);
+  });
+
+  it('"I\'m OK" records the check-in and moves the reminder to the next due time', async () => {
+    const nextDue = new Date(Date.now() + 30 * 60000).toISOString();
+    mockRpc.mockResolvedValue({ data: nextDue, error: null });
+    const result = await checkInNow();
+    expect(result).toEqual({ ok: true, nextDue });
+    expect(mockRpc).toHaveBeenCalledWith('shift_check_in');
+    expect((mockSchedule.mock.calls[0][0] as Date).toISOString()).toBe(nextDue);
+  });
+
+  it('reports a refused check-in without touching the reminder', async () => {
+    mockRpc.mockResolvedValue({ data: null, error: { message: 'No check-ins are set for this shift.' } });
+    const result = await checkInNow();
+    expect(result).toEqual({ ok: false, reason: 'No check-ins are set for this shift.' });
+    expect(mockSchedule).not.toHaveBeenCalled();
   });
 });
 
