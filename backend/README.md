@@ -286,6 +286,48 @@ duration/distance/speed, an outsider with no shared circle gets zero, and
 Ghost Mode / an ended sharing window each correctly drop it back to zero
 (restored once undone).
 
+### Organizations for field crews (migration `...000048`)
+
+Safe Circle for businesses: an organization with owners, admins, managers and
+workers. Circles are peer groups where everyone sees everyone; an organization
+is one-directional (admins and managers see workers, workers never see each
+other), so it gets its own tables rather than stretching `circle_members`.
+
+| Rule | How it's enforced |
+|---|---|
+| Workers are invisible until they consent | Redeeming an org code (same hashed, 48 h, rate-limited pattern as circle invites) only creates an `invited` row; `accept_org_consent` makes it `active`. The check `(status = 'active') = (consented_at is not null)` keeps the two in sync. |
+| Visible only while clocked in | Positions are returned only for pings recorded inside one of the worker's shifts. Personal time before clock-in or after clock-out never comes back, even for past shifts. |
+| A forgotten clock-out can't mean permanent tracking | A shift stops being visible after 14 h (`max_shift_length()`), and a cron job closes stale ones. |
+| One open shift per person across all organizations | Partial unique index, so being clocked in at one employer can't make you visible to another. |
+| Managers see only teams they lead | Admins/owners see all workers; managers see workers on teams where they are `is_lead`. Only a manager can lead a team (demoting one clears their lead flags). |
+| No teammate visibility | Workers can only select their own rows in every org table. |
+| Every look is on the record | `org_audit` rows for live views and track pulls (deduped to one per viewer and worker per 15 min, like `location_views`); the worker can read every row about them, admins read the whole organization's log. |
+
+The design decision worth knowing: **managers and admins get no read access to
+`locations` itself.** Widening that table's RLS policy would expose a worker's
+whole history, including personal time before they clocked in, and reads
+through RLS can't be audited. Every non-worker read goes through
+`org_live_roster`, `org_worker_track` and `org_shifts`, which apply the
+visibility rule, limit pings to shift windows and write the audit log.
+(Consequence: the manager dashboard polls these rather than using realtime.)
+
+Ownership edge cases: `organizations.created_by` is `ON DELETE SET NULL` so a
+deleted account can't cascade-delete an organization for everyone else. If the
+sole owner's account is deleted, an admin (then a manager) inherits it; if only
+workers remain the organization is deleted rather than handing a worker the
+power to see the whole crew. Removing or leaving a member closes their open
+shift and drops their team rows.
+
+Verified in a rolled-back transaction (46 checks): the consent gate, clock-in
+rules, who sees whom (admin, lead manager, other-team manager, worker,
+outsider), no direct reads of `locations`/`latest_locations`, shift-window
+scoping (pings 1, 4 and 5 are personal time and never returned), audit
+visibility and deduping, stale shifts, role-escalation guards, demotion,
+leaving, and both account-deletion cases.
+
+Not yet built: SOS and check-in alerts to managers, work-site geofences,
+including org data in `export_my_data`, and the client screens.
+
 ## How access control works
 
 Row-level security is the enforcement point, not application code:
