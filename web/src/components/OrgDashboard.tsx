@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import type { SosEvent } from '../lib/types'
+import { eventsMissingNames, fillSosNames, type SosDetailRow } from '../lib/sosNames'
 import { isAdminRole, type OrgMembership } from '../lib/org'
 import { OrgLive } from './OrgLive'
 import { OrgPeople } from './OrgPeople'
@@ -28,7 +29,15 @@ export function OrgDashboard({ orgs, myUserId }: { orgs: OrgMembership[]; myUser
       .select('*, profiles!sos_events_user_id_fkey(full_name), sos_acknowledgements(user_id, profiles(full_name))')
       .is('resolved_at', null)
       .order('created_at', { ascending: false })
-    setSosEvents((data as unknown as SosEvent[]) ?? [])
+    let loaded = (data as unknown as SosEvent[]) ?? []
+    // An overseer isn't a circle-mate of the worker, so the sender's profile
+    // comes back empty; fetch just the names (migration ...000055).
+    const missing = eventsMissingNames(loaded)
+    if (missing.length > 0) {
+      const { data: names } = await supabase.rpc('org_sos_details', { p_event_ids: missing })
+      loaded = fillSosNames(loaded, (names as SosDetailRow[] | null) ?? [])
+    }
+    setSosEvents(loaded)
   }, [])
 
   useEffect(() => {

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { eventsMissingNames, fillSosNames, type SosDetailRow } from '@/lib/sosNames';
 import { supabase } from '@/lib/supabase';
 import type { SosEvent } from '@/lib/types';
 
@@ -23,7 +24,16 @@ export function useActiveSosEvents() {
       )
       .is('resolved_at', null)
       .order('created_at', { ascending: false });
-    setEvents((data as unknown as SosEvent[]) ?? []);
+    let loaded = (data as unknown as SosEvent[]) ?? [];
+    // An SOS a manager oversees through an organization has no readable
+    // profile for the sender (they aren't circle-mates), so ask for just the
+    // names — see migration ...000055. Only when something is missing.
+    const missing = eventsMissingNames(loaded);
+    if (missing.length > 0) {
+      const { data: names } = await supabase.rpc('org_sos_details', { p_event_ids: missing });
+      loaded = fillSosNames(loaded, (names as SosDetailRow[] | null) ?? []);
+    }
+    setEvents(loaded);
     setIsLoading(false);
   }, []);
 

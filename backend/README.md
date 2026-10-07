@@ -392,6 +392,47 @@ overdue, once, on an open shift, the no-location fallback, "I'm OK"
 resolving and re-arming, a finished shift never alerting, and the export
 containing the organization data and only the caller's own.
 
+**Security review** (migration `...000055`). An adversarial pass over all of the
+above, reproduced against the live database before fixing (16 failures, then
+0 of 36):
+
+- *Internal helpers were callable by any signed-in user.* `revoke ... from
+  public, anon` doesn't touch `authenticated`, which Supabase grants new
+  functions by default. That left `org_log` (**forge or frame anyone in the
+  audit log**), the overseer and SOS-recipient lists, and role and visibility
+  lookups open to the API. Revoked; only policy helpers that must run as the
+  caller keep access, and `team_org` was folded into one admin-only check.
+- *SOS rows could be rewritten* by anyone who could see them (coordinates,
+  message, timestamp, even reassigned to another user), a hole in the original
+  update policy that organizations widened to overseers. Updates are now limited
+  to `resolved_at`/`resolved_by`, recorded honestly (who really resolved it, at
+  server time) and a resolved SOS can't be re-opened.
+- *The SOS rate limit could be dodged* by sending a backdated `created_at`
+  (7 of 7 got through, each pushing a circle and managers). The server now sets
+  the time and the server-only fields for API callers.
+- *Becoming a worker needed no consent* when demoted from owner, admin or
+  manager, because those roles were pre-marked as having accepted. Entering the
+  worker role now resets consent, so they appear as waiting to accept and can't
+  be seen until they accept themselves.
+- *Overseers saw "Someone needs help"* with no name: profiles are circle-only.
+  `org_sos_details` returns just the sender's and acknowledgers' names, for SOS
+  the caller oversees.
+
+What held up: no direct writes to any organization table, one organization
+can't read or change another, a removed member loses everything including sight
+of their old SOS, a worker can't edit their own role or consent.
+
+Known and accepted: a worker's phone is trusted for what it reports
+(a worker can send false positions or stop tracking, as with any phone-based
+tracking; managers see only what the phone sends, and the app can't prove it
+is real). Invite codes are six characters from a 32-letter set, protected by
+the same per-account attempt limit and 48 h expiry as circle codes, which would
+not stop someone with very many accounts but makes it impractical. Reads
+through `pg_temp` shadowing aren't possible through the API.
+
+The scripts that produced these results are in `tests/organizations/`; rerun
+them after changing any of this.
+
 Not yet built: a "phone has gone quiet" alert for a clocked-in worker who
 hasn't opted into check-ins (managers can already see "may be offline" on the
 crew view, but nothing pushes), work-site geofences,
