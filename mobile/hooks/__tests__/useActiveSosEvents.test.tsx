@@ -1,5 +1,5 @@
 import React from 'react';
-import TestRenderer, { act } from 'react-test-renderer';
+import { act, create, type ReactTestRenderer } from 'react-test-renderer';
 
 // Behaves like supabase-js's realtime client where it matters here: the same
 // name returns the same channel, and adding a listener after subscribe()
@@ -62,9 +62,9 @@ beforeEach(() => {
 
 describe('useActiveSosEvents', () => {
   it('can be mounted by several screens at once without sharing a realtime channel', async () => {
-    let renderer!: TestRenderer.ReactTestRenderer;
+    let renderer!: ReactTestRenderer;
     await act(async () => {
-      renderer = TestRenderer.create(
+      renderer = create(
         <>
           <Probe />
           <Probe />
