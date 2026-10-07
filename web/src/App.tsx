@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { supabase } from './lib/supabase'
 import { LoginScreen } from './components/LoginScreen'
-import { Dashboard } from './components/Dashboard'
+import { AppShell } from './components/AppShell'
 import { ResetPasswordScreen } from './components/ResetPasswordScreen'
 import { GuestTrack } from './components/GuestTrack'
 import { parseTrackToken } from './lib/track'
@@ -53,7 +53,7 @@ function AuthenticatedApp() {
     return <ResetPasswordScreen onDone={() => setRecoveryMode(false)} />
   }
 
-  return session ? <Dashboard myUserId={session.user.id} /> : <LoginScreen initialError={linkError} />
+  return session ? <AppShell myUserId={session.user.id} /> : <LoginScreen initialError={linkError} />
 }
 
 // A guest tracking link (/track/<token>) must work with no account, so it's

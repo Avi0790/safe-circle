@@ -128,6 +128,52 @@ app never sees data for anyone outside your circles, and never writes to
 `locations` or `places` (view only, by design — see the module docstring
 in `src/components/Dashboard.tsx`).
 
+## Work view for crews (owners, admins, managers)
+
+Everything above is the **circle** dashboard, which stays read-only. Anyone who
+oversees an organization (migration `...000048` in the backend) also gets a
+**Work** view next to it (`AppShell.tsx` decides: no organization role means no
+extra bar and exactly the dashboard they had before; workers clock in on their
+phones, so a worker-only account doesn't get it either). It is the one place
+the web dashboard writes: changing roles, managing teams, and acknowledging or
+resolving an SOS. It still never tracks anyone; location only ever comes from
+workers' phones.
+
+- **Live crew** (`OrgLive.tsx`, `OrgMap.tsx`): a Leaflet map and list of who's
+  clocked in, with last-heard-from, a "may be offline" warning once a phone has
+  been quiet for 15 minutes, low battery and driving speed. Click a worker to
+  see their last 24 hours of **on-shift** path and recent shifts. Off-shift
+  workers are listed by name only and workers who haven't accepted the
+  disclosure show as "waiting to accept". Admins see everyone; a manager sees
+  only workers on teams they lead (enforced in the database).
+- **People & teams** (`OrgPeople.tsx`, owners and admins): change roles, remove
+  people, create and delete teams, make a manager a team's lead, add and remove
+  people, and get a new invite code. The buttons mirror the database's rules
+  (`lib/teams.ts`), which are what actually enforce them.
+- **Shifts** (`OrgShifts.tsx`): clock-in and clock-out times for the last 7, 30
+  or 90 days with a **CSV download** for timesheets. Names are user-typed, so
+  the CSV writer (`lib/csv.ts`) prefixes any cell starting with `=`, `+`, `-`
+  or `@` with an apostrophe; otherwise a display name like `=HYPERLINK(...)`
+  would run as a formula when an admin opens the file.
+- **SOS** (`OrgSosBanner.tsx`): active SOS from workers the viewer oversees
+  (only those sent while the worker was clocked in), with "Open location",
+  "On my way" and "Resolve", live over realtime.
+
+Why it polls instead of streaming: managers have no read access to the
+`locations` table at all. Every look goes through `org_live_roster`,
+`org_worker_track` or `org_shifts`, which apply the shift window and write the
+audit log the worker can read in their Work tab, so a realtime feed of
+`locations` would bypass both. The live view refreshes every 30 s while open
+and says on screen that workers can see when you look.
+
+Checked by rendering the real components against a stubbed Supabase client with
+fixture data (all three tabs, worker selection and the on-shift path, the SOS
+banner), since a real sign-in would send credentials to the production project.
+The permission and visibility rules themselves were verified against the live
+database in the backend's rolled-back transaction tests. Logic is unit tested
+in `src/lib/__tests__/crew.test.ts` (crew split and flags, team and permission
+rules, CSV escaping).
+
 ## Deploying
 
 Per the proposal, this deploys to Vercel:
