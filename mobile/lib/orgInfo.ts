@@ -15,7 +15,7 @@ export interface OrgMembership {
 
 // What a worker is agreeing to before anyone can see them. Each line
 // describes something the backend actually enforces (migrations ...000048,
-// ...000051, ...000053) — keep them in step. Changing what this promises
+// ...000051, ...000053, ...000056) — keep them in step. Changing what this promises
 // means bumping org_disclosure_version() in the database (migration
 // ...000052) so workers who accepted the old text are asked again.
 export const ORG_DISCLOSURE: string[] = [
@@ -24,6 +24,7 @@ export const ORG_DISCLOSURE: string[] = [
   'A shift ends automatically after 14 hours, so forgetting to clock out can’t mean being tracked all day.',
   'If you send an SOS while clocked in, your admins and the managers who oversee you are alerted with your location. An SOS sent off shift does not reach them.',
   'If you turn on check-in reminders when you clock in and miss one, your admins and the managers who oversee you are alerted with your last location.',
+  'If your phone stops sending your location for about 20 minutes while you are clocked in, your admins and the managers who oversee you are notified, so they can check that you are OK.',
   'Other workers cannot see you.',
   'Every time a manager or admin looks at your location, it is recorded.',
   'You can leave the organization at any time.',

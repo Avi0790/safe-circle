@@ -30,8 +30,9 @@ select count(*) from public.organizations;
 | `06_account_type` | the signup choice and its fallbacks |
 | `07_adversarial_security` | forged audit rows, internal helpers, direct writes, cross-organization access, SOS tampering and rate-limit dodging, consent bypass, removed members (36 checks) |
 | `08_sos_names` | overseers get the sender's name without opening profiles |
+| `09_quiet_phone` | the "gone quiet" push: who is told, once per stretch, resets, exclusions |
 
-Scripts 04, 05 and 07 insert "trusted" rows as the database owner; their
+Scripts 04, 05, 07 and 09 insert "trusted" rows as the database owner; their
 helper clears the fake JWT claims first (`auth.uid()` must be null, as it is
 for cron jobs), because the SOS insert guard deliberately treats any signed-in
 caller differently.

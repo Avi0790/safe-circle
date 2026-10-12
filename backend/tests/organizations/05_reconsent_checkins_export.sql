@@ -180,7 +180,7 @@ begin
     jsonb_array_length(exp -> 'organizations') = 1
     and exp -> 'organizations' -> 0 ->> 'organization' = 'Crew'
     and exp -> 'organizations' -> 0 ->> 'role' = 'worker'
-    and (exp -> 'organizations' -> 0 ->> 'consented_to_disclosure_version')::int = 2
+    and (exp -> 'organizations' -> 0 ->> 'consented_to_disclosure_version')::int = public.org_disclosure_version()
     and jsonb_array_length(exp -> 'organizations' -> 0 -> 'teams') = 1);
   msg := msg || pg_temp.ok('export lists the worker''s shifts', jsonb_array_length(exp -> 'work_shifts') >= 1);
   msg := msg || pg_temp.ok('export lists who looked at them at work',

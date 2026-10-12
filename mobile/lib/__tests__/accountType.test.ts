@@ -81,5 +81,6 @@ describe('organization memberships', () => {
     expect(ORG_DISCLOSURE.join(' ')).toMatch(/SOS while clocked in/i);
     expect(ORG_DISCLOSURE.join(' ')).toMatch(/off shift does not reach/i);
     expect(ORG_DISCLOSURE.join(' ')).toMatch(/check-in reminders/i);
+    expect(ORG_DISCLOSURE.join(' ')).toMatch(/stops sending your location/i);
   });
 });

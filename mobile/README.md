@@ -449,7 +449,9 @@ development mode is also inherently slower than a real build, and running over
   before clocking in; the tab then shows when the next one is due and an
   **I'm OK** button, an on-device notification fires 5 minutes before it's due
   (so it works with no signal), and a missed one alerts the people who oversee
-  you with your last location. "Download my data" now includes your work
+  you with your last location. Separately, everyone clocked in is covered by the
+  quiet-phone alert: if the phone stops sending for about 20 minutes, the
+  people who oversee you are notified. "Download my data" now includes your work
   history. Workers get the SOS button on this tab, and
   everyone who oversees a worker sees their active SOS banner here and on the
   Crew screen (with the same "on my way" and resolve actions); it reaches

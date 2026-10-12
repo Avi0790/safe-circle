@@ -433,10 +433,20 @@ through `pg_temp` shadowing aren't possible through the API.
 The scripts that produced these results are in `tests/organizations/`; rerun
 them after changing any of this.
 
-Not yet built: a "phone has gone quiet" alert for a clocked-in worker who
-hasn't opted into check-ins (managers can already see "may be offline" on the
-crew view, but nothing pushes), work-site geofences,
-including org data in `export_my_data`, and the client screens.
+**Quiet-phone alert** (migration `...000056`): a clocked-in worker whose phone
+hasn't sent a location for 20 minutes (or since clocking in, if none ever
+arrived) triggers one plain push to the people who oversee them. It is not an
+SOS: a dead battery isn't an emergency and an SOS would also reach their family
+circles; check-ins stay the opt-in "are you OK?" and this is the passive net
+underneath for everyone. It alerts once per stretch, resets when the phone
+reports again (so a later stretch alerts again), and skips finished or
+14-hour-stale shifts and anyone pending re-consent. Because it is a new thing
+the app does about workers, it is in the disclosure and `org_disclosure_version()`
+is now 3, so existing workers are asked to accept again. The crew screens'
+"may be offline" flag still shows at 15 minutes; the push waits until 20 so a
+short tunnel doesn't page anyone. Verified in a rolled-back transaction
+(9 checks, `tests/organizations/09_quiet_phone.sql`), reading recipients from the
+queued pushes.
 
 ## How access control works
 

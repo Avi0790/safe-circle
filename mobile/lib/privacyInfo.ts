@@ -74,7 +74,7 @@ export const PRIVACY_SECTIONS: PrivacySection[] = [
     emoji: '🦺',
     title: 'At work, only while you’re clocked in',
     body:
-      "If you belong to a work organization, its admins and managers can see you only while you're clocked in, and only the positions recorded during that shift — never before you clock in or after you clock out. If you send an SOS while clocked in, your admins and the managers who oversee you are alerted too (never when you're off shift). If you choose check-in reminders and miss one, they're alerted with your last location. If this ever changes, you're asked to accept the new version before anyone can see you again. A shift also ends by itself after 14 hours, other workers can't see you, and your Work tab lists every look at your location.",
+      "If you belong to a work organization, its admins and managers can see you only while you're clocked in, and only the positions recorded during that shift — never before you clock in or after you clock out. If you send an SOS while clocked in, your admins and the managers who oversee you are alerted too (never when you're off shift). If you choose check-in reminders and miss one, they're alerted with your last location. If your phone stops sending your location for about 20 minutes while you're clocked in, they're notified so they can check on you. If this ever changes, you're asked to accept the new version before anyone can see you again. A shift also ends by itself after 14 hours, other workers can't see you, and your Work tab lists every look at your location.",
   },
   {
     id: 'medical-card',
