@@ -498,6 +498,21 @@ development mode is also inherently slower than a real build, and running over
   against the migrations when written, and a test asserts every button's
   route exists and is registered so the screen can't point at nothing. The
   in-app Help also answers "how is my privacy protected?".
+- **QR invite codes** (`components/InviteQr.tsx`, `QrScannerModal.tsx`,
+  `lib/joinCode.ts`, `lib/qr.ts`): creating a circle now shows a QR code next to
+  the invite code, and Settings → Invite shows one for any code you generate.
+  On the Join screen, **Scan QR code** opens the camera, reads the code and
+  joins straight away (join approval still applies). The QR carries the same
+  code as the text (so it has the same 48-hour expiry and the same attempt
+  limit), not a link: a `safecircle://` link would make a phone's own camera try
+  to open the app, which doesn't work from Expo Go and lands on a route that
+  doesn't exist in a real build, so the code is scanned inside the app. Anything
+  that isn't a valid invite code (another site's QR, a Wi-Fi code) is rejected
+  rather than guessed at. Encoding is pure JavaScript (`qrcode-generator`, no
+  native module, drawn as plain black-on-white views for scanner contrast); the
+  scanner uses `expo-camera`, which Expo Go includes. Generated codes were
+  decoded back with an independent decoder (jsQR) to confirm they scan. Camera
+  is hidden on web. The same pieces can be reused for organization codes.
 - **Share location & driving report** (location-history screen,
   `lib/locationReport.ts`) — the raw JSON export is complete but not
   something anyone wants to actually read on a phone. This builds a

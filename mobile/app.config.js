@@ -68,6 +68,14 @@ module.exports = {
         },
       ],
       'expo-sharing',
+      [
+        'expo-camera',
+        {
+          cameraPermission: 'Safe Circle uses the camera to scan a circle invite QR code.',
+          microphonePermission: false,
+          recordAudioAndroid: false,
+        },
+      ],
     ],
     experiments: {
       typedRoutes: true,

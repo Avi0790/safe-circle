@@ -1,6 +1,8 @@
 import { useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Platform, StyleSheet, Text, View } from 'react-native';
 import { Button } from '@/components/Button';
+import { InviteQr } from '@/components/InviteQr';
+import { QrScannerModal } from '@/components/QrScannerModal';
 import { TextField } from '@/components/TextField';
 import { useCircles } from '@/contexts/CircleContext';
 import { supabase } from '@/lib/supabase';
@@ -40,6 +42,7 @@ export function CircleOnboarding({
   const [pendingCircleName, setPendingCircleName] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [scanning, setScanning] = useState(false);
 
   async function handleCreate() {
     setError(null);
@@ -69,9 +72,11 @@ export function CircleOnboarding({
     onDone?.();
   }
 
-  async function handleJoin() {
+  // codeOverride is for a scanned QR code, which joins straight away.
+  async function handleJoin(codeOverride?: string) {
     setError(null);
-    if (!inviteCode.trim()) {
+    const code = (codeOverride ?? inviteCode).trim();
+    if (!code) {
       setError('Enter the invite code.');
       return;
     }
@@ -79,7 +84,7 @@ export function CircleOnboarding({
     // join_with_code (migration ...000041_join_approval.sql) instead of
     // redeem_invite_code: it also handles circles whose creator requires
     // approval, returning 'pending' rather than joining instantly.
-    const { data, error } = await supabase.rpc('join_with_code', { code: inviteCode.trim() });
+    const { data, error } = await supabase.rpc('join_with_code', { code });
     setLoading(false);
     if (error) {
       // e.g. rate-limited ("Too many invite code attempts...")
@@ -165,9 +170,10 @@ export function CircleOnboarding({
       <View style={styles.content}>
         <Text style={typography.title}>Circle created!</Text>
         <Text style={typography.body}>
-          Share this code with the people you want in your circle. It's shown only once, so
-          save it now.
+          Share this code, or have people scan the QR code from the Join screen in the app. It's
+          shown only once, so save it now.
         </Text>
+        {createdCode ? <InviteQr code={createdCode} /> : null}
         <Text selectable style={styles.code}>
           {createdCode}
         </Text>
@@ -189,9 +195,21 @@ export function CircleOnboarding({
           maxLength={6}
         />
         {error && <Text style={styles.error}>{error}</Text>}
-        <Button title="Join" onPress={handleJoin} loading={loading} />
+        <Button title="Join" onPress={() => handleJoin()} loading={loading} />
+        {Platform.OS !== 'web' && (
+          <Button title="Scan QR code" variant="secondary" onPress={() => setScanning(true)} />
+        )}
         <Button title="Back" variant="secondary" onPress={() => setMode('choose')} />
       </View>
+      <QrScannerModal
+        visible={scanning}
+        onClose={() => setScanning(false)}
+        onCode={(code) => {
+          setScanning(false);
+          setInviteCode(code);
+          handleJoin(code);
+        }}
+      />
     </View>
   );
 }

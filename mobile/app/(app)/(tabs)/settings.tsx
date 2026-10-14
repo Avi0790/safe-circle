@@ -14,6 +14,7 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Avatar } from '@/components/Avatar';
 import { Button } from '@/components/Button';
+import { InviteQr } from '@/components/InviteQr';
 import { TextField } from '@/components/TextField';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCircles } from '@/contexts/CircleContext';
@@ -914,9 +915,12 @@ export default function SettingsTab() {
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>Invite someone to {selectedCircle.name}</Text>
           {inviteCode ? (
-            <Text selectable style={styles.code}>
-              {inviteCode}
-            </Text>
+            <>
+              <InviteQr code={inviteCode} />
+              <Text selectable style={styles.code}>
+                {inviteCode}
+              </Text>
+            </>
           ) : (
             <Text style={typography.caption}>
               Generate a code to share. Creating a new one invalidates any earlier code.
