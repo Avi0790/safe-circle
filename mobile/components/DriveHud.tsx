@@ -12,6 +12,9 @@ export interface DriveHudProps {
   arrival: string;
   rerouting: boolean;
   muted: boolean;
+  // e.g. "Family" while this trip is being shared with that circle
+  sharingWith?: string | null;
+  notice?: string | null;
   topInset: number;
   bottomInset: number;
   onToggleMute: () => void;
@@ -26,6 +29,8 @@ export function DriveHud(p: DriveHudProps) {
         <Text style={styles.instruction} numberOfLines={2}>
           {p.rerouting ? 'Rerouting…' : p.instruction}
         </Text>
+        {p.sharingWith ? <Text style={styles.sharing}>👪 Sharing this trip with {p.sharingWith}</Text> : null}
+        {p.notice ? <Text style={styles.notice}>{p.notice}</Text> : null}
       </View>
 
       <View style={[styles.bottom, { paddingBottom: p.bottomInset + spacing.sm }]}>
@@ -63,6 +68,8 @@ const styles = StyleSheet.create({
   },
   distance: { color: '#ffffff', fontSize: 34, fontWeight: '800' },
   instruction: { color: '#e2e8f0', fontSize: 20, fontWeight: '600' },
+  sharing: { color: '#a7f3d0', fontSize: 13, fontWeight: '600' },
+  notice: { color: '#fde68a', fontSize: 13 },
   bottom: {
     position: 'absolute',
     bottom: 0,

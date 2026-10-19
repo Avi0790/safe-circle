@@ -521,8 +521,18 @@ development mode is also inherently slower than a real build, and running over
   the route, next turn, off-route, voice prompts) is plain functions with tests,
   and one test drives a real captured 8.3 km route through the actual screen
   with simulated GPS, checking the speed readout, spoken turns, arrival and
-  rerouting. Not built yet: sharing your ETA with your circle, saving
-  destinations, and web.
+  rerouting. **Share my ETA:** on the route preview, if you're in a
+  circle, a switch (off every time) shares the trip with it: the people in that
+  circle see "Sam is heading to Walmart, arriving in about 12 min" on their Map
+  tab (`components/TripBanner.tsx`, `hooks/useActiveTrips.ts`), get a push when
+  you start and when you arrive, and see the ETA stay current while you drive
+  (`lib/sharedTrips.ts`; an update goes up when the ETA moves a minute or on a
+  heartbeat, never more than once a minute). Only the destination's name and the
+  ETA are shared, not the route or its coordinates; Ghost mode and sharing
+  windows apply; stopping navigation, leaving the screen or losing signal ends
+  it. If sharing can't start, directions carry on and say so. The Privacy screen
+  covers it. Not built yet: saving destinations, the web dashboard version of
+  the trip banner, and web navigation.
 - **QR invite codes** (`components/InviteQr.tsx`, `QrScannerModal.tsx`,
   `lib/joinCode.ts`, `lib/qr.ts`): creating a circle now shows a QR code next to
   the invite code, and Settings → Invite shows one for any code you generate.

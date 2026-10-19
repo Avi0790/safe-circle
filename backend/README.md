@@ -255,6 +255,42 @@ Verified against the live function: no `Authorization` header → 401; the
 anon key alone (not a real signed-in session) → also 401, since it isn't a
 user JWT.
 
+### Share my ETA (migration `...000057`)
+
+While driving with in-app directions, someone can choose, trip by trip, to let
+one circle see where they're headed and when they expect to arrive, and to be
+told when they get there. `shared_trips` holds only the destination's **name**, an
+ETA and a status: no route and no destination coordinates, so a shared trip
+reveals less than the live location the circle can already see. Written only by
+`start_shared_trip` / `update_shared_trip` / `end_shared_trip` (no write
+policies); one active trip per person, updates throttled to one per 15 s, ETA
+within 24 h, destination 1 to 80 characters.
+
+It follows the privacy rules of seeing someone's location: the read policy is
+"you, or a circle-mate who you haven't hidden from, while you're sharing"
+(Ghost mode and sharing windows apply), and the pushes go through
+`trip_recipients()`, which excludes anyone the driver hid from and sends nothing
+if they aren't sharing. Pushes use relative minutes ("arriving in about 12
+min"), since the server doesn't know a recipient's time zone, and only a real
+arrival is announced; stopping a trip just makes it vanish. A cron job every 5
+minutes marks trips nobody has heard from in 10 minutes `stale` (dead battery,
+no signal) and deletes finished trips after 2 days: where someone drove is not
+something to keep. Included in "Download my data" (destination only).
+
+**A gap this surfaced, not changed here:** the older `circle_recipients()`
+helper used by Walk me home, Check on me and map-pin pushes ignores Ghost mode,
+so those pushes still reach people the sender has hidden from. SOS is meant to
+ignore it (an emergency); the others arguably shouldn't.
+
+Verified in a rolled-back transaction (29 checks,
+`tests/circles/01_shared_trips.sql`, reading recipients from the queued
+pushes): visibility for the driver, a circle-mate, someone hidden from, and an
+outsider; only the right people pushed; one active trip; update throttling; no
+tampering by circle-mates or direct writes; arrival pushes once and stopping
+pushes nobody; validation; sharing window ended; expiry and cleanup; internal
+helpers not callable; the export. Every organization, SOS and security suite
+was rerun with identical results.
+
 ### Drive reports (migration `...000047`)
 
 Real trips — not just the live "🚗 Driving NN mph" status that already

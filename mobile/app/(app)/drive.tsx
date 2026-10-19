@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, FlatList, Linking, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, Linking, Platform, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import * as Location from 'expo-location';
 import * as Speech from 'expo-speech';
@@ -29,6 +29,7 @@ import {
   type PreparedRoute,
 } from '@/lib/navigation';
 import { fetchRoute, RoutingError } from '@/lib/routing';
+import { endSharedTrip, shouldSendEtaUpdate, startSharedTrip, updateSharedTrip } from '@/lib/sharedTrips';
 import { supabase } from '@/lib/supabase';
 import { colors, radius, spacing, typography } from '@/lib/theme';
 
@@ -84,6 +85,9 @@ export default function DriveScreen() {
   const [nav, setNav] = useState<NavState | null>(null);
   const [muted, setMuted] = useState(false);
   const [mapReady, setMapReady] = useState(false);
+  const [shareTrip, setShareTrip] = useState(false);
+  const [sharingWith, setSharingWith] = useState<string | null>(null);
+  const [tripNotice, setTripNotice] = useState<string | null>(null);
 
   const mapRef = useRef<MapView>(null);
   // Read inside the location callback, which outlives any one render.
@@ -98,6 +102,9 @@ export default function DriveScreen() {
   const offCount = useRef(0);
   const lastReroute = useRef(0);
   const reroutingRef = useRef(false);
+  // The shared trip, if this drive is being shared with the circle.
+  const tripId = useRef<string | null>(null);
+  const lastEta = useRef<{ at: number; eta: number } | null>(null);
 
   phaseRef.current = phase;
   preparedRef.current = prepared;
@@ -139,12 +146,24 @@ export default function DriveScreen() {
   }, []);
 
   // ------------------------------------------------------- driving logic
+  // Stops sharing the trip. Arriving tells the circle; stopping just makes it
+  // disappear.
+  const closeTrip = useCallback((arrived: boolean) => {
+    const id = tripId.current;
+    if (!id) return;
+    tripId.current = null;
+    lastEta.current = null;
+    setSharingWith(null);
+    endSharedTrip(id, arrived);
+  }, []);
+
   const finishArrival = useCallback(() => {
     if (phaseRef.current !== 'driving') return;
     setPhase('arrived');
     phaseRef.current = 'arrived';
+    closeTrip(true);
     speak('You have arrived at your destination.');
-  }, [speak]);
+  }, [speak, closeTrip]);
 
   const reroute = useCallback(
     async (from: LatLng) => {
@@ -180,6 +199,17 @@ export default function DriveScreen() {
       if (!s) return;
       alongHint.current = s.alongM;
       setNav(s);
+
+      // Keep the circle's ETA fresh while sharing.
+      const sharedId = tripId.current;
+      if (sharedId) {
+        const now = Date.now();
+        const etaMs = now + s.remainingS * 1000;
+        if (shouldSendEtaUpdate(lastEta.current?.at ?? null, lastEta.current?.eta ?? null, now, etaMs)) {
+          lastEta.current = { at: now, eta: etaMs };
+          updateSharedTrip(sharedId, etaMs);
+        }
+      }
 
       if (s.arrived) {
         finishArrival();
@@ -263,7 +293,15 @@ export default function DriveScreen() {
     };
   }, [driving]);
 
-  useEffect(() => () => void Speech.stop(), []);
+  useEffect(
+    () => () => {
+      Speech.stop();
+      // Leaving the screen mid-drive must not leave the trip showing.
+      const id = tripId.current;
+      if (id) endSharedTrip(id, false);
+    },
+    [],
+  );
 
   // The camera follows the vehicle, turned to its heading once it is moving.
   useEffect(() => {
@@ -352,12 +390,33 @@ export default function DriveScreen() {
     alongHint.current = undefined;
     offCount.current = 0;
     setNav(null);
+    setTripNotice(null);
     setPhase('driving');
     phaseRef.current = 'driving';
     speak(`Starting route. ${prep.route.steps[0]?.instruction ?? ''}.`);
+
+    const target = destRef.current;
+    if (shareTrip && selectedCircle && target) {
+      const etaMs = Date.now() + prep.route.durationS * 1000;
+      const circleName = selectedCircle.name;
+      startSharedTrip(selectedCircle.id, target.title, etaMs).then((res) => {
+        if (!res.ok) {
+          setTripNotice("Couldn't share this trip with your circle. Directions still work.");
+        } else if (phaseRef.current === 'driving') {
+          tripId.current = res.id;
+          lastEta.current = { at: Date.now(), eta: etaMs };
+          setSharingWith(circleName);
+        } else {
+          // The drive ended before the call came back.
+          endSharedTrip(res.id, false);
+        }
+      });
+    }
   }
 
   function endDriving() {
+    closeTrip(false);
+    setTripNotice(null);
     Speech.stop();
     setPhase('plan');
     phaseRef.current = 'plan';
@@ -511,6 +570,18 @@ export default function DriveScreen() {
             Routes come from OpenStreetMap-based services and can be wrong. Follow road signs and
             local laws.
           </Text>
+          {selectedCircle && (
+            <View style={styles.shareRow}>
+              <View style={styles.shareText}>
+                <Text style={styles.shareTitle}>Share this trip with {selectedCircle.name}</Text>
+                <Text style={typography.caption}>
+                  They'll see where you're headed and when you expect to arrive, and get a message
+                  when you arrive. Not your route. Off unless you turn it on.
+                </Text>
+              </View>
+              <Switch value={shareTrip} onValueChange={setShareTrip} trackColor={{ true: colors.accent }} />
+            </View>
+          )}
           <Button title="Start" onPress={startDriving} />
           <Button
             title="Open in Maps app instead"
@@ -531,6 +602,8 @@ export default function DriveScreen() {
           arrival={formatArrivalClock(remainingS)}
           rerouting={rerouting}
           muted={muted}
+          sharingWith={sharingWith}
+          notice={tripNotice}
           topInset={insets.top}
           bottomInset={insets.bottom}
           onToggleMute={toggleMute}
@@ -577,6 +650,9 @@ const styles = StyleSheet.create({
   error: { color: colors.danger, fontSize: 14 },
   footnote: { ...typography.caption, paddingHorizontal: spacing.lg, paddingBottom: spacing.sm },
   summary: { fontSize: 20, fontWeight: '700', color: colors.textHeading },
+  shareRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.xs },
+  shareText: { flex: 1, gap: 2 },
+  shareTitle: { fontSize: 15, fontWeight: '600', color: colors.textHeading },
   sheet: {
     position: 'absolute',
     left: 0,

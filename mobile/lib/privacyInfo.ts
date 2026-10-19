@@ -77,6 +77,13 @@ export const PRIVACY_SECTIONS: PrivacySection[] = [
       "If you belong to a work organization, its admins and managers can see you only while you're clocked in, and only the positions recorded during that shift — never before you clock in or after you clock out. If you send an SOS while clocked in, your admins and the managers who oversee you are alerted too (never when you're off shift). If you choose check-in reminders and miss one, they're alerted with your last location. If your phone stops sending your location for about 20 minutes while you're clocked in, they're notified so they can check on you. If this ever changes, you're asked to accept the new version before anyone can see you again. A shift also ends by itself after 14 hours, other workers can't see you, and your Work tab lists every look at your location.",
   },
   {
+    id: 'shared-trips',
+    emoji: '🚗',
+    title: 'Share a trip only when you choose',
+    body:
+      "When you use Directions you can choose, trip by trip, to let one circle see where you're headed and when you expect to arrive, and to be told when you get there. It shares the destination's name and your ETA, not your route or the destination's coordinates. It's off every time unless you switch it on, it follows Ghost mode and sharing windows, it disappears when you arrive or your phone goes quiet, and finished trips are deleted after 2 days. The notification text includes the destination name.",
+  },
+  {
     id: 'medical-card',
     emoji: '🩺',
     title: 'Medical card stays private until SOS',

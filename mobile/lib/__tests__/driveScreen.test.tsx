@@ -1,5 +1,5 @@
 import React from 'react';
-import { TextInput } from 'react-native';
+import { Switch, TextInput } from 'react-native';
 import { act, create, type ReactTestRenderer } from 'react-test-renderer';
 import * as Speech from 'expo-speech';
 import osrmFixture from './fixtures/osrm-jonesboro.json';
@@ -12,6 +12,8 @@ import photonFixture from './fixtures/photon-walmart.json';
 const mockWatchers: { cb: (loc: unknown) => void; removed: boolean }[] = [];
 const mockStart = { latitude: 35.8423, longitude: -90.7043 };
 const mockFetch = jest.fn();
+const mockRpc = jest.fn();
+const mockCircle: { current: null | { id: string; name: string } } = { current: null };
 
 jest.mock('expo-router', () => ({
   useRouter: () => ({ back: jest.fn(), push: jest.fn() }),
@@ -21,8 +23,13 @@ jest.mock('react-native-safe-area-context', () => {
   const { View } = require('react-native');
   return { SafeAreaView: View, useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }) };
 });
-jest.mock('@/contexts/CircleContext', () => ({ useCircles: () => ({ selectedCircle: null }) }));
-jest.mock('@/lib/supabase', () => ({ supabase: {} }));
+jest.mock('@/contexts/CircleContext', () => ({ useCircles: () => ({ selectedCircle: mockCircle.current }) }));
+jest.mock('@/lib/supabase', () => {
+  const places: Record<string, unknown> = {};
+  for (const m of ['select', 'eq', 'order']) places[m] = () => places;
+  places.then = (resolve: (v: unknown) => void) => resolve({ data: [], error: null });
+  return { supabase: { rpc: (...a: unknown[]) => mockRpc(...a), from: () => places } };
+});
 jest.mock('expo-speech', () => ({ speak: jest.fn(), stop: jest.fn() }));
 jest.mock('expo-keep-awake', () => ({ activateKeepAwakeAsync: jest.fn(), deactivateKeepAwake: jest.fn() }));
 jest.mock('expo-location', () => ({
@@ -92,6 +99,9 @@ beforeEach(() => {
   jest.useFakeTimers();
   mockWatchers.length = 0;
   mockFetch.mockReset();
+  mockRpc.mockReset();
+  mockRpc.mockImplementation(async (name: string) => ({ data: name === 'start_shared_trip' ? 'trip-1' : null, error: null }));
+  mockCircle.current = null;
   (Speech.speak as jest.Mock).mockClear();
   mockFetch.mockImplementation(async (url: string) => ({
     ok: true,
@@ -213,5 +223,107 @@ describe('Drive screen', () => {
     });
     await press(r, 'End');
     expect(allText(r)).toContain('Where to?');
+  });
+});
+
+describe('Drive screen: sharing the trip with the circle', () => {
+  const calls = (name: string) => mockRpc.mock.calls.filter((c) => c[0] === name);
+
+  async function toPreview(r: ReactTestRenderer) {
+    await search(r, 'walmart');
+    await press(r, 'Walmart Supercenter');
+  }
+
+  it('offers sharing only when a circle is selected, and starts switched off', async () => {
+    let r = await mountAndPlan();
+    await toPreview(r);
+    expect(allText(r)).not.toContain('Share this trip');
+
+    mockCircle.current = { id: 'c1', name: 'Family' };
+    r = await mountAndPlan();
+    await toPreview(r);
+    expect(allText(r)).toContain('Share this trip with Family');
+    expect(allText(r)).toContain('Not your route');
+    expect(r.root.findByType(Switch).props.value).toBe(false);
+  });
+
+  it('tells the server nothing about a trip unless the switch is on', async () => {
+    mockCircle.current = { id: 'c1', name: 'Family' };
+    const r = await mountAndPlan();
+    await toPreview(r);
+    await press(r, 'Start');
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(calls('start_shared_trip')).toHaveLength(0);
+    expect(allText(r)).not.toContain('Sharing this trip');
+  });
+
+  it('shares the trip, keeps the ETA fresh, and announces the arrival', async () => {
+    mockCircle.current = { id: 'c1', name: 'Family' };
+    const r = await mountAndPlan();
+    await toPreview(r);
+    await act(async () => {
+      r.root.findByType(Switch).props.onValueChange(true);
+    });
+    await press(r, 'Start');
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    const start = calls('start_shared_trip');
+    expect(start).toHaveLength(1);
+    expect(start[0][1]).toMatchObject({ p_circle_id: 'c1', p_destination: 'Walmart Supercenter' });
+    // only a name and an ETA go up: no coordinates, no route
+    expect(Object.keys(start[0][1]).sort()).toEqual(['p_circle_id', 'p_destination', 'p_eta']);
+    expect(allText(r)).toContain('Sharing this trip with Family');
+
+    for (let i = 0; i < 40; i++) await emit(route[i][0], route[i][1], 13, 10_000 + i * 1_000);
+    expect(calls('update_shared_trip')).toHaveLength(0); // too soon since the start
+
+    await act(async () => {
+      jest.advanceTimersByTime(180_000); // three minutes pass; the ETA has slipped
+    });
+    await emit(route[41][0], route[41][1], 13, 60_000);
+    expect(calls('update_shared_trip')).toHaveLength(1);
+    expect(calls('update_shared_trip')[0][1].p_trip).toBe('trip-1');
+
+    for (let i = 42; i < route.length; i++) await emit(route[i][0], route[i][1], 13, 61_000 + i * 1_000);
+    expect(calls('end_shared_trip')).toHaveLength(1);
+    expect(calls('end_shared_trip')[0][1]).toEqual({ p_trip: 'trip-1', p_arrived: true });
+    expect(allText(r)).toContain("You've arrived");
+  });
+
+  it('stopping navigation ends the shared trip without announcing an arrival', async () => {
+    mockCircle.current = { id: 'c1', name: 'Family' };
+    const r = await mountAndPlan();
+    await toPreview(r);
+    await act(async () => {
+      r.root.findByType(Switch).props.onValueChange(true);
+    });
+    await press(r, 'Start');
+    await act(async () => {
+      await Promise.resolve();
+    });
+    await press(r, 'End');
+    expect(calls('end_shared_trip')).toHaveLength(1);
+    expect(calls('end_shared_trip')[0][1]).toEqual({ p_trip: 'trip-1', p_arrived: false });
+  });
+
+  it('still navigates, and says so, when the trip could not be shared', async () => {
+    mockCircle.current = { id: 'c1', name: 'Family' };
+    mockRpc.mockImplementation(async () => ({ data: null, error: { message: 'offline' } }));
+    const r = await mountAndPlan();
+    await toPreview(r);
+    await act(async () => {
+      r.root.findByType(Switch).props.onValueChange(true);
+    });
+    await press(r, 'Start');
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(allText(r)).toContain("Couldn't share this trip");
+    expect(allText(r)).toContain('mph'); // directions carry on
+    expect(allText(r)).not.toContain('Sharing this trip');
   });
 });

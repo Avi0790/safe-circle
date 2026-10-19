@@ -14,6 +14,8 @@ import { SosButton } from '@/components/SosButton';
 import { WalkBanner } from '@/components/WalkBanner';
 import { SafetyTimerBanner } from '@/components/SafetyTimerBanner';
 import { RideBanner } from '@/components/RideBanner';
+import { TripBanner } from '@/components/TripBanner';
+import { useActiveTrips } from '@/hooks/useActiveTrips';
 import { QuickActions } from '@/components/QuickActions';
 import {
   getMapType,
@@ -150,6 +152,7 @@ export default function MapTab() {
   const { selectedCircleId } = useCircles();
   const { members, isLoading } = useCircleMembers(selectedCircleId);
   const { events: sosEvents, refresh: refreshSos } = useActiveSosEvents();
+  const { trips } = useActiveTrips();
   const { walks, refresh: refreshWalks } = useActiveWalks();
   const { timers, refresh: refreshTimers } = useActiveSafetyTimers();
   const { requests: rideRequests, refresh: refreshRides } = useRideRequests();
@@ -264,6 +267,7 @@ export default function MapTab() {
         <WalkBanner walks={walks} onChanged={refreshWalks} />
         <SafetyTimerBanner timers={timers} onChanged={refreshTimers} />
         <RideBanner requests={rideRequests} onChanged={refreshRides} onAskEveryone={handleAskEveryone} />
+        <TripBanner trips={trips} />
         {locationIssue === 'denied' && (
           <Pressable style={styles.locationBanner} onPress={() => Linking.openSettings()}>
             <Text style={styles.locationBannerText}>

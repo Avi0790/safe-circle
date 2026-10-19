@@ -219,7 +219,7 @@ export const HELP_FAQ: FaqEntry[] = [
     keywords: ['directions', 'navigate', 'navigation', 'turn by turn', 'speedometer', 'route to'],
     question: 'How do I get driving directions?',
     answer:
-      "Open ⋯ Quick actions on the Map tab and tap Directions. Search for a place (or pick a saved one), check the route, and tap Start for turn-by-turn text and voice with a live speedometer. You can't type a destination while the car is moving, so ask a passenger or pull over first. It works while the screen is open, and routes come from free OpenStreetMap-based services, so double-check them against road signs.",
+      "Open ⋯ Quick actions on the Map tab and tap Directions. Search for a place (or pick a saved one), check the route, and tap Start for turn-by-turn text and voice with a live speedometer. You can't type a destination while the car is moving, so ask a passenger or pull over first. It works while the screen is open, and routes come from free OpenStreetMap-based services, so double-check them against road signs. Before you start you can also choose to share the trip with your circle, so they see where you're headed and your ETA.",
   },
   {
     id: 'privacy-overview',
