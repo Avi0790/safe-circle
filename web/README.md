@@ -82,6 +82,14 @@ if you haven't already.
   active walk-me-home timers and open ride requests appear as banners
   (`WalkRideBanner.tsx`). An overdue walk isn't repeated because it has
   already raised a normal SOS.
+- **Shared trips ("Share my ETA")** — read-only: when a circle-mate shares a
+  drive from the mobile app, the selected circle shows "🚗 Sam is heading to
+  Mall — arriving in about 12 min (3:41 PM)" (`TripBanner.tsx`,
+  `lib/sharedTrips.ts`). Only the destination's name and the ETA are shared,
+  never the route. It counts down locally, updates live, and disappears when
+  they arrive, stop sharing, or their phone goes quiet for 10 minutes. Your
+  own trip isn't shown, and people who've hidden from you (Ghost mode) or
+  stopped sharing are filtered out by the database, not this page.
 - **Quick status chips and SOS acknowledgements** — read-only: a member's
   chip ("🚗 On my way") shows next to their name in `MemberList.tsx` while
   it's still active; an active SOS shows who's tapped "I'm on my way" on

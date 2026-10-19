@@ -20,6 +20,8 @@ import { ActivityFeed } from './ActivityFeed'
 import { ChatFeed } from './ChatFeed'
 import { SosBanner } from './SosBanner'
 import { WalkRideBanner } from './WalkRideBanner'
+import { TripBanner } from './TripBanner'
+import type { SharedTrip } from '../lib/sharedTrips'
 import { fetchWeather, type Weather } from '../lib/weather'
 
 const MESSAGE_LIMIT = 50
@@ -41,6 +43,7 @@ export function Dashboard({ myUserId }: { myUserId: string }) {
   const [walks, setWalks] = useState<Walk[]>([])
   const [safetyTimers, setSafetyTimers] = useState<SafetyTimer[]>([])
   const [rides, setRides] = useState<RideRequest[]>([])
+  const [trips, setTrips] = useState<SharedTrip[]>([])
   const [pins, setPins] = useState<MapPin[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -271,6 +274,38 @@ export function Dashboard({ myUserId }: { myUserId: string }) {
       supabase.removeChannel(channel)
     }
   }, [loadWalksAndRides])
+
+  // Shared trips ("share my ETA", started from the mobile app): circle-scoped,
+  // and RLS already hides the ones from people who've hidden from you or have
+  // stopped sharing. Unlike SOS, a trip belongs to one circle, so it follows
+  // the circle selected in the sidebar.
+  const loadTrips = useCallback(async (circleId: string) => {
+    const { data } = await supabase
+      .from('shared_trips')
+      .select('id, user_id, circle_id, destination, eta, status, started_at, updated_at, profiles(full_name)')
+      .eq('circle_id', circleId)
+      .eq('status', 'active')
+      .order('started_at', { ascending: false })
+    setTrips((data as unknown as SharedTrip[]) ?? [])
+  }, [])
+
+  useEffect(() => {
+    if (!selectedCircleId) return
+    loadTrips(selectedCircleId)
+
+    const channel = supabase
+      .channel(`shared-trips-${selectedCircleId}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'shared_trips', filter: `circle_id=eq.${selectedCircleId}` },
+        () => loadTrips(selectedCircleId),
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [selectedCircleId, loadTrips])
 
   // Meetup pins (mobile-only to drop/remove; this dashboard only shows
   // them, same as everything else). Circle-scoped, unlike walks/rides.
@@ -518,6 +553,7 @@ export function Dashboard({ myUserId }: { myUserId: string }) {
 
         <SosBanner events={sosEvents} />
         <WalkRideBanner walks={walks} timers={safetyTimers} rides={rides} />
+        <TripBanner trips={trips} myUserId={myUserId} />
         <MemberList
           members={members}
           selectedId={historyMemberId}
