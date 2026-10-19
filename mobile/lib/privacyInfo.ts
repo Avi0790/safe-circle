@@ -81,7 +81,7 @@ export const PRIVACY_SECTIONS: PrivacySection[] = [
     emoji: '🚗',
     title: 'Share a trip only when you choose',
     body:
-      "When you use Directions, driving or walking, you can choose, trip by trip, to let one circle see where you're headed, whether you're driving or walking, and when you expect to arrive, and to be told when you get there. It shares the destination's name and your ETA, not your route or the destination's coordinates. It's off every time unless you switch it on, it follows Ghost mode and sharing windows, it disappears when you arrive or your phone goes quiet, and finished trips are deleted after 2 days. The notification text includes the destination name.",
+      "When you use Directions, driving or walking, or tell your circle you're on a bus, train or flight, you can choose, trip by trip, to let one circle see where you're headed, whether you're driving or walking, and when you expect to arrive, and to be told when you get there. It shares the destination's name and your ETA, not your route or the destination's coordinates. It's off every time unless you switch it on, it follows Ghost mode and sharing windows, it disappears when you arrive or your phone goes quiet, and finished trips are deleted after 2 days. The notification text includes the destination name.",
   },
   {
     id: 'medical-card',

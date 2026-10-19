@@ -4,8 +4,14 @@ import {
   ETA_CHANGE_MS,
   ETA_HEARTBEAT_MS,
   ETA_MIN_INTERVAL_MS,
+  isTripLive,
   liveTripsOfOthers,
+  maxTripMinutes,
+  myManualTrips,
   shouldSendEtaUpdate,
+  stepTripMinutes,
+  TRIP_PRESET_MINUTES,
+  formatTripDuration,
   startSharedTrip,
   tripEtaText,
   tripHeadline,
@@ -80,5 +86,72 @@ describe('walking trips', () => {
     expect((supabase.rpc as jest.Mock).mock.calls[0][1]).toMatchObject({ p_destination: 'Library', p_mode: 'walk' });
     await startSharedTrip('c', 'Walmart', 1_000_000);
     expect((supabase.rpc as jest.Mock).mock.calls[1][1]).toMatchObject({ p_mode: 'drive' });
+  });
+});
+
+describe('bus, train and flight trips', () => {
+  const now = Date.parse('2026-10-19T15:00:00Z');
+  const base = (over: Partial<SharedTrip>): SharedTrip => ({
+    id: 't', user_id: 'u1', circle_id: 'c', destination: 'Denver', eta: new Date(now + 4 * 3_600_000).toISOString(),
+    mode: 'flight', status: 'active', started_at: new Date(now - 3 * 3_600_000).toISOString(),
+    updated_at: new Date(now - 3 * 3_600_000).toISOString(), profiles: { full_name: 'Sam' }, ...over,
+  });
+
+  it('stays up while nothing reports in (a plane is in airplane mode), because it goes by ETA', () => {
+    expect(isTripLive(base({}), now)).toBe(true); // silent for 3 hours
+    expect(isTripLive(base({ mode: 'drive' }), now)).toBe(false); // a drive that quiet is gone
+  });
+
+  it('fades out after the ETA plus the grace for each kind', () => {
+    const late = (mode: 'bus' | 'train' | 'flight', minutes: number) =>
+      isTripLive(base({ mode, eta: new Date(now - minutes * 60_000).toISOString() }), now);
+    expect(late('bus', 29)).toBe(true);
+    expect(late('bus', 31)).toBe(false);
+    expect(late('train', 44)).toBe(true);
+    expect(late('train', 46)).toBe(false);
+    expect(late('flight', 119)).toBe(true);
+    expect(late('flight', 121)).toBe(false);
+  });
+
+  it('never shows a finished trip, mine, or a stale one', () => {
+    expect(isTripLive(base({ status: 'arrived' }), now)).toBe(false);
+    expect(isTripLive(base({ status: 'stale' }), now)).toBe(false);
+    const list = [base({ id: 'theirs' }), base({ id: 'mine', user_id: 'me' })];
+    expect(liveTripsOfOthers(list, 'me', now).map((t) => t.id)).toEqual(['theirs']);
+    expect(myManualTrips(list, 'me', now).map((t) => t.id)).toEqual(['mine']);
+    expect(myManualTrips([base({ id: 'drive', user_id: 'me', mode: 'drive', updated_at: new Date(now).toISOString() })], 'me', now)).toEqual([]);
+  });
+
+  it('words each kind, and reads long trips in hours', () => {
+    const p = { full_name: 'Sam' };
+    expect(tripHeadline({ mode: 'bus', destination: 'Campus', profiles: p })).toBe('🚌 Sam is on the bus to Campus');
+    expect(tripHeadline({ mode: 'train', destination: 'Chicago', profiles: p })).toBe('🚆 Sam is on the train to Chicago');
+    expect(tripHeadline({ mode: 'flight', destination: 'Denver', profiles: p })).toBe('✈️ Sam is flying to Denver');
+    expect(formatTripDuration(25)).toBe('25 min');
+    expect(formatTripDuration(89)).toBe('89 min');
+    expect(formatTripDuration(105)).toBe('1 h 45 min');
+    expect(formatTripDuration(120)).toBe('2 h');
+    expect(tripEtaText(new Date(now + 245 * 60_000).toISOString(), now, 'flight')).toMatch(/^landing in about 4 h 5 min \(/);
+    expect(tripEtaText(new Date(now + 25 * 60_000).toISOString(), now, 'bus')).toMatch(/^arriving in about 25 min \(/);
+  });
+
+  it('says a late bus or flight was due, not "arriving now"', () => {
+    const past = new Date(now - 10 * 60_000).toISOString();
+    expect(tripEtaText(past, now, 'bus')).toMatch(/^was due at /);
+    expect(tripEtaText(past, now, 'flight')).toMatch(/^was due at /);
+    expect(tripEtaText(past, now, 'drive')).toBe('arriving now');
+  });
+
+  it('steps the arrival time within what the server accepts', () => {
+    expect(stepTripMinutes('bus', 30, 1)).toBe(35);
+    expect(stepTripMinutes('flight', 120, 1)).toBe(135);
+    expect(stepTripMinutes('bus', 5, -1)).toBe(5);
+    expect(stepTripMinutes('bus', maxTripMinutes('bus'), 1)).toBe(maxTripMinutes('bus'));
+    expect(maxTripMinutes('bus')).toBeLessThan(24 * 60);
+    expect(maxTripMinutes('flight')).toBeLessThan(48 * 60);
+    expect(maxTripMinutes('flight')).toBeGreaterThan(24 * 60);
+    for (const mode of ['bus', 'train', 'flight'] as const) {
+      for (const m of TRIP_PRESET_MINUTES[mode]) expect(m).toBeLessThanOrEqual(maxTripMinutes(mode));
+    }
   });
 });

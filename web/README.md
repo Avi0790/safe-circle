@@ -83,8 +83,9 @@ if you haven't already.
   (`WalkRideBanner.tsx`). An overdue walk isn't repeated because it has
   already raised a normal SOS.
 - **Shared trips ("Share my ETA")** — read-only: when a circle-mate shares a
-  drive or a walk from the mobile app, the selected circle shows "🚗 Sam is
-  heading to Mall" (or "🚶 Sam is walking to the library") and "arriving in
+  drive, a walk, or a bus, train or flight from the mobile app, the selected
+  circle shows "🚗 Sam is heading to Mall" (or "🚶 Sam is walking to the
+  library", "✈️ Sam is flying to Denver") and "arriving in
   about 12 min (3:41 PM)" (`TripBanner.tsx`,
   `lib/sharedTrips.ts`). Only the destination's name and the ETA are shared,
   never the route. It counts down locally, updates live, and disappears when

@@ -545,6 +545,23 @@ development mode is also inherently slower than a real build, and running over
   shared trip records whether it is a drive or a walk (backend migration
   `...000059`), so circles see "🚶 Sam is walking to the library". Tested
   against a real captured walking route (`walkSimulation.test.ts`).
+  **Transit** (third option on the toggle): there's no free, keyless transit
+  routing, so tapping a place opens the phone's Maps app with transit
+  directions (Apple Maps `dirflg=r`; on Android a Google Maps universal link,
+  since `google.navigation:` has no transit option). The typing lock for a
+  moving vehicle doesn't apply, since you're a passenger.
+- **Share a bus, train or flight** (⋯ Quick actions, or the link on
+  "Where to?"; `app/(app)/share-trip.tsx`): a manual shared trip. Pick the
+  kind, type the destination, set the arrival time with presets or a stepper
+  (5-minute steps, 15 for flights; up to 24 hours, 48 for a flight), and the
+  circle sees "✈️ Sam is flying to Denver, landing in about 2 h" in the same
+  trip banner and push as drives and walks. Nothing reports in while you
+  travel (a phone on a plane can't), so these trips expire by their ETA plus a
+  grace period (30 min bus, 45 min train, 2 h flight; backend migration
+  `...000060`) instead of after 10 quiet minutes. While one is up the screen
+  shows it with **I've arrived** (tells the circle), **Running late (+15 min)**
+  and **Stop sharing**. If your temporary sharing window has ended, it warns
+  that the circle can't see trips; it never turns on location tracking itself.
   **Saved destinations** (`lib/savedDestinations.ts`): on the route preview,
   save the place as Home, Work, or under its own name (up to 20). They are
   stored only on the phone, per account, so a home address is never uploaded or

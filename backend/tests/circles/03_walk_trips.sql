@@ -84,7 +84,7 @@ begin
 
   -- ===== validation =====
   begin perform public.start_shared_trip(circ, 'X', eta, 'run'); msg := msg || pg_temp.ok('unknown mode refused', false);
-  exception when others then msg := msg || pg_temp.ok('unknown mode refused', sqlerrm like 'Choose driving or walking%'); end;
+  exception when others then msg := msg || pg_temp.ok('unknown mode refused', sqlerrm like 'Choose driving, walking%'); end;
   begin perform public.start_shared_trip(circ, 'X', eta, 'WALK'); msg := msg || pg_temp.ok('mode is case-sensitive, not guessed', false);
   exception when others then msg := msg || pg_temp.ok('mode is case-sensitive, not guessed', true); end;
   begin perform public.start_shared_trip(circ, 'X', eta, null); msg := msg || pg_temp.ok('null mode refused', false);

@@ -229,6 +229,13 @@ describe('external maps fallback', () => {
     expect(externalMapsUrl(B, 'android')).toBe('google.navigation:q=35.01,-90');
   });
 
+  it('hands transit to the Maps app: Apple Maps public-transit, Google Maps universal link', () => {
+    expect(externalMapsUrl(B, 'ios', 'transit')).toBe('http://maps.apple.com/?daddr=35.01,-90&dirflg=r');
+    expect(externalMapsUrl(B, 'android', 'transit')).toBe(
+      'https://www.google.com/maps/dir/?api=1&destination=35.01,-90&travelmode=transit',
+    );
+  });
+
   it('asks for walking directions when walking', () => {
     expect(externalMapsUrl(B, 'ios', 'walk')).toBe('http://maps.apple.com/?daddr=35.01,-90&dirflg=w');
     expect(externalMapsUrl(B, 'android', 'walk')).toBe('google.navigation:q=35.01,-90&mode=w');

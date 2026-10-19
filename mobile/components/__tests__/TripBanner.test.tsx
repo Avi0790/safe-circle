@@ -42,6 +42,37 @@ describe('TripBanner', () => {
     await act(async () => tree.unmount());
   });
 
+  it('keeps showing a flight that has not reported in for hours, until it lands', async () => {
+    const hoursAgo = new Date(Date.now() - 3 * 3_600_000).toISOString();
+    let tree!: ReturnType<typeof create>;
+    await act(async () => {
+      tree = create(
+        <TripBanner
+          trips={[
+            trip({ mode: 'flight', destination: 'Denver', updated_at: hoursAgo, eta: new Date(Date.now() + 2 * 3_600_000 + 5 * 60_000).toISOString() }),
+            trip({ id: 'drive', mode: 'drive', destination: 'Walmart', updated_at: hoursAgo }),
+          ]}
+        />,
+      );
+    });
+    const out = text(tree.toJSON());
+    expect(out).toContain('✈️ Sam is flying to Denver');
+    expect(out).toMatch(/landing in about 2 h (4|5) min/);
+    expect(out).not.toContain('Walmart'); // a drive that quiet is gone
+    await act(async () => tree.unmount());
+  });
+
+  it('shows the bus and the train', async () => {
+    let tree!: ReturnType<typeof create>;
+    await act(async () => {
+      tree = create(<TripBanner trips={[trip({ mode: 'bus', destination: 'Campus' }), trip({ id: 'tr', mode: 'train', destination: 'Chicago' })]} />);
+    });
+    const out = text(tree.toJSON());
+    expect(out).toContain('🚌 Sam is on the bus to Campus');
+    expect(out).toContain('🚆 Sam is on the train to Chicago');
+    await act(async () => tree.unmount());
+  });
+
   it('renders nothing when nobody is driving', async () => {
     let tree!: ReturnType<typeof create>;
     await act(async () => {

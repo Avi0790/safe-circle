@@ -20,7 +20,7 @@ export function TripBanner({ trips }: { trips: SharedTrip[] }) {
           <Text style={styles.title} numberOfLines={1}>
             {tripHeadline(trip)}
           </Text>
-          <Text style={styles.sub}>{tripEtaText(trip.eta, now)}</Text>
+          <Text style={styles.sub}>{tripEtaText(trip.eta, now, trip.mode)}</Text>
         </View>
       ))}
     </View>

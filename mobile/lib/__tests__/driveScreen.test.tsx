@@ -1,5 +1,5 @@
 import React from 'react';
-import { Alert, Switch, TextInput } from 'react-native';
+import { Alert, Linking, Switch, TextInput } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { act, create, type ReactTestRenderer } from 'react-test-renderer';
 import * as Speech from 'expo-speech';
@@ -15,11 +15,12 @@ const mockWatchers: { cb: (loc: unknown) => void; removed: boolean }[] = [];
 const mockStart = { latitude: 35.8423, longitude: -90.7043 };
 const mockFetch = jest.fn();
 const mockRpc = jest.fn();
+const mockPush = jest.fn();
 const mockUser: { current: null | string } = { current: null };
 const mockCircle: { current: null | { id: string; name: string } } = { current: null };
 
 jest.mock('expo-router', () => ({
-  useRouter: () => ({ back: jest.fn(), push: jest.fn() }),
+  useRouter: () => ({ back: jest.fn(), push: mockPush }),
   Stack: { Screen: () => null },
 }));
 jest.mock('react-native-safe-area-context', () => {
@@ -107,6 +108,7 @@ beforeEach(async () => {
   mockWatchers.length = 0;
   mockFetch.mockReset();
   mockRpc.mockReset();
+  mockPush.mockReset();
   mockRpc.mockImplementation(async (name: string) => ({ data: name === 'start_shared_trip' ? 'trip-1' : null, error: null }));
   mockCircle.current = null;
   mockUser.current = null;
@@ -486,5 +488,48 @@ describe('Drive screen: walking', () => {
     });
     expect(footCalls().length).toBe(before + 1);
     expect(mockFetch.mock.calls.some((c) => String(c[0]).includes('/route/v1/driving'))).toBe(false);
+  });
+});
+
+describe('Drive screen: transit', () => {
+  it('opens the Maps app with transit directions, and does not plan a route itself', async () => {
+    const open = jest.spyOn(Linking, 'openURL').mockResolvedValue(true as never);
+    const r = await mountAndPlan();
+    await press(r, 'Transit');
+    expect(allText(r)).toContain("doesn't plan bus or train routes");
+    await search(r, 'walmart');
+    await press(r, 'Walmart Supercenter');
+    expect(open).toHaveBeenCalledTimes(1);
+    expect(String(open.mock.calls[0][0])).toMatch(/^http:\/\/maps\.apple\.com\/\?daddr=[-\d.]+,[-\d.]+&dirflg=r$/);
+    expect(mockFetch.mock.calls.some((c) => String(c[0]).includes('/route/v1/'))).toBe(false);
+    expect(allText(r)).toContain('Where to?'); // still on the plan screen
+    open.mockRestore();
+  });
+
+  it('does not lock the search box on a moving bus (you are a passenger)', async () => {
+    const r = await mountAndPlan();
+    await press(r, 'Transit');
+    await emit(mockStart.longitude, mockStart.latitude, 13, 2_000);
+    await emit(mockStart.longitude, mockStart.latitude, 13, 3_000);
+    expect(allText(r)).not.toContain("You're moving");
+    expect(r.root.findByType(TextInput).props.editable).toBe(true);
+  });
+
+  it('remembers Transit, and still locks typing in Drive', async () => {
+    let r = await mountAndPlan();
+    await press(r, 'Transit');
+    await act(async () => r.unmount());
+    r = await mountAndPlan();
+    expect(r.root.findAll((n) => n.props.accessibilityState?.selected === true && text({ children: n.children }).includes('Transit')).length).toBeGreaterThan(0);
+    await press(r, 'Drive');
+    await emit(mockStart.longitude, mockStart.latitude, 13, 2_000);
+    await emit(mockStart.longitude, mockStart.latitude, 13, 3_000);
+    expect(allText(r)).toContain("You're moving");
+  });
+
+  it('links to sharing a bus, train or flight trip', async () => {
+    const r = await mountAndPlan();
+    await press(r, 'On a bus, train or flight?');
+    expect(mockPush).toHaveBeenCalledWith('/share-trip');
   });
 });

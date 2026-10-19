@@ -219,7 +219,14 @@ export const HELP_FAQ: FaqEntry[] = [
     keywords: ['directions', 'navigate', 'navigation', 'turn by turn', 'speedometer', 'route to'],
     question: 'How do I get driving directions?',
     answer:
-      "Open ⋯ Quick actions on the Map tab and tap Directions. Choose 🚗 Drive or 🚶 Walk at the top (it remembers your choice), then search for a place (or pick one you saved), check the route, and tap Start for turn-by-turn text and voice with a live speedometer. When driving you can't type a destination while the car is moving, so ask a passenger or pull over first; walking has no such lock, and gives short “In 200 ft, turn left” prompts and your pace instead of a speedometer. It works while the screen is open, and routes come from free OpenStreetMap-based services, so double-check them against road signs. On the route screen you can save the place as Home, Work or by its name; saved places stay on your phone only and appear first next time, with a Remove button. Before you start you can also choose to share the trip with your circle, so they see where you're headed and your ETA.",
+      "Open ⋯ Quick actions on the Map tab and tap Directions. Choose 🚗 Drive or 🚶 Walk at the top (it remembers your choice), then search for a place (or pick one you saved), check the route, and tap Start for turn-by-turn text and voice with a live speedometer. When driving you can't type a destination while the car is moving, so ask a passenger or pull over first; walking has no such lock, and gives short “In 200 ft, turn left” prompts and your pace instead of a speedometer. It works while the screen is open, and routes come from free OpenStreetMap-based services, so double-check them against road signs. On the route screen you can save the place as Home, Work or by its name; saved places stay on your phone only and appear first next time, with a Remove button. Before you start you can also choose to share the trip with your circle, so they see where you're headed and your ETA. Choose 🚌 Transit to get bus and train directions in your phone's Maps app instead (Safe Circle can't plan those itself).",
+  },
+  {
+    id: 'share-trip',
+    keywords: ['bus', 'train', 'flight', 'plane', 'fly', 'flying', 'transit', 'share trip', 'eta', 'landing'],
+    question: "Can I let my circle know I'm on a bus, train or flight?",
+    answer:
+      "Yes: ⋯ Quick actions → Share a bus, train or flight (or the link on the Directions screen). Pick the kind of trip, type where you're going, and set when you expect to arrive. Your circle sees, for example, “✈️ Sam is flying to Denver, landing in about 2 h”, and gets a notification; they don't see a route. Because a phone on a plane can't send updates, the trip stays up until your arrival time plus a grace period for delays (30 minutes for a bus, 45 for a train, 2 hours for a flight), or until you tap I've arrived (which tells them) or Stop sharing (which doesn't). Running late moves the time 15 minutes later. Ghost mode and sharing windows apply as usual.",
   },
   {
     id: 'privacy-overview',

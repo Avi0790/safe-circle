@@ -17,6 +17,11 @@ describe('travel mode preference', () => {
     expect(await getTravelMode()).toBe('drive');
   });
 
+  it('remembers Transit too', async () => {
+    await setTravelMode('transit');
+    expect(await getTravelMode()).toBe('transit');
+  });
+
   it('treats anything unexpected in storage as drive', async () => {
     await AsyncStorage.setItem('safecircle.travelMode.v1', 'cycling');
     expect(await getTravelMode()).toBe('drive');

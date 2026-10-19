@@ -42,7 +42,7 @@ import {
 } from '@/lib/savedDestinations';
 import { endSharedTrip, shouldSendEtaUpdate, startSharedTrip, updateSharedTrip } from '@/lib/sharedTrips';
 import { supabase } from '@/lib/supabase';
-import { getTravelMode, setTravelMode } from '@/lib/travelMode';
+import { getTravelMode, setTravelMode, type PlanMode } from '@/lib/travelMode';
 import { colors, radius, spacing, typography } from '@/lib/theme';
 
 type Phase = 'plan' | 'preview' | 'driving' | 'arrived';
@@ -92,7 +92,9 @@ export default function DriveScreen() {
   const [saved, setSaved] = useState<SavedPlace[]>([]);
   const [mine, setMine] = useState<SavedDestination[]>([]);
   const [saveNotice, setSaveNotice] = useState<string | null>(null);
-  const [mode, setMode] = useState<TravelMode>('drive');
+  const [plan, setPlan] = useState<PlanMode>('drive');
+  // Transit hands over to the Maps app, so navigation itself is only ever a drive or a walk.
+  const mode: TravelMode = plan === 'walk' ? 'walk' : 'drive';
   const [dest, setDest] = useState<Destination | null>(null);
   const [prepared, setPrepared] = useState<PreparedRoute | null>(null);
   const [routing, setRouting] = useState(false);
@@ -360,17 +362,21 @@ export default function DriveScreen() {
   useEffect(() => {
     let cancelled = false;
     getTravelMode().then((m) => {
-      if (!cancelled) setMode(m);
+      if (!cancelled) setPlan(m);
     });
     return () => {
       cancelled = true;
     };
   }, []);
 
-  function chooseMode(next: TravelMode) {
-    setMode(next);
-    modeRef.current = next;
+  function chooseMode(next: PlanMode) {
+    setPlan(next);
+    modeRef.current = next === 'walk' ? 'walk' : 'drive';
     setTravelMode(next);
+  }
+
+  function openTransit(target: Destination) {
+    Linking.openURL(externalMapsUrl(target, Platform.OS, 'transit'));
   }
 
   // Personal places live on this phone only (lib/savedDestinations.ts).
@@ -525,7 +531,7 @@ export default function DriveScreen() {
   const walking = mode === 'walk';
   // The "ask a passenger" lock is about someone typing while driving; it makes
   // no sense for a person on foot (a jogger would trip it).
-  const moving = !walking && (speedMps ?? 0) >= MOVING_MPS;
+  const moving = plan === 'drive' && (speedMps ?? 0) >= MOVING_MPS;
   const rawMph = speedToMph(speedMps) ?? 0;
   // Walking pace is a few mph, so one decimal says something; a car does not need it.
   const mph = speedMps == null ? null : walking ? Math.round(rawMph * 10) / 10 : Math.round(rawMph) < 1 ? 0 : Math.round(rawMph);
@@ -578,21 +584,30 @@ export default function DriveScreen() {
           </View>
 
           <View style={styles.modeRow} accessibilityRole="tablist">
-            {(['drive', 'walk'] as const).map((m) => (
+            {(['drive', 'walk', 'transit'] as const).map((m) => (
               <Pressable
                 key={m}
                 accessibilityRole="tab"
-                accessibilityState={{ selected: mode === m }}
+                accessibilityState={{ selected: plan === m }}
                 disabled={routing}
-                style={[styles.modeBtn, mode === m && styles.modeBtnOn]}
+                style={[styles.modeBtn, plan === m && styles.modeBtnOn]}
                 onPress={() => chooseMode(m)}
               >
-                <Text style={[styles.modeText, mode === m && styles.modeTextOn]}>
-                  {m === 'drive' ? '🚗 Drive' : '🚶 Walk'}
+                <Text style={[styles.modeText, plan === m && styles.modeTextOn]}>
+                  {m === 'drive' ? '🚗 Drive' : m === 'walk' ? '🚶 Walk' : '🚌 Transit'}
                 </Text>
               </Pressable>
             ))}
           </View>
+          {plan === 'transit' && (
+            <Text style={typography.caption}>
+              Safe Circle doesn't plan bus or train routes (that needs schedule data), so tapping a
+              place opens your Maps app with transit directions.
+            </Text>
+          )}
+          <Pressable onPress={() => router.push('/share-trip')} accessibilityRole="link">
+            <Text style={styles.link}>On a bus, train or flight? Share your trip with your circle →</Text>
+          </Pressable>
 
           {moving && (
             <Text style={styles.warning}>
@@ -637,7 +652,7 @@ export default function DriveScreen() {
                 <Pressable
                   style={[styles.row, styles.rowGrow]}
                   disabled={routing || moving}
-                  onPress={() => chooseDestination(item.target)}
+                  onPress={() => (plan === 'transit' ? openTransit(item.target) : chooseDestination(item.target))}
                 >
                   <Text style={styles.rowTitle}>{item.title}</Text>
                   {item.subtitle ? <Text style={typography.caption}>{item.subtitle}</Text> : null}
@@ -832,6 +847,7 @@ const styles = StyleSheet.create({
     maxWidth: '100%',
   },
   chipText: { fontSize: 14, fontWeight: '600', color: colors.textHeading },
+  link: { color: colors.accent, fontSize: 14, fontWeight: '600' },
   modeRow: { flexDirection: 'row', gap: spacing.sm },
   modeBtn: {
     flex: 1,
