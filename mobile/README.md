@@ -498,6 +498,31 @@ development mode is also inherently slower than a real build, and running over
   against the migrations when written, and a test asserts every button's
   route exists and is registered so the screen can't point at nothing. The
   in-app Help also answers "how is my privacy protected?".
+- **Directions** (⋯ Quick actions → 🧭 Directions, `app/(app)/drive.tsx`,
+  `lib/navigation.ts`, `lib/routing.ts`, `lib/geocode.ts`, `components/DriveHud.tsx`)
+  — a Google/Apple-Maps-style drive: it starts from your current location, you
+  search for a place (or pick one of your circle's saved places), see the route
+  with its distance, time and arrival, then **Start** for turn-by-turn text and
+  voice, a live **speedometer** (mph, from the phone's GPS at full rate while
+  navigating), distance and time remaining, automatic **rerouting** if you leave
+  the route, and arrival. The screen stays awake while navigating, and *Open in
+  Maps app instead* hands the destination to Apple/Google Maps if our routing
+  can't be reached. **Free and keyless:** routes from OSRM, place search from
+  Photon (both OpenStreetMap data), voice from the phone's own text-to-speech
+  (`expo-speech`). **Safety:** you can't type a destination while the vehicle is
+  moving (about 5 mph); the screen says to ask a passenger or pull over, and the
+  driving view has only mute and end. **Honest limits:** the public OSRM and
+  Photon servers are shared community services (demo-grade; set
+  `EXPO_PUBLIC_OSRM_URL` / `EXPO_PUBLIC_GEOCODER_URL` to your own before real
+  use); there are no live traffic or speed-limit signs (neither is available free
+  and keyless); it works while the screen is open, not as a background navigator;
+  and the request, including your location and search text, goes from the phone
+  to those services, which the Privacy screen says. The maths (position along
+  the route, next turn, off-route, voice prompts) is plain functions with tests,
+  and one test drives a real captured 8.3 km route through the actual screen
+  with simulated GPS, checking the speed readout, spoken turns, arrival and
+  rerouting. Not built yet: sharing your ETA with your circle, saving
+  destinations, and web.
 - **QR invite codes** (`components/InviteQr.tsx`, `QrScannerModal.tsx`,
   `lib/joinCode.ts`, `lib/qr.ts`): creating a circle now shows a QR code next to
   the invite code, and Settings → Invite shows one for any code you generate.

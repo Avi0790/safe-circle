@@ -64,6 +64,7 @@ function AppNavigator() {
             <Stack.Screen name="location-views" options={{ headerShown: true }} />
             <Stack.Screen name="history-retention" options={{ headerShown: true }} />
             <Stack.Screen name="privacy" options={{ headerShown: true }} />
+            <Stack.Screen name="drive" options={{ headerShown: false }} />
             <Stack.Screen name="crew" options={{ headerShown: true }} />
             <Stack.Screen name="crew-worker" options={{ headerShown: true }} />
             <Stack.Screen name="crew-manage" options={{ headerShown: true }} />

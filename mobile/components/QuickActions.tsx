@@ -14,7 +14,7 @@ export function QuickActions({ onRideRequested }: { onRideRequested: () => void 
   const [open, setOpen] = useState(false);
   const [requesting, setRequesting] = useState(false);
 
-  function go(path: '/walk' | '/drop-pin' | '/safety-timer' | '/text-for-help' | '/ai-help') {
+  function go(path: '/walk' | '/drop-pin' | '/safety-timer' | '/text-for-help' | '/ai-help' | '/drive') {
     setOpen(false);
     router.push(path);
   }
@@ -56,6 +56,7 @@ export function QuickActions({ onRideRequested }: { onRideRequested: () => void 
     <View style={styles.container}>
       {open && (
         <View style={styles.menu}>
+          <MenuRow label="🧭 Directions" onPress={() => go('/drive')} />
           <MenuRow label="🚶 Walk me home" onPress={() => go('/walk')} />
           <MenuRow label="⏱️ Check on me" onPress={() => go('/safety-timer')} />
           <MenuRow

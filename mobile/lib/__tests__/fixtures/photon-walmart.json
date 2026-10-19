@@ -1,0 +1,4 @@
+{"type":"FeatureCollection","features":[
+ {"type":"Feature","geometry":{"type":"Point","coordinates":[-90.6552,35.8101]},"properties":{"osm_type":"N","osm_id":11,"name":"Walmart Supercenter","housenumber":"1815","street":"East Highland Drive","city":"Jonesboro","state":"Arkansas"}},
+ {"type":"Feature","geometry":{"type":"Point","coordinates":[-90.697772,35.8028865]},"properties":{"osm_type":"N","osm_id":12,"name":"Walmart","street":"Harrisburg Road","city":"Jonesboro","state":"Arkansas"}}
+]}

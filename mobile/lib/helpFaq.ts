@@ -215,6 +215,13 @@ export const HELP_FAQ: FaqEntry[] = [
       "The circle gets a push the moment someone's phone first drops to 20% or below, so people know sharing might stop soon — not repeated on every low-battery ping after that.",
   },
   {
+    id: 'directions',
+    keywords: ['directions', 'navigate', 'navigation', 'turn by turn', 'speedometer', 'route to'],
+    question: 'How do I get driving directions?',
+    answer:
+      "Open ⋯ Quick actions on the Map tab and tap Directions. Search for a place (or pick a saved one), check the route, and tap Start for turn-by-turn text and voice with a live speedometer. You can't type a destination while the car is moving, so ask a passenger or pull over first. It works while the screen is open, and routes come from free OpenStreetMap-based services, so double-check them against road signs.",
+  },
+  {
     id: 'privacy-overview',
     keywords: ['how is my privacy', 'is my location private', 'who can see my location', 'privacy'],
     question: 'How is my privacy protected?',
