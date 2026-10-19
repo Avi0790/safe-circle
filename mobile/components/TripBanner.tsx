@@ -1,10 +1,10 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNow } from '@/hooks/useNow';
-import { liveTripsOfOthers, tripEtaText, type SharedTrip } from '@/lib/sharedTrips';
+import { liveTripsOfOthers, tripEtaText, tripHeadline, type SharedTrip } from '@/lib/sharedTrips';
 import { colors, radius, spacing } from '@/lib/theme';
 
-// Who in your circles is driving somewhere, and when they expect to arrive.
+// Who in your circles is driving or walking somewhere, and when they expect to arrive.
 // Informational only: nothing to tap, and it disappears on its own when they
 // arrive, stop sharing, or their phone goes quiet.
 export function TripBanner({ trips }: { trips: SharedTrip[] }) {
@@ -18,7 +18,7 @@ export function TripBanner({ trips }: { trips: SharedTrip[] }) {
       {visible.map((trip) => (
         <View key={trip.id} style={styles.card}>
           <Text style={styles.title} numberOfLines={1}>
-            🚗 {trip.profiles?.full_name ?? 'Someone'} is heading to {trip.destination}
+            {tripHeadline(trip)}
           </Text>
           <Text style={styles.sub}>{tripEtaText(trip.eta, now)}</Text>
         </View>

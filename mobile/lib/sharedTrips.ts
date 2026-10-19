@@ -1,7 +1,8 @@
 import { formatClockTime } from '@/lib/format';
+import type { TravelMode } from '@/lib/navigation';
 import { supabase } from '@/lib/supabase';
 
-// "Share my ETA": while driving with in-app directions, a person can let their
+// "Share my ETA": while driving or walking with in-app directions, a person can let their
 // circle see where they're headed and when they expect to arrive (backend:
 // migration ...000057). Only the destination's NAME, an ETA and the status are
 // shared: not the route, and not the destination's coordinates.
@@ -12,6 +13,7 @@ export interface SharedTrip {
   circle_id: string;
   destination: string;
   eta: string;
+  mode: TravelMode;
   status: 'active' | 'arrived' | 'ended' | 'stale';
   started_at: string;
   updated_at: string;
@@ -64,11 +66,23 @@ export function liveTripsOfOthers(trips: SharedTrip[], myUserId: string | undefi
 
 export type StartTripResult = { ok: true; id: string } | { ok: false; error: string };
 
-export async function startSharedTrip(circleId: string, destination: string, etaMs: number): Promise<StartTripResult> {
+// "🚗 Sam is heading to Walmart" / "🚶 Sam is walking to the library".
+export function tripHeadline(trip: Pick<SharedTrip, 'mode' | 'destination' | 'profiles'>): string {
+  const who = trip.profiles?.full_name ?? 'Someone';
+  return trip.mode === 'walk' ? `🚶 ${who} is walking to ${trip.destination}` : `🚗 ${who} is heading to ${trip.destination}`;
+}
+
+export async function startSharedTrip(
+  circleId: string,
+  destination: string,
+  etaMs: number,
+  mode: TravelMode = 'drive',
+): Promise<StartTripResult> {
   const { data, error } = await supabase.rpc('start_shared_trip', {
     p_circle_id: circleId,
     p_destination: destination,
     p_eta: new Date(etaMs).toISOString(),
+    p_mode: mode,
   });
   if (error || !data) return { ok: false, error: error?.message ?? 'Could not share the trip.' };
   return { ok: true, id: data as string };

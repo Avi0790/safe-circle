@@ -4,6 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { act, create, type ReactTestRenderer } from 'react-test-renderer';
 import * as Speech from 'expo-speech';
 import osrmFixture from './fixtures/osrm-jonesboro.json';
+import footFixture from './fixtures/osrm-foot-jonesboro.json';
 import photonFixture from './fixtures/photon-walmart.json';
 
 // The Drive screen end to end: real screen, real navigation and routing code,
@@ -112,7 +113,12 @@ beforeEach(async () => {
   (Speech.speak as jest.Mock).mockClear();
   mockFetch.mockImplementation(async (url: string) => ({
     ok: true,
-    json: async () => (String(url).includes('/route/v1/driving') ? osrmFixture : photonFixture),
+    json: async () =>
+      String(url).includes('/route/v1/driving')
+        ? osrmFixture
+        : String(url).includes('/route/v1/foot')
+          ? footFixture
+          : photonFixture,
   }));
   (global as any).fetch = mockFetch;
 });
@@ -282,7 +288,8 @@ describe('Drive screen: sharing the trip with the circle', () => {
     expect(start).toHaveLength(1);
     expect(start[0][1]).toMatchObject({ p_circle_id: 'c1', p_destination: 'Walmart Supercenter' });
     // only a name and an ETA go up: no coordinates, no route
-    expect(Object.keys(start[0][1]).sort()).toEqual(['p_circle_id', 'p_destination', 'p_eta']);
+    expect(Object.keys(start[0][1]).sort()).toEqual(['p_circle_id', 'p_destination', 'p_eta', 'p_mode']);
+    expect(start[0][1].p_mode).toBe('drive');
     expect(allText(r)).toContain('Sharing this trip with Family');
 
     for (let i = 0; i < 40; i++) await emit(route[i][0], route[i][1], 13, 10_000 + i * 1_000);
@@ -392,5 +399,92 @@ describe('Drive screen: sharing the trip with the circle', () => {
       await press(r, 'Walmart Supercenter');
       expect(allText(r)).not.toContain('Save this place');
     });
+  });
+});
+
+describe('Drive screen: walking', () => {
+  const calls = (name: string) => mockRpc.mock.calls.filter((c) => c[0] === name);
+  const walkRoute = densify(footFixture.routes[0].geometry.coordinates, 10);
+  const footCalls = () => mockFetch.mock.calls.filter((c) => String(c[0]).includes('/route/v1/foot'));
+
+  it('asks the walking router, not the car router, and says so', async () => {
+    const r = await mountAndPlan();
+    await press(r, 'Walk');
+    await search(r, 'walmart');
+    await press(r, 'Walmart Supercenter');
+    expect(footCalls()).toHaveLength(1);
+    expect(String(footCalls()[0][0])).toContain('routed-foot/route/v1/foot/');
+    expect(mockFetch.mock.calls.some((c) => String(c[0]).includes('/route/v1/driving'))).toBe(false);
+    // 7.6 km on foot is 101 min, nothing like the 11 minutes by car
+    expect(allText(r)).toMatch(/1 h 41 min · 4\.7 mi/);
+    expect(allText(r)).toContain('Walking routes come from OpenStreetMap');
+  });
+
+  it('remembers Walk for next time', async () => {
+    let r = await mountAndPlan();
+    expect(r.root.findAll((n) => n.props.accessibilityState?.selected === true && text({ children: n.children }).includes('Drive')).length).toBeGreaterThan(0);
+    await press(r, 'Walk');
+    await act(async () => r.unmount());
+    r = await mountAndPlan();
+    expect(r.root.findAll((n) => n.props.accessibilityState?.selected === true && text({ children: n.children }).includes('Walk')).length).toBeGreaterThan(0);
+  });
+
+  it('does not lock the search box at a jogging pace', async () => {
+    const r = await mountAndPlan();
+    await press(r, 'Walk');
+    await emit(mockStart.longitude, mockStart.latitude, 3.5, 2_000); // ~8 mph
+    await emit(mockStart.longitude, mockStart.latitude, 3.5, 3_000);
+    expect(allText(r)).not.toContain("You're moving");
+    expect(r.root.findByType(TextInput).props.editable).toBe(true);
+  });
+
+  it('walks the whole route: pace to a decimal, turns in feet, arrival, and a shared walk', async () => {
+    mockCircle.current = { id: 'c1', name: 'Family' };
+    const r = await mountAndPlan();
+    await press(r, 'Walk');
+    await search(r, 'walmart');
+    await press(r, 'Walmart Supercenter');
+    await act(async () => {
+      r.root.findByType(Switch).props.onValueChange(true);
+    });
+    await press(r, 'Start');
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(spoken()[0]).toMatch(/^Starting route\. Head/);
+    expect(calls('start_shared_trip')[0][1]).toMatchObject({ p_destination: 'Walmart Supercenter', p_mode: 'walk' });
+
+    let sawPace = false;
+    for (let i = 0; i < walkRoute.length; i++) {
+      const [lon, lat] = walkRoute[i];
+      await emit(lon, lat, 1.4, 10_000 + i * 7_000); // 1.4 m/s = 3.1 mph; 10 m apart
+      if (i === 60) sawPace = /3\.1/.test(allText(r)) && allText(r).includes('mph');
+    }
+    expect(sawPace).toBe(true);
+    expect(spoken().some((t) => /^In \d+ ft, /.test(t))).toBe(true);
+    expect(spoken().some((t) => t.includes('quarter mile'))).toBe(false);
+    expect(spoken()[spoken().length - 1]).toBe('You have arrived at your destination.');
+    expect(allText(r)).toContain("You've arrived");
+    expect(calls('end_shared_trip')[0][1]).toEqual({ p_trip: 'trip-1', p_arrived: true });
+  });
+
+  it('reroutes with the walking router when a walker leaves the route', async () => {
+    const r = await mountAndPlan();
+    await press(r, 'Walk');
+    await search(r, 'walmart');
+    await press(r, 'Walmart Supercenter');
+    await press(r, 'Start');
+    await act(async () => {
+      await Promise.resolve();
+    });
+    for (let i = 0; i < 10; i++) await emit(walkRoute[i][0], walkRoute[i][1], 1.4, 10_000 + i * 7_000);
+    const before = footCalls().length;
+    // ~200 m north of the route, several fixes in a row
+    for (let k = 0; k < 4; k++) await emit(walkRoute[10][0], walkRoute[10][1] + 0.0018, 1.4, 90_000 + k * 7_000);
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(footCalls().length).toBe(before + 1);
+    expect(mockFetch.mock.calls.some((c) => String(c[0]).includes('/route/v1/driving'))).toBe(false);
   });
 });

@@ -28,6 +28,7 @@ import {
   type LatLng,
   type NavState,
   type PreparedRoute,
+  type TravelMode,
 } from '@/lib/navigation';
 import { fetchRoute, RoutingError } from '@/lib/routing';
 import {
@@ -41,6 +42,7 @@ import {
 } from '@/lib/savedDestinations';
 import { endSharedTrip, shouldSendEtaUpdate, startSharedTrip, updateSharedTrip } from '@/lib/sharedTrips';
 import { supabase } from '@/lib/supabase';
+import { getTravelMode, setTravelMode } from '@/lib/travelMode';
 import { colors, radius, spacing, typography } from '@/lib/theme';
 
 type Phase = 'plan' | 'preview' | 'driving' | 'arrived';
@@ -90,6 +92,7 @@ export default function DriveScreen() {
   const [saved, setSaved] = useState<SavedPlace[]>([]);
   const [mine, setMine] = useState<SavedDestination[]>([]);
   const [saveNotice, setSaveNotice] = useState<string | null>(null);
+  const [mode, setMode] = useState<TravelMode>('drive');
   const [dest, setDest] = useState<Destination | null>(null);
   const [prepared, setPrepared] = useState<PreparedRoute | null>(null);
   const [routing, setRouting] = useState(false);
@@ -108,6 +111,7 @@ export default function DriveScreen() {
   const preparedRef = useRef<PreparedRoute | null>(null);
   const destRef = useRef<Destination | null>(null);
   const mutedRef = useRef(false);
+  const modeRef = useRef<TravelMode>('drive');
   const fixRef = useRef<Fix | null>(null);
   const prevFix = useRef<Fix | null>(null);
   const said = useRef(new Set<string>());
@@ -123,6 +127,7 @@ export default function DriveScreen() {
   preparedRef.current = prepared;
   destRef.current = dest;
   mutedRef.current = muted;
+  modeRef.current = mode;
 
   const speak = useCallback((text: string) => {
     if (!mutedRef.current) Speech.speak(text, { language: 'en-US' });
@@ -187,7 +192,7 @@ export default function DriveScreen() {
       setRerouting(true);
       speak('Rerouting.');
       try {
-        const route = await fetchRoute(from, target);
+        const route = await fetchRoute(from, target, undefined, modeRef.current);
         const next = prepareRoute(route);
         said.current = new Set();
         alongHint.current = undefined;
@@ -239,7 +244,7 @@ export default function DriveScreen() {
         return;
       }
 
-      const say = nextAnnouncement(s.nextStepIndex, s.distanceToNextM, prep.route.steps, said.current);
+      const say = nextAnnouncement(s.nextStepIndex, s.distanceToNextM, prep.route.steps, said.current, modeRef.current);
       if (say) {
         said.current.add(say.key);
         speak(say.text);
@@ -316,21 +321,23 @@ export default function DriveScreen() {
     [],
   );
 
-  // The camera follows the vehicle, turned to its heading once it is moving.
+  // The camera follows you, turned to your heading once you are moving. A
+  // walker is slower, closer to the ground and looking straight down.
   useEffect(() => {
     if (phase !== 'driving' || !mapReady || !fix) return;
-    const moving = (speedMps ?? 0) >= 1;
+    const walking = mode === 'walk';
+    const moving = (speedMps ?? 0) >= (walking ? 0.6 : 1);
     mapRef.current?.animateCamera(
       {
         center: { latitude: fix.latitude, longitude: fix.longitude },
         heading: moving && fix.heading != null && fix.heading >= 0 ? fix.heading : undefined,
-        pitch: 45,
-        zoom: 17,
-        altitude: 700,
+        pitch: walking ? 0 : 45,
+        zoom: walking ? 18 : 17,
+        altitude: walking ? 300 : 700,
       },
       { duration: 700 },
     );
-  }, [phase, mapReady, fix, speedMps]);
+  }, [phase, mapReady, fix, speedMps, mode]);
 
   // ---------------------------------------------------------------- plan
   useEffect(() => {
@@ -348,6 +355,23 @@ export default function DriveScreen() {
       cancelled = true;
     };
   }, [selectedCircle]);
+
+  // Walk or Drive is remembered per device.
+  useEffect(() => {
+    let cancelled = false;
+    getTravelMode().then((m) => {
+      if (!cancelled) setMode(m);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  function chooseMode(next: TravelMode) {
+    setMode(next);
+    modeRef.current = next;
+    setTravelMode(next);
+  }
 
   // Personal places live on this phone only (lib/savedDestinations.ts).
   useEffect(() => {
@@ -433,7 +457,7 @@ export default function DriveScreen() {
     setSaveNotice(null);
     setRouting(true);
     try {
-      const route = await fetchRoute(origin, target);
+      const route = await fetchRoute(origin, target, undefined, mode);
       setDest(target);
       destRef.current = target;
       setPrepared(prepareRoute(route));
@@ -462,7 +486,7 @@ export default function DriveScreen() {
     if (shareTrip && selectedCircle && target) {
       const etaMs = Date.now() + prep.route.durationS * 1000;
       const circleName = selectedCircle.name;
-      startSharedTrip(selectedCircle.id, target.title, etaMs).then((res) => {
+      startSharedTrip(selectedCircle.id, target.title, etaMs, mode).then((res) => {
         if (!res.ok) {
           setTripNotice("Couldn't share this trip with your circle. Directions still work.");
         } else if (phaseRef.current === 'driving') {
@@ -498,8 +522,13 @@ export default function DriveScreen() {
   }
 
   const region = useMemo(() => (prepared ? boundsRegion(prepared.route.coords) : null), [prepared]);
-  const moving = (speedMps ?? 0) >= MOVING_MPS;
-  const mph = speedMps == null ? null : Math.round(speedToMph(speedMps) ?? 0) < 1 ? 0 : Math.round(speedToMph(speedMps) ?? 0);
+  const walking = mode === 'walk';
+  // The "ask a passenger" lock is about someone typing while driving; it makes
+  // no sense for a person on foot (a jogger would trip it).
+  const moving = !walking && (speedMps ?? 0) >= MOVING_MPS;
+  const rawMph = speedToMph(speedMps) ?? 0;
+  // Walking pace is a few mph, so one decimal says something; a car does not need it.
+  const mph = speedMps == null ? null : walking ? Math.round(rawMph * 10) / 10 : Math.round(rawMph) < 1 ? 0 : Math.round(rawMph);
 
   // ------------------------------------------------------------- screens
   if (permission === 'denied') {
@@ -546,6 +575,23 @@ export default function DriveScreen() {
           <View style={styles.headerRow}>
             <Text style={typography.title}>Where to?</Text>
             <Button title="Close" variant="secondary" onPress={() => router.back()} />
+          </View>
+
+          <View style={styles.modeRow} accessibilityRole="tablist">
+            {(['drive', 'walk'] as const).map((m) => (
+              <Pressable
+                key={m}
+                accessibilityRole="tab"
+                accessibilityState={{ selected: mode === m }}
+                disabled={routing}
+                style={[styles.modeBtn, mode === m && styles.modeBtnOn]}
+                onPress={() => chooseMode(m)}
+              >
+                <Text style={[styles.modeText, mode === m && styles.modeTextOn]}>
+                  {m === 'drive' ? '🚗 Drive' : '🚶 Walk'}
+                </Text>
+              </Pressable>
+            ))}
           </View>
 
           {moving && (
@@ -686,8 +732,9 @@ export default function DriveScreen() {
             </View>
           )}
           <Text style={styles.footnote}>
-            Routes come from OpenStreetMap-based services and can be wrong. Follow road signs and
-            local laws.
+            {walking
+              ? 'Walking routes come from OpenStreetMap data and can be wrong, or use paths that are dark or crossings without signals. Use your own judgment.'
+              : 'Routes come from OpenStreetMap-based services and can be wrong. Follow road signs and local laws.'}
           </Text>
           {selectedCircle && (
             <View style={styles.shareRow}>
@@ -705,7 +752,7 @@ export default function DriveScreen() {
           <Button
             title="Open in Maps app instead"
             variant="secondary"
-            onPress={() => Linking.openURL(externalMapsUrl(dest, Platform.OS))}
+            onPress={() => Linking.openURL(externalMapsUrl(dest, Platform.OS, mode))}
           />
           <Button title="Back" variant="secondary" onPress={endDriving} />
         </View>
@@ -716,6 +763,7 @@ export default function DriveScreen() {
           instruction={nextStep?.instruction ?? 'Follow the route'}
           distanceToNext={nav ? formatNavDistance(nav.distanceToNextM) : formatNavDistance(prepared.stepAlong[1] ?? 0)}
           speedMph={mph}
+          mode={mode}
           remainingDistance={formatNavDistance(remainingM)}
           remainingTime={formatNavDuration(remainingS)}
           arrival={formatArrivalClock(remainingS)}
@@ -784,6 +832,19 @@ const styles = StyleSheet.create({
     maxWidth: '100%',
   },
   chipText: { fontSize: 14, fontWeight: '600', color: colors.textHeading },
+  modeRow: { flexDirection: 'row', gap: spacing.sm },
+  modeBtn: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: spacing.sm,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.bgElevated,
+  },
+  modeBtnOn: { backgroundColor: colors.accent, borderColor: colors.accent },
+  modeText: { fontSize: 15, fontWeight: '600', color: colors.textHeading },
+  modeTextOn: { color: '#fff' },
   summary: { fontSize: 20, fontWeight: '700', color: colors.textHeading },
   shareRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.xs },
   shareText: { flex: 1, gap: 2 },

@@ -81,7 +81,7 @@ export const PRIVACY_SECTIONS: PrivacySection[] = [
     emoji: '🚗',
     title: 'Share a trip only when you choose',
     body:
-      "When you use Directions you can choose, trip by trip, to let one circle see where you're headed and when you expect to arrive, and to be told when you get there. It shares the destination's name and your ETA, not your route or the destination's coordinates. It's off every time unless you switch it on, it follows Ghost mode and sharing windows, it disappears when you arrive or your phone goes quiet, and finished trips are deleted after 2 days. The notification text includes the destination name.",
+      "When you use Directions, driving or walking, you can choose, trip by trip, to let one circle see where you're headed, whether you're driving or walking, and when you expect to arrive, and to be told when you get there. It shares the destination's name and your ETA, not your route or the destination's coordinates. It's off every time unless you switch it on, it follows Ghost mode and sharing windows, it disappears when you arrive or your phone goes quiet, and finished trips are deleted after 2 days. The notification text includes the destination name.",
   },
   {
     id: 'medical-card',
@@ -116,7 +116,7 @@ export const PRIVACY_LIMITS: string[] = [
   "At work, your managers and admins can see your location while you're clocked in — that's what clocking in means. Clock out and it stops.",
   "If an invite code leaks and join approval is off, whoever has it can join. Turn approval on for circles that matter.",
   "Map tiles (OpenStreetMap) and weather (Open-Meteo) come from free public services, which see the map area or coordinates requested — not your name or account.",
-  "Directions: when you search for a place or plan a route, your current location and what you type go from your phone to free public OpenStreetMap-based services (Photon for search, OSRM for routes), not through Safe Circle's servers. They see the request, not your name or account.",
+  "Directions: when you search for a place or plan a route, your current location and what you type go from your phone to free public OpenStreetMap-based services (Photon for search, OSRM for driving routes, and the FOSSGIS routing server for walking routes), not through Safe Circle's servers. They see the request, not your name or account.",
   "Places you save for Directions (Home, Work…) are stored only on your phone, under your account. They are never uploaded or shown to your circle, and they are deleted if you delete your account.",
 ];
 

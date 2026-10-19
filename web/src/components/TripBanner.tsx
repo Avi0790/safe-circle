@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
-import { liveTripsOfOthers, tripEtaText, type SharedTrip } from '../lib/sharedTrips'
+import { liveTripsOfOthers, tripEtaText, tripHeadline, type SharedTrip } from '../lib/sharedTrips'
 
 // Read-only, like WalkRideBanner: trips are started and ended from the mobile
-// app. Shows who in the selected circle is driving somewhere and when they
+// app. Shows who in the selected circle is driving or walking somewhere and when they
 // expect to arrive; it disappears when they arrive, stop sharing, or their
 // phone goes quiet.
 export function TripBanner({ trips, myUserId }: { trips: SharedTrip[]; myUserId: string }) {
@@ -22,7 +22,7 @@ export function TripBanner({ trips, myUserId }: { trips: SharedTrip[]; myUserId:
       {visible.map((trip) => (
         <div key={trip.id} className="info-alert">
           <span className="sos-alert-title">
-            🚗 {trip.profiles?.full_name ?? 'Someone'} is heading to {trip.destination}
+            {tripHeadline(trip)}
           </span>
           <span className="sos-alert-time">{tripEtaText(trip.eta, now)}</span>
         </div>

@@ -282,7 +282,7 @@ export function Dashboard({ myUserId }: { myUserId: string }) {
   const loadTrips = useCallback(async (circleId: string) => {
     const { data } = await supabase
       .from('shared_trips')
-      .select('id, user_id, circle_id, destination, eta, status, started_at, updated_at, profiles(full_name)')
+      .select('id, user_id, circle_id, destination, eta, mode, status, started_at, updated_at, profiles(full_name)')
       .eq('circle_id', circleId)
       .eq('status', 'active')
       .order('started_at', { ascending: false })

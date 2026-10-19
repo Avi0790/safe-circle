@@ -161,6 +161,34 @@ describe('nextAnnouncement', () => {
   });
 });
 
+describe('nextAnnouncement while walking', () => {
+  const steps = lRoute.steps;
+
+  it('stays quiet until the turn is about 400 feet away, and says the real distance', () => {
+    expect(nextAnnouncement(1, 300, steps, new Set(), 'walk')).toBeNull();
+    const far = nextAnnouncement(1, 110, steps, new Set(), 'walk')!;
+    expect(far.text).toBe('In 350 ft, turn right onto Oak Avenue.');
+    // a driver 110 m out gets the quarter-mile wording, not a distance in feet
+    expect(nextAnnouncement(1, 110, steps, new Set())!.text).toBe('In a quarter mile, turn right onto Oak Avenue.');
+  });
+
+  it('warns once far, once near (30 m), never twice', () => {
+    const said = new Set<string>();
+    const far = nextAnnouncement(1, 100, steps, said, 'walk')!;
+    said.add(far.key);
+    expect(nextAnnouncement(1, 80, steps, said, 'walk')).toBeNull();
+    const near = nextAnnouncement(1, 25, steps, said, 'walk')!;
+    expect(near.text).toBe('Turn right onto Oak Avenue.');
+    said.add(near.key);
+    expect(nextAnnouncement(1, 10, steps, said, 'walk')).toBeNull();
+  });
+
+  it('keeps the arrival wording', () => {
+    expect(nextAnnouncement(2, 100, steps, new Set(), 'walk')).toBeNull();
+    expect(nextAnnouncement(2, 20, steps, new Set(), 'walk')!.text).toBe('Your destination is just ahead.');
+  });
+});
+
 describe('formatting', () => {
   it('shows feet when close and miles when far', () => {
     expect(formatNavDistance(20)).toBe('70 ft');
@@ -199,6 +227,12 @@ describe('external maps fallback', () => {
   it('builds the right link per platform', () => {
     expect(externalMapsUrl(B, 'ios')).toBe('http://maps.apple.com/?daddr=35.01,-90&dirflg=d');
     expect(externalMapsUrl(B, 'android')).toBe('google.navigation:q=35.01,-90');
+  });
+
+  it('asks for walking directions when walking', () => {
+    expect(externalMapsUrl(B, 'ios', 'walk')).toBe('http://maps.apple.com/?daddr=35.01,-90&dirflg=w');
+    expect(externalMapsUrl(B, 'android', 'walk')).toBe('google.navigation:q=35.01,-90&mode=w');
+    expect(externalMapsUrl(B, 'ios', 'drive')).toBe(externalMapsUrl(B, 'ios'));
   });
 });
 
@@ -239,6 +273,8 @@ describe('parseOsrmRoute', () => {
   it('reports no route, and a malformed response, distinctly', () => {
     expect(() => parseOsrmRoute({ code: 'NoRoute' })).toThrow(RoutingError);
     try { parseOsrmRoute({ code: 'NoRoute' }); } catch (e) { expect((e as RoutingError).kind).toBe('no-route'); }
+    expect(() => parseOsrmRoute({ code: 'NoRoute' })).toThrow("Couldn't find a driving route there.");
+    expect(() => parseOsrmRoute({ code: 'NoRoute' }, 'walk')).toThrow("Couldn't find a walking route there.");
     try { parseOsrmRoute({ code: 'Ok', routes: [{ distance: 1, duration: 1, geometry: { coordinates: [] } }] }); }
     catch (e) { expect((e as RoutingError).kind).toBe('bad-response'); }
   });

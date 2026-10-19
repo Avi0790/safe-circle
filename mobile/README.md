@@ -532,6 +532,19 @@ development mode is also inherently slower than a real build, and running over
   windows apply; stopping navigation, leaving the screen or losing signal ends
   it. If sharing can't start, directions carry on and say so. The Privacy screen
   covers it. The web dashboard shows these trips too (read-only).
+  **Walk mode** (🚗 Drive / 🚶 Walk toggle on "Where to?", remembered per
+  device in `lib/travelMode.ts`): the same screen for when you can't drive.
+  Routes come from the free FOSSGIS foot-profile OSRM server
+  (`routing.openstreetmap.de/routed-foot`, override with
+  `EXPO_PUBLIC_OSRM_FOOT_URL`) because the public demo server only knows cars
+  and answers a walking request with a car route. Prompts are walking-sized (a
+  turn is announced at about 400 ft, saying the real distance, then at about
+  100 ft instead of "a quarter mile"), the speedometer becomes a pace with one
+  decimal, the camera looks straight down, and the typing lock for a moving
+  vehicle doesn't apply. "Open in Maps app" asks for walking directions. A
+  shared trip records whether it is a drive or a walk (backend migration
+  `...000059`), so circles see "🚶 Sam is walking to the library". Tested
+  against a real captured walking route (`walkSimulation.test.ts`).
   **Saved destinations** (`lib/savedDestinations.ts`): on the route preview,
   save the place as Home, Work, or under its own name (up to 20). They are
   stored only on the phone, per account, so a home address is never uploaded or

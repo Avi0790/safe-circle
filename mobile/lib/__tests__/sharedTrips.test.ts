@@ -6,9 +6,12 @@ import {
   ETA_MIN_INTERVAL_MS,
   liveTripsOfOthers,
   shouldSendEtaUpdate,
+  startSharedTrip,
   tripEtaText,
+  tripHeadline,
   type SharedTrip,
 } from '../sharedTrips';
+import { supabase } from '../supabase';
 
 describe('shouldSendEtaUpdate', () => {
   const t0 = 1_000_000;
@@ -48,7 +51,7 @@ describe('liveTripsOfOthers', () => {
   const now = Date.parse('2026-10-12T15:00:00Z');
   const trip = (over: Partial<SharedTrip>): SharedTrip => ({
     id: 't', user_id: 'u1', circle_id: 'c', destination: 'Mall', eta: new Date(now + 600_000).toISOString(),
-    status: 'active', started_at: new Date(now - 60_000).toISOString(), updated_at: new Date(now - 30_000).toISOString(),
+    mode: 'drive', status: 'active', started_at: new Date(now - 60_000).toISOString(), updated_at: new Date(now - 30_000).toISOString(),
     profiles: { full_name: 'Sam' }, ...over,
   });
 
@@ -60,5 +63,22 @@ describe('liveTripsOfOthers', () => {
       trip({ id: 'quiet', updated_at: new Date(now - 11 * 60_000).toISOString() }),
     ];
     expect(liveTripsOfOthers(trips, 'me', now).map((t) => t.id)).toEqual(['live']);
+  });
+});
+
+describe('walking trips', () => {
+  it('words a walk differently from a drive', () => {
+    const profiles = { full_name: 'Sam' };
+    expect(tripHeadline({ mode: 'drive', destination: 'Walmart', profiles })).toBe('🚗 Sam is heading to Walmart');
+    expect(tripHeadline({ mode: 'walk', destination: 'City Library', profiles })).toBe('🚶 Sam is walking to City Library');
+    expect(tripHeadline({ mode: 'walk', destination: 'Park', profiles: null })).toBe('🚶 Someone is walking to Park');
+  });
+
+  it('sends the mode to the server, defaulting to a drive', async () => {
+    (supabase.rpc as jest.Mock).mockResolvedValue({ data: 'trip-1', error: null });
+    await startSharedTrip('c', 'Library', 1_000_000, 'walk');
+    expect((supabase.rpc as jest.Mock).mock.calls[0][1]).toMatchObject({ p_destination: 'Library', p_mode: 'walk' });
+    await startSharedTrip('c', 'Walmart', 1_000_000);
+    expect((supabase.rpc as jest.Mock).mock.calls[1][1]).toMatchObject({ p_mode: 'drive' });
   });
 });

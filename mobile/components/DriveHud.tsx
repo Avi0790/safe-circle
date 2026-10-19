@@ -1,4 +1,5 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import type { TravelMode } from '@/lib/navigation';
 import { colors, radius, spacing } from '@/lib/theme';
 
 // The driving overlay. Deliberately sparse and large: it is glanced at, not
@@ -7,6 +8,7 @@ export interface DriveHudProps {
   instruction: string;
   distanceToNext: string;
   speedMph: number | null;
+  mode?: TravelMode;
   remainingDistance: string;
   remainingTime: string;
   arrival: string;
@@ -34,8 +36,11 @@ export function DriveHud(p: DriveHudProps) {
       </View>
 
       <View style={[styles.bottom, { paddingBottom: p.bottomInset + spacing.sm }]}>
-        <View style={styles.speedBox} accessibilityLabel={`Speed ${p.speedMph ?? 0} miles per hour`}>
-          <Text style={styles.speed}>{p.speedMph ?? '—'}</Text>
+        <View
+          style={styles.speedBox}
+          accessibilityLabel={`${p.mode === 'walk' ? 'Walking speed' : 'Speed'} ${p.speedMph ?? 0} miles per hour`}
+        >
+          <Text style={styles.speed}>{p.speedMph == null ? '—' : p.mode === 'walk' ? p.speedMph.toFixed(1) : p.speedMph}</Text>
           <Text style={styles.speedUnit}>mph</Text>
         </View>
         <View style={styles.trip}>

@@ -1,4 +1,4 @@
-import { liveTripsOfOthers, tripEtaText, TRIP_LIVE_WINDOW_MS, type SharedTrip } from '../sharedTrips'
+import { liveTripsOfOthers, tripEtaText, tripHeadline, TRIP_LIVE_WINDOW_MS, type SharedTrip } from '../sharedTrips'
 
 const now = Date.parse('2026-10-12T15:00:00Z')
 
@@ -8,6 +8,7 @@ const trip = (over: Partial<SharedTrip>): SharedTrip => ({
   circle_id: 'c',
   destination: 'Mall',
   eta: new Date(now + 600_000).toISOString(),
+  mode: 'drive',
   status: 'active',
   started_at: new Date(now - 60_000).toISOString(),
   updated_at: new Date(now - 30_000).toISOString(),
@@ -44,5 +45,13 @@ describe('liveTripsOfOthers', () => {
   it('shows a trip that has been quiet for just under the window', () => {
     const t = trip({ updated_at: new Date(now - TRIP_LIVE_WINDOW_MS + 1_000).toISOString() })
     expect(liveTripsOfOthers([t], 'me', now)).toHaveLength(1)
+  })
+})
+
+describe('tripHeadline', () => {
+  it('says driving or walking', () => {
+    expect(tripHeadline(trip({}))).toBe('🚗 Sam is heading to Mall')
+    expect(tripHeadline(trip({ mode: 'walk', destination: 'City Library' }))).toBe('🚶 Sam is walking to City Library')
+    expect(tripHeadline(trip({ profiles: null }))).toBe('🚗 Someone is heading to Mall')
   })
 })

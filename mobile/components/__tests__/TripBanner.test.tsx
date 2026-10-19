@@ -14,7 +14,7 @@ function text(node: any): string {
 
 const trip = (over: Partial<SharedTrip>): SharedTrip => ({
   id: 't', user_id: 'u1', circle_id: 'c', destination: 'Walmart', eta: new Date(Date.now() + 12 * 60_000).toISOString(),
-  status: 'active', started_at: new Date().toISOString(), updated_at: new Date().toISOString(),
+  mode: 'drive', status: 'active', started_at: new Date().toISOString(), updated_at: new Date().toISOString(),
   profiles: { full_name: 'Sam' }, ...over,
 });
 
@@ -28,6 +28,17 @@ describe('TripBanner', () => {
     expect(out).toContain('Sam is heading to Walmart');
     expect(out).toMatch(/arriving in about 1[12] min/);
     expect(out).not.toContain('Secret');
+    await act(async () => tree.unmount());
+  });
+
+  it('says walking, with a walker, for a walk', async () => {
+    let tree!: ReturnType<typeof create>;
+    await act(async () => {
+      tree = create(<TripBanner trips={[trip({ mode: 'walk', destination: 'City Library' })]} />);
+    });
+    const out = text(tree.toJSON());
+    expect(out).toContain('🚶 Sam is walking to City Library');
+    expect(out).not.toContain('heading to');
     await act(async () => tree.unmount());
   });
 

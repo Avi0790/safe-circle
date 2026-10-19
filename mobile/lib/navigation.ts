@@ -36,6 +36,11 @@ export interface PreparedRoute {
   totalM: number;
 }
 
+// How the trip is made. Walking has its own routing server, shorter spoken
+// prompts (a walker needs seconds, not a quarter mile, of warning) and a pace
+// readout instead of a speedometer.
+export type TravelMode = 'drive' | 'walk';
+
 export const OFF_ROUTE_METERS = 50;
 export const ARRIVE_METERS = 30;
 // A manoeuvre this close behind you has been taken.
@@ -248,6 +253,8 @@ export function navState(
 
 export const FAR_PROMPT_M = 420; // about a quarter mile
 export const NEAR_PROMPT_M = 90;
+export const WALK_FAR_PROMPT_M = 120; // about 400 feet
+export const WALK_NEAR_PROMPT_M = 30;
 
 export interface Announcement {
   key: string;
@@ -262,20 +269,27 @@ export function nextAnnouncement(
   distanceM: number,
   steps: RouteStep[],
   said: Set<string>,
+  mode: TravelMode = 'drive',
 ): Announcement | null {
   const step = steps[stepIndex];
   if (!step) return null;
   const nearKey = `${stepIndex}:near`;
   const farKey = `${stepIndex}:far`;
+  const walking = mode === 'walk';
+  const nearM = walking ? WALK_NEAR_PROMPT_M : NEAR_PROMPT_M;
+  const farM = walking ? WALK_FAR_PROMPT_M : FAR_PROMPT_M;
 
-  if (distanceM <= NEAR_PROMPT_M && !said.has(nearKey)) {
+  if (distanceM <= nearM && !said.has(nearKey)) {
     // The arrival itself is announced by the screen when you actually get
     // there; saying "you have arrived" 90 m short would be wrong and twice.
     return { key: nearKey, text: step.type === 'arrive' ? 'Your destination is just ahead.' : `${step.instruction}.` };
   }
-  if (distanceM <= FAR_PROMPT_M && distanceM > NEAR_PROMPT_M && !said.has(farKey) && step.type !== 'arrive') {
+  if (distanceM <= farM && distanceM > nearM && !said.has(farKey) && step.type !== 'arrive') {
     const lower = step.instruction.charAt(0).toLowerCase() + step.instruction.slice(1);
-    return { key: farKey, text: `In a quarter mile, ${lower}.` };
+    // Driving says a round "quarter mile"; a walker's next turn can be much
+    // closer than any fixed phrase, so say the real distance.
+    const lead = walking ? `In ${formatNavDistance(distanceM)}` : 'In a quarter mile';
+    return { key: farKey, text: `${lead}, ${lower}.` };
   }
   return null;
 }
