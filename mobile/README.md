@@ -531,8 +531,16 @@ development mode is also inherently slower than a real build, and running over
   ETA are shared, not the route or its coordinates; Ghost mode and sharing
   windows apply; stopping navigation, leaving the screen or losing signal ends
   it. If sharing can't start, directions carry on and say so. The Privacy screen
-  covers it. Not built yet: saving destinations, the web dashboard version of
-  the trip banner, and web navigation.
+  covers it. The web dashboard shows these trips too (read-only).
+  **Saved destinations** (`lib/savedDestinations.ts`): on the route preview,
+  save the place as Home, Work, or under its own name (up to 20). They are
+  stored only on the phone, per account, so a home address is never uploaded or
+  shown to a circle, and one person's places aren't visible to another who
+  signs in on the same phone. They appear first on "Where to?" under My places
+  (Home and Work on top) with a Remove button; saving Home again moves it, and
+  saving the same spot twice renames instead of duplicating. Deleting your
+  account clears them. Circle places still appear below. Not built yet: web
+  navigation.
 - **QR invite codes** (`components/InviteQr.tsx`, `QrScannerModal.tsx`,
   `lib/joinCode.ts`, `lib/qr.ts`): creating a circle now shows a QR code next to
   the invite code, and Settings → Invite shows one for any code you generate.

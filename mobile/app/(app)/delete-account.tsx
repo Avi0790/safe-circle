@@ -4,6 +4,7 @@ import { Stack } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { TextField } from '@/components/TextField';
 import { useAuth } from '@/contexts/AuthContext';
+import { clearDestinations } from '@/lib/savedDestinations';
 import { supabase } from '@/lib/supabase';
 import { removeAvatar } from '@/lib/avatarUpload';
 import { stopSharing } from '@/lib/sharingWindow';
@@ -47,6 +48,7 @@ export default function DeleteAccountScreen() {
         return;
       }
       await clearMembersCache();
+      await clearDestinations(userId);
       // The account no longer exists; this just clears the local session and
       // sends the app back to the sign-in screen.
       await supabase.auth.signOut().catch(() => {});

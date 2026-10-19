@@ -117,6 +117,7 @@ export const PRIVACY_LIMITS: string[] = [
   "If an invite code leaks and join approval is off, whoever has it can join. Turn approval on for circles that matter.",
   "Map tiles (OpenStreetMap) and weather (Open-Meteo) come from free public services, which see the map area or coordinates requested — not your name or account.",
   "Directions: when you search for a place or plan a route, your current location and what you type go from your phone to free public OpenStreetMap-based services (Photon for search, OSRM for routes), not through Safe Circle's servers. They see the request, not your name or account.",
+  "Places you save for Directions (Home, Work…) are stored only on your phone, under your account. They are never uploaded or shown to your circle, and they are deleted if you delete your account.",
 ];
 
 export const PRIVACY_NOT_DONE = 'Safe Circle has no ads and no analytics or tracking SDKs.';

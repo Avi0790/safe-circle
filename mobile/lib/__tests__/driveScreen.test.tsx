@@ -1,5 +1,6 @@
 import React from 'react';
-import { Switch, TextInput } from 'react-native';
+import { Alert, Switch, TextInput } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { act, create, type ReactTestRenderer } from 'react-test-renderer';
 import * as Speech from 'expo-speech';
 import osrmFixture from './fixtures/osrm-jonesboro.json';
@@ -13,6 +14,7 @@ const mockWatchers: { cb: (loc: unknown) => void; removed: boolean }[] = [];
 const mockStart = { latitude: 35.8423, longitude: -90.7043 };
 const mockFetch = jest.fn();
 const mockRpc = jest.fn();
+const mockUser: { current: null | string } = { current: null };
 const mockCircle: { current: null | { id: string; name: string } } = { current: null };
 
 jest.mock('expo-router', () => ({
@@ -24,6 +26,9 @@ jest.mock('react-native-safe-area-context', () => {
   return { SafeAreaView: View, useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }) };
 });
 jest.mock('@/contexts/CircleContext', () => ({ useCircles: () => ({ selectedCircle: mockCircle.current }) }));
+jest.mock('@/contexts/AuthContext', () => ({
+  useAuth: () => ({ session: mockUser.current ? { user: { id: mockUser.current } } : null }),
+}));
 jest.mock('@/lib/supabase', () => {
   const places: Record<string, unknown> = {};
   for (const m of ['select', 'eq', 'order']) places[m] = () => places;
@@ -95,13 +100,15 @@ function press(r: ReactTestRenderer, label: string) {
   });
 }
 
-beforeEach(() => {
+beforeEach(async () => {
+  await AsyncStorage.clear();
   jest.useFakeTimers();
   mockWatchers.length = 0;
   mockFetch.mockReset();
   mockRpc.mockReset();
   mockRpc.mockImplementation(async (name: string) => ({ data: name === 'start_shared_trip' ? 'trip-1' : null, error: null }));
   mockCircle.current = null;
+  mockUser.current = null;
   (Speech.speak as jest.Mock).mockClear();
   mockFetch.mockImplementation(async (url: string) => ({
     ok: true,
@@ -325,5 +332,65 @@ describe('Drive screen: sharing the trip with the circle', () => {
     expect(allText(r)).toContain("Couldn't share this trip");
     expect(allText(r)).toContain('mph'); // directions carry on
     expect(allText(r)).not.toContain('Sharing this trip');
+  });
+
+  describe('saved destinations', () => {
+    it('saves a place as Home on this phone, then lists it first next time', async () => {
+      mockUser.current = 'u1';
+      let r = await mountAndPlan();
+      await search(r, 'walmart');
+      await press(r, 'Walmart Supercenter');
+      expect(allText(r)).toContain('Save this place on this phone');
+      await press(r, 'Home');
+      expect(allText(r)).toContain('Saved as Home on this phone');
+      expect(await AsyncStorage.getItem('safecircle.savedDestinations.v1.u1')).toContain('"Home"');
+
+      // A fresh visit to the plan screen shows it before any search.
+      await act(async () => r.unmount());
+      r = await mountAndPlan();
+      expect(allText(r)).toContain('My places');
+      expect(allText(r)).toContain('Saved on this phone');
+      mockFetch.mockClear();
+      await press(r, 'Home');
+      expect(mockFetch.mock.calls.some((c) => String(c[0]).includes('/route/v1/driving'))).toBe(true);
+      expect(allText(r)).toMatch(/min · .* mi · arrive/);
+    });
+
+    it("never shows one account's places to another on the same phone", async () => {
+      await AsyncStorage.setItem(
+        'safecircle.savedDestinations.v1.u1',
+        JSON.stringify([{ id: 'a', name: 'Secret Home', latitude: 35.9, longitude: -90.7 }]),
+      );
+      mockUser.current = 'u2';
+      const r = await mountAndPlan();
+      expect(allText(r)).not.toContain('Secret Home');
+    });
+
+    it('removes a place after confirming', async () => {
+      await AsyncStorage.setItem(
+        'safecircle.savedDestinations.v1.u1',
+        JSON.stringify([{ id: 'a', name: 'Gym', latitude: 35.9, longitude: -90.7 }]),
+      );
+      mockUser.current = 'u1';
+      const alert = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+      const r = await mountAndPlan();
+      expect(allText(r)).toContain('Gym');
+      await press(r, 'Remove');
+      expect(alert).toHaveBeenCalled();
+      const buttons = alert.mock.calls[0][2] as { text: string; onPress?: () => Promise<void> }[];
+      await act(async () => {
+        await buttons.find((b) => b.text === 'Remove')?.onPress?.();
+      });
+      expect(allText(r)).not.toContain('Gym');
+      expect(await AsyncStorage.getItem('safecircle.savedDestinations.v1.u1')).toBe('[]');
+      alert.mockRestore();
+    });
+
+    it('offers no saving when signed out of the session', async () => {
+      const r = await mountAndPlan();
+      await search(r, 'walmart');
+      await press(r, 'Walmart Supercenter');
+      expect(allText(r)).not.toContain('Save this place');
+    });
   });
 });

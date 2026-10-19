@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, FlatList, Linking, Platform, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Linking, Platform, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import * as Location from 'expo-location';
 import * as Speech from 'expo-speech';
@@ -9,6 +9,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Button } from '@/components/Button';
 import { DriveHud } from '@/components/DriveHud';
 import { TextField } from '@/components/TextField';
+import { useAuth } from '@/contexts/AuthContext';
 import { useCircles } from '@/contexts/CircleContext';
 import { externalMapsUrl } from '@/lib/externalMaps';
 import { speedToMph } from '@/lib/format';
@@ -29,6 +30,15 @@ import {
   type PreparedRoute,
 } from '@/lib/navigation';
 import { fetchRoute, RoutingError } from '@/lib/routing';
+import {
+  addDestination,
+  loadDestinations,
+  PINNED_NAMES,
+  removeDestination,
+  savedAt,
+  storeDestinations,
+  type SavedDestination,
+} from '@/lib/savedDestinations';
 import { endSharedTrip, shouldSendEtaUpdate, startSharedTrip, updateSharedTrip } from '@/lib/sharedTrips';
 import { supabase } from '@/lib/supabase';
 import { colors, radius, spacing, typography } from '@/lib/theme';
@@ -68,6 +78,7 @@ export default function DriveScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { selectedCircle } = useCircles();
+  const userId = useAuth().session?.user.id;
 
   const [phase, setPhase] = useState<Phase>('plan');
   const [permission, setPermission] = useState<'checking' | 'granted' | 'denied'>('checking');
@@ -77,6 +88,8 @@ export default function DriveScreen() {
   const [results, setResults] = useState<PlaceResult[]>([]);
   const [searching, setSearching] = useState(false);
   const [saved, setSaved] = useState<SavedPlace[]>([]);
+  const [mine, setMine] = useState<SavedDestination[]>([]);
+  const [saveNotice, setSaveNotice] = useState<string | null>(null);
   const [dest, setDest] = useState<Destination | null>(null);
   const [prepared, setPrepared] = useState<PreparedRoute | null>(null);
   const [routing, setRouting] = useState(false);
@@ -336,6 +349,55 @@ export default function DriveScreen() {
     };
   }, [selectedCircle]);
 
+  // Personal places live on this phone only (lib/savedDestinations.ts).
+  useEffect(() => {
+    if (!userId) return;
+    let cancelled = false;
+    loadDestinations(userId).then((list) => {
+      if (!cancelled) setMine(list);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
+
+  async function savePlace(name: string) {
+    if (!userId || !dest) return;
+    const result = addDestination(
+      mine,
+      { name, latitude: dest.latitude, longitude: dest.longitude },
+      `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    );
+    if (!result.ok) {
+      setSaveNotice(
+        result.reason === 'full' ? 'You have the most places you can save. Remove one first.' : 'Give the place a name.',
+      );
+      return;
+    }
+    const written = await storeDestinations(userId, result.list);
+    if (!written) {
+      setSaveNotice("Couldn't save that place on this phone.");
+      return;
+    }
+    setMine(result.list);
+    setSaveNotice(null);
+  }
+
+  function confirmRemove(place: SavedDestination) {
+    Alert.alert(`Remove ${place.name}?`, 'It only removes it from this phone.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Remove',
+        style: 'destructive',
+        onPress: async () => {
+          if (!userId) return;
+          const next = removeDestination(mine, place.id);
+          if (await storeDestinations(userId, next)) setMine(next);
+        },
+      },
+    ]);
+  }
+
   // Debounced so typing doesn't fire a request per keystroke at a shared,
   // free service.
   useEffect(() => {
@@ -368,6 +430,7 @@ export default function DriveScreen() {
       return;
     }
     setError(null);
+    setSaveNotice(null);
     setRouting(true);
     try {
       const route = await fetchRoute(origin, target);
@@ -458,9 +521,23 @@ export default function DriveScreen() {
 
   if (phase === 'plan') {
     const showingResults = query.trim().length >= MIN_QUERY_LENGTH;
-    const rows: { key: string; title: string; subtitle: string; target: Destination }[] = showingResults
-      ? results.map((r) => ({ key: r.id, title: r.title, subtitle: r.subtitle, target: r }))
-      : saved.map((p) => ({ key: p.id, title: p.name, subtitle: 'Saved place', target: { title: p.name, latitude: p.latitude, longitude: p.longitude } }));
+    type Row =
+      | { kind: 'header'; key: string; title: string }
+      | { kind: 'place'; key: string; title: string; subtitle: string; target: Destination; mineId?: string };
+    const rows: Row[] = [];
+    if (showingResults) {
+      if (results.length > 0) rows.push({ kind: 'header', key: 'h-results', title: 'Results' });
+      for (const r of results) rows.push({ kind: 'place', key: r.id, title: r.title, subtitle: r.subtitle, target: r });
+    } else {
+      if (mine.length > 0) rows.push({ kind: 'header', key: 'h-mine', title: 'My places' });
+      for (const p of mine) {
+        rows.push({ kind: 'place', key: p.id, title: p.name, subtitle: 'Saved on this phone', target: { title: p.name, latitude: p.latitude, longitude: p.longitude }, mineId: p.id });
+      }
+      if (saved.length > 0) rows.push({ kind: 'header', key: 'h-circle', title: 'Circle places' });
+      for (const p of saved) {
+        rows.push({ kind: 'place', key: p.id, title: p.name, subtitle: 'Saved place', target: { title: p.name, latitude: p.latitude, longitude: p.longitude } });
+      }
+    }
 
     return (
       <SafeAreaView style={styles.safeArea}>
@@ -506,21 +583,39 @@ export default function DriveScreen() {
           keyExtractor={(r) => r.key}
           contentContainerStyle={styles.list}
           keyboardShouldPersistTaps="handled"
-          ListHeaderComponent={
-            rows.length > 0 ? <Text style={styles.sectionLabel}>{showingResults ? 'Results' : 'Saved places'}</Text> : null
-          }
-          renderItem={({ item }) => (
-            <Pressable style={styles.row} disabled={routing || moving} onPress={() => chooseDestination(item.target)}>
-              <Text style={styles.rowTitle}>{item.title}</Text>
-              {item.subtitle ? <Text style={typography.caption}>{item.subtitle}</Text> : null}
-            </Pressable>
-          )}
+          renderItem={({ item }) => {
+            if (item.kind === 'header') return <Text style={styles.sectionLabel}>{item.title}</Text>;
+            const place = item.mineId ? mine.find((m) => m.id === item.mineId) : undefined;
+            return (
+              <View style={styles.placeRow}>
+                <Pressable
+                  style={[styles.row, styles.rowGrow]}
+                  disabled={routing || moving}
+                  onPress={() => chooseDestination(item.target)}
+                >
+                  <Text style={styles.rowTitle}>{item.title}</Text>
+                  {item.subtitle ? <Text style={typography.caption}>{item.subtitle}</Text> : null}
+                </Pressable>
+                {place && (
+                  <Pressable
+                    accessibilityLabel={`Remove ${place.name}`}
+                    hitSlop={8}
+                    style={styles.removeBtn}
+                    onPress={() => confirmRemove(place)}
+                  >
+                    <Text style={styles.removeText}>Remove</Text>
+                  </Pressable>
+                )}
+              </View>
+            );
+          }}
           ListEmptyComponent={
             showingResults && !searching ? (
               <Text style={typography.caption}>No places found. Try a different name or add the town.</Text>
-            ) : !showingResults && saved.length === 0 ? (
+            ) : !showingResults && saved.length === 0 && mine.length === 0 ? (
               <Text style={typography.caption}>
-                Search for a place above. Places saved in your circle also appear here.
+                Search for a place above, then save it as Home or Work to find it here next time.
+                Places saved in your circle also appear here.
               </Text>
             ) : null
           }
@@ -566,6 +661,30 @@ export default function DriveScreen() {
             {formatNavDuration(prepared.route.durationS)} · {formatNavDistance(prepared.totalM)} · arrive{' '}
             {formatArrivalClock(prepared.route.durationS)}
           </Text>
+          {userId && (
+            <View style={styles.saveBlock}>
+              {savedAt(mine, dest) ? (
+                <Text style={typography.caption}>★ Saved as {savedAt(mine, dest)?.name} on this phone</Text>
+              ) : (
+                <>
+                  <Text style={typography.caption}>Save this place on this phone (not shared):</Text>
+                  <View style={styles.chipRow}>
+                    {PINNED_NAMES.map((name) => (
+                      <Pressable key={name} style={styles.chip} onPress={() => savePlace(name)}>
+                        <Text style={styles.chipText}>{name}</Text>
+                      </Pressable>
+                    ))}
+                    <Pressable style={styles.chip} onPress={() => savePlace(dest.title)}>
+                      <Text style={styles.chipText} numberOfLines={1}>
+                        As “{dest.title}”
+                      </Text>
+                    </Pressable>
+                  </View>
+                </>
+              )}
+              {saveNotice && <Text style={styles.error}>{saveNotice}</Text>}
+            </View>
+          )}
           <Text style={styles.footnote}>
             Routes come from OpenStreetMap-based services and can be wrong. Follow road signs and
             local laws.
@@ -649,6 +768,22 @@ const styles = StyleSheet.create({
   warning: { color: colors.stale, fontWeight: '600', fontSize: 14 },
   error: { color: colors.danger, fontSize: 14 },
   footnote: { ...typography.caption, paddingHorizontal: spacing.lg, paddingBottom: spacing.sm },
+  placeRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  rowGrow: { flex: 1 },
+  removeBtn: { paddingHorizontal: spacing.sm, paddingVertical: spacing.sm },
+  removeText: { color: colors.danger, fontSize: 14, fontWeight: '600' },
+  saveBlock: { gap: spacing.xs },
+  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  chip: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    backgroundColor: colors.bgElevated,
+    maxWidth: '100%',
+  },
+  chipText: { fontSize: 14, fontWeight: '600', color: colors.textHeading },
   summary: { fontSize: 20, fontWeight: '700', color: colors.textHeading },
   shareRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.xs },
   shareText: { flex: 1, gap: 2 },
