@@ -1051,17 +1051,28 @@ describe('Drive screen: Google-style navigation view', () => {
     expect(vehicleMarker(r).props.rotation).toBe(before);
   });
 
-  it('lets you pick the vehicle and its colour, remembered on this phone', async () => {
+  it('opens Choose driving avatar from the options card; Done saves the avatar and colour', async () => {
     const r = await startDrive();
     await press(r, 'More options');
-    expect(allText(r)).toContain('Your vehicle');
-    await press(r, 'Vehicle: SUV');
-    await press(r, 'Colour: Red');
-    expect(JSON.parse((await AsyncStorage.getItem('safecircle.vehicle.v1'))!)).toEqual({ style: 'suv', color: 'red' });
+    expect(allText(r)).toContain('Driving avatar');
+    expect(allText(r)).toContain('Navigation arrow · Ocean blue');
+    await press(r, 'Choose driving avatar');
+    expect(allText(r)).toContain('Choose driving avatar');
+    await press(r, 'Avatar: Off-road');
+    await press(r, 'Colour: Coral red');
+    expect(allText(r)).toContain('Coral red');
     await press(r, 'Done');
+    expect(JSON.parse((await AsyncStorage.getItem('safecircle.vehicle.v1'))!)).toEqual({ style: 'offroad', color: 'red' });
     await emit(route[0][0], route[0][1], 13, 10_000);
     const icon = vehicleMarker(r).findAll((n) => typeof n.type === 'function' && (n.type as { name?: string }).name === 'VehicleIcon')[0];
-    expect(icon.props).toMatchObject({ style: 'suv', color: 'red', walking: false });
+    expect(icon.props).toMatchObject({ style: 'offroad', color: 'red', walking: false });
+  });
+
+  it('tapping your car on the map opens the avatar picker too', async () => {
+    const r = await startDrive();
+    await emit(route[0][0], route[0][1], 13, 10_000);
+    await act(async () => vehicleMarker(r).props.onPress());
+    expect(allText(r)).toContain('Choose driving avatar');
   });
 
   it('the compass switches between heading up and north up', async () => {
@@ -1251,14 +1262,23 @@ describe('Drive screen: lane guidance and speed limits', () => {
     expect(reverseCalls()).toHaveLength(0);
   });
 
-  it('offers the new vehicle styles and colours', async () => {
+  it('offers every avatar and colour in the picker', async () => {
     const r = await startDrive();
     await press(r, 'More options');
-    for (const label of ['Vehicle: Sports', 'Vehicle: Neon', 'Vehicle: Motorbike', 'Colour: Yellow', 'Colour: Purple']) {
+    await press(r, 'Choose driving avatar');
+    for (const label of [
+      'Avatar: Navigation arrow',
+      'Avatar: Sports car',
+      'Avatar: Compact',
+      'Avatar: Classic',
+      'Avatar: Race car',
+      'Avatar: Sedan',
+      'Avatar: Off-road',
+      'Colour: Polar white',
+      'Colour: Night black',
+      'Colour: Orchid',
+    ]) {
       expect(r.root.findAll((n) => n.props.accessibilityLabel === label).length).toBeGreaterThan(0);
     }
-    await press(r, 'Vehicle: Neon');
-    await press(r, 'Colour: Purple');
-    expect(JSON.parse((await AsyncStorage.getItem('safecircle.vehicle.v1'))!)).toEqual({ style: 'neon', color: 'purple' });
   });
 });

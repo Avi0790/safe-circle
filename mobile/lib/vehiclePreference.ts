@@ -2,34 +2,40 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // What marks you on the map while navigating, instead of the blue dot, like
 // Google Maps' and Waze's vehicle icons. Per device.
-export type VehicleStyle = 'arrow' | 'sedan' | 'sports' | 'suv' | 'pickup' | 'neon' | 'moto';
-export type VehicleColor = 'blue' | 'red' | 'black' | 'white' | 'silver' | 'yellow' | 'green' | 'purple';
+export type VehicleStyle = 'arrow' | 'sports' | 'compact' | 'classic' | 'race' | 'sedan' | 'offroad';
+export type VehicleColor = 'white' | 'black' | 'silver' | 'red' | 'blue' | 'yellow' | 'green' | 'purple';
 
 export interface VehiclePreference {
   style: VehicleStyle;
   color: VehicleColor;
 }
 
+// The driving avatars, in carousel order (like Google Maps' "Choose driving
+// avatar"). Drawn in components/VehicleIcon.tsx (map, top-down) and
+// components/AvatarArt.tsx (picker, three-quarter view).
 export const VEHICLE_STYLES: { style: VehicleStyle; label: string }[] = [
-  { style: 'arrow', label: 'Arrow' },
-  { style: 'sedan', label: 'Car' },
-  { style: 'sports', label: 'Sports' },
-  { style: 'suv', label: 'SUV' },
-  { style: 'pickup', label: 'Pickup' },
-  { style: 'neon', label: 'Neon' },
-  { style: 'moto', label: 'Motorbike' },
+  { style: 'arrow', label: 'Navigation arrow' },
+  { style: 'sports', label: 'Sports car' },
+  { style: 'compact', label: 'Compact' },
+  { style: 'classic', label: 'Classic' },
+  { style: 'race', label: 'Race car' },
+  { style: 'sedan', label: 'Sedan' },
+  { style: 'offroad', label: 'Off-road' },
 ];
 
 export const VEHICLE_COLORS: { color: VehicleColor; hex: string; label: string }[] = [
-  { color: 'blue', hex: '#2563eb', label: 'Blue' },
-  { color: 'red', hex: '#dc2626', label: 'Red' },
-  { color: 'black', hex: '#111827', label: 'Black' },
-  { color: 'white', hex: '#f8fafc', label: 'White' },
-  { color: 'silver', hex: '#9ca3af', label: 'Silver' },
-  { color: 'yellow', hex: '#facc15', label: 'Yellow' },
-  { color: 'green', hex: '#22c55e', label: 'Green' },
-  { color: 'purple', hex: '#a855f7', label: 'Purple' },
+  { color: 'white', hex: '#f5f7fa', label: 'Polar white' },
+  { color: 'black', hex: '#1a1a1d', label: 'Night black' },
+  { color: 'silver', hex: '#78909c', label: 'Slate grey' },
+  { color: 'red', hex: '#f04452', label: 'Coral red' },
+  { color: 'blue', hex: '#1a8cff', label: 'Ocean blue' },
+  { color: 'yellow', hex: '#ffcc00', label: 'Sunshine yellow' },
+  { color: 'green', hex: '#0f8291', label: 'Deep teal' },
+  { color: 'purple', hex: '#b13fc0', label: 'Orchid' },
 ];
+
+// Avatars from before this set was redrawn map onto their nearest new one.
+const OLD_STYLES: Record<string, VehicleStyle> = { suv: 'offroad', pickup: 'offroad', neon: 'sports', moto: 'compact' };
 
 export const DEFAULT_VEHICLE: VehiclePreference = { style: 'arrow', color: 'blue' };
 
@@ -38,7 +44,8 @@ const KEY = 'safecircle.vehicle.v1';
 export function parseVehicle(raw: string | null): VehiclePreference {
   try {
     const v = JSON.parse(raw ?? '') as Partial<VehiclePreference>;
-    const style = VEHICLE_STYLES.some((s) => s.style === v.style) ? (v.style as VehicleStyle) : DEFAULT_VEHICLE.style;
+    const named = typeof v.style === 'string' ? (OLD_STYLES[v.style] ?? v.style) : undefined;
+    const style = VEHICLE_STYLES.some((s) => s.style === named) ? (named as VehicleStyle) : DEFAULT_VEHICLE.style;
     const color = VEHICLE_COLORS.some((c) => c.color === v.color) ? (v.color as VehicleColor) : DEFAULT_VEHICLE.color;
     return { style, color };
   } catch {
@@ -62,7 +69,20 @@ export async function setVehicle(v: VehiclePreference): Promise<void> {
   }
 }
 
-export const vehicleHex = (color: VehicleColor) => VEHICLE_COLORS.find((c) => c.color === color)?.hex ?? '#2563eb';
+export const vehicleHex = (color: VehicleColor) => VEHICLE_COLORS.find((c) => c.color === color)?.hex ?? '#1a8cff';
+export const vehicleColorName = (color: VehicleColor) => VEHICLE_COLORS.find((c) => c.color === color)?.label ?? '';
+export const vehicleStyleName = (style: VehicleStyle) => VEHICLE_STYLES.find((s) => s.style === style)?.label ?? '';
+
+// A lighter (amount > 0) or darker (amount < 0) version of a colour, for the
+// shading that makes the drawn avatars look solid.
+export function shade(hex: string, amount: number): string {
+  const n = parseInt(hex.replace('#', ''), 16);
+  const mix = (c: number) => Math.round(amount >= 0 ? c + (255 - c) * amount : c * (1 + amount));
+  const r = mix((n >> 16) & 255);
+  const g = mix((n >> 8) & 255);
+  const b = mix(n & 255);
+  return `#${((1 << 24) | (r << 16) | (g << 8) | b).toString(16).slice(1)}`;
+}
 
 // Which way you're facing, in degrees from north: the GPS heading while
 // moving, otherwise the direction between your last two positions, otherwise

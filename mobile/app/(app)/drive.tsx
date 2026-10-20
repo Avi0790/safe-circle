@@ -11,6 +11,7 @@ import { DriveHud } from '@/components/DriveHud';
 import { DrivePanel } from '@/components/DrivePanel';
 import type { CameraMode } from '@/components/DriveHud';
 import { VehicleMarker } from '@/components/VehicleMarker';
+import { AvatarPicker } from '@/components/AvatarPicker';
 import { useRoadReports } from '@/hooks/useRoadReports';
 import { TextField } from '@/components/TextField';
 import { useAuth } from '@/contexts/AuthContext';
@@ -125,6 +126,7 @@ export default function DriveScreen() {
   const [vehicle, setVehicleState] = useState<VehiclePreference>(DEFAULT_VEHICLE);
   const [heading, setHeading] = useState(0);
   const [cameraMode, setCameraMode] = useState<CameraMode>('heading');
+  const [avatarOpen, setAvatarOpen] = useState(false);
   const lastFollowMode = useRef<'heading' | 'north'>('heading');
   // The posted limit of the road you're on, when the map has one.
   const [speedLimit, setSpeedLimit] = useState<number | null>(null);
@@ -828,6 +830,7 @@ export default function DriveScreen() {
     closeTrip(false);
     closeLink(false);
     setSpeedLimit(null);
+    setAvatarOpen(false);
     limitLookup.current = { at: null, step: null, inFlight: false };
     setTripNotice(null);
     setPanel(null);
@@ -1048,6 +1051,10 @@ export default function DriveScreen() {
               style={vehicle.style}
               color={vehicle.color}
               walking={mode === 'walk'}
+              onPress={() => {
+                setPanel(null);
+                setAvatarOpen(true);
+              }}
             />
           )}
           {stop && (
@@ -1162,11 +1169,26 @@ export default function DriveScreen() {
         />
       )}
 
+      {phase === 'driving' && avatarOpen && (
+        <AvatarPicker
+          value={vehicle}
+          bottomInset={insets.bottom}
+          onClose={() => setAvatarOpen(false)}
+          onDone={(v) => {
+            chooseVehicle(v);
+            setAvatarOpen(false);
+          }}
+        />
+      )}
+
       {phase === 'driving' && panel && (
         <DrivePanel
           view={panel}
           vehicle={vehicle}
-          onVehicle={chooseVehicle}
+          onOpenAvatar={() => {
+            setPanel(null);
+            setAvatarOpen(true);
+          }}
           bottomInset={insets.bottom}
           voiceMode={voiceMode}
           onVoiceMode={chooseVoice}

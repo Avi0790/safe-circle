@@ -4,8 +4,8 @@ import { ROAD_REPORT_KINDS, type RoadReportKind } from '@/lib/roadReports';
 import { STOP_CATEGORIES, type StopCategory, type StopResult } from '@/lib/stops';
 import { colors, radius, spacing, typography } from '@/lib/theme';
 import { VOICE_MODES, type VoiceMode } from '@/lib/voicePreference';
-import { VEHICLE_COLORS, VEHICLE_STYLES, type VehiclePreference } from '@/lib/vehiclePreference';
-import { VehicleIcon } from '@/components/VehicleIcon';
+import { vehicleColorName, vehicleStyleName, type VehiclePreference } from '@/lib/vehiclePreference';
+import { AvatarArt } from '@/components/AvatarArt';
 
 // The card that slides up over navigation, like Apple Maps': audio, Share
 // ETA, report an incident, add a stop, end the route. Everything is one or two
@@ -14,7 +14,8 @@ export interface DrivePanelProps {
   // 'report' is the Report pill's shortcut straight to the incident buttons
   view: 'main' | 'stops' | 'report';
   vehicle?: VehiclePreference;
-  onVehicle?: (v: VehiclePreference) => void;
+  // opens the Choose driving avatar sheet
+  onOpenAvatar?: () => void;
   bottomInset: number;
   voiceMode: VoiceMode;
   onVoiceMode: (mode: VoiceMode) => void;
@@ -133,37 +134,17 @@ export function DrivePanel(p: DrivePanelProps) {
             <Text style={styles.label}>Report an incident</Text>
             <ReportGrid {...p} />
 
-            {p.vehicle && p.onVehicle && (
-              <>
-                <Text style={styles.label}>Your vehicle</Text>
-                <View style={styles.vehicleRow}>
-                  {VEHICLE_STYLES.map(({ style, label }) => (
-                    <Pressable
-                      key={style}
-                      style={[styles.vehicleTile, p.vehicle!.style === style && styles.vehicleTileOn]}
-                      onPress={() => p.onVehicle!({ ...p.vehicle!, style })}
-                      accessibilityLabel={`Vehicle: ${label}`}
-                      accessibilityState={{ selected: p.vehicle!.style === style }}
-                    >
-                      <View style={styles.vehiclePreview}>
-                        <VehicleIcon style={style} color={p.vehicle!.color} />
-                      </View>
-                      <Text style={styles.vehicleLabel}>{label}</Text>
-                    </Pressable>
-                  ))}
+            {p.vehicle && p.onOpenAvatar && (
+              <Pressable style={styles.avatarRow} onPress={p.onOpenAvatar} accessibilityRole="button" accessibilityLabel="Choose driving avatar">
+                <AvatarArt style={p.vehicle.style} color={p.vehicle.color} width={92} />
+                <View style={styles.avatarText}>
+                  <Text style={styles.actionText}>Driving avatar</Text>
+                  <Text style={typography.caption}>
+                    {vehicleStyleName(p.vehicle.style)} · {vehicleColorName(p.vehicle.color)}
+                  </Text>
                 </View>
-                <View style={styles.swatchRow}>
-                  {VEHICLE_COLORS.map(({ color, hex, label }) => (
-                    <Pressable
-                      key={color}
-                      style={[styles.swatch, { backgroundColor: hex }, p.vehicle!.color === color && styles.swatchOn]}
-                      onPress={() => p.onVehicle!({ ...p.vehicle!, color })}
-                      accessibilityLabel={`Colour: ${label}`}
-                      accessibilityState={{ selected: p.vehicle!.color === color }}
-                    />
-                  ))}
-                </View>
-              </>
+                <Text style={styles.chevron}>›</Text>
+              </Pressable>
             )}
 
             {p.stopTitle ? (
@@ -297,22 +278,18 @@ const styles = StyleSheet.create({
   inline: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   error: { color: colors.danger, fontSize: 14 },
   footnote: { ...typography.caption, marginTop: spacing.xs },
-  vehicleRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
-  vehicleTile: {
-    width: '23%',
-    flexGrow: 1,
+  avatarRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: spacing.sm,
+    gap: spacing.md,
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.md,
     borderRadius: radius.md,
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.bgElevated,
-    gap: 4,
+    marginTop: spacing.sm,
   },
-  vehicleTileOn: { borderColor: colors.accent, borderWidth: 2 },
-  vehiclePreview: { height: 96, justifyContent: 'center' },
-  vehicleLabel: { fontSize: 13, fontWeight: '600', color: colors.textHeading },
-  swatchRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md, paddingVertical: spacing.xs },
-  swatch: { width: 32, height: 32, borderRadius: 16, borderWidth: 2, borderColor: colors.border },
-  swatchOn: { borderColor: colors.accent, borderWidth: 4 },
+  avatarText: { flex: 1, gap: 2 },
+  chevron: { fontSize: 26, color: colors.offline },
 });

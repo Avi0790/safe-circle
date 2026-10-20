@@ -1,251 +1,201 @@
-import { StyleSheet, View } from 'react-native';
-import { vehicleHex, type VehicleColor, type VehicleStyle } from '@/lib/vehiclePreference';
+import { useId } from 'react';
+import Svg, { Circle, Defs, Ellipse, G, LinearGradient, Path, Polygon, RadialGradient, Rect, Stop } from 'react-native-svg';
+import { shade, vehicleHex, type VehicleColor, type VehicleStyle } from '@/lib/vehiclePreference';
 
-// Top-down vehicles drawn from plain views (no SVG dependency), pointing up,
-// with headlight beams ahead, taillights behind and a glow underneath.
-// VehicleMarker.tsx turns them to your heading on the map. (No map import
-// here, so the options card can show previews anywhere.)
-//
-// The beams sit above the vehicle and an equal space below it, so the middle
-// of the drawing is the middle of the vehicle: the point the marker is
-// anchored and rotated on.
-const BEAM = 22;
+// The driving avatar seen from above, for the navigation map: shaded so the
+// body looks curved, tinted glass, headlight beams fading out ahead and red
+// taillights. Points up; VehicleMarker.tsx lays it flat and turns it to your
+// heading. The beams sit above the car and the same space below it, so the
+// middle of the drawing is the middle of the car (the marker's anchor).
+const VW = 48;
+const VH = 128;
+const CX = VW / 2;
+const CY = VH / 2;
 
-const LIGHT_BODY = new Set(['white', 'silver', 'yellow']);
+interface Shape {
+  L: number; // length
+  W: number; // width
+  r: number; // corner rounding
+  ws: number; // windshield starts this far from the nose
+  wl: number; // windshield length
+  rl: number; // roof length
+  rwl: number; // rear window length
+  extras?: { spoiler?: boolean; chrome?: boolean; roofLights?: boolean; spare?: boolean; fatTyres?: boolean };
+}
+
+const SHAPES: Record<Exclude<VehicleStyle, 'arrow' | 'race'>, Shape> = {
+  sports: { L: 54, W: 24, r: 10, ws: 17, wl: 9, rl: 10, rwl: 6, extras: { spoiler: true } },
+  compact: { L: 44, W: 24, r: 8, ws: 10, wl: 8, rl: 17, rwl: 4 },
+  classic: { L: 56, W: 24, r: 5, ws: 15, wl: 7, rl: 16, rwl: 6, extras: { chrome: true } },
+  sedan: { L: 58, W: 25, r: 9, ws: 16, wl: 9, rl: 17, rwl: 7 },
+  offroad: { L: 56, W: 28, r: 5, ws: 12, wl: 8, rl: 20, rwl: 4, extras: { roofLights: true, spare: true, fatTyres: true } },
+};
 
 export function VehicleIcon({
   style,
   color,
   walking = false,
   lights = true,
+  size = 1,
 }: {
   style: VehicleStyle;
   color: VehicleColor;
   walking?: boolean;
   lights?: boolean;
+  // 1 = map size; previews can draw it bigger
+  size?: number;
 }) {
+  const uid = useId().replace(/[^a-zA-Z0-9]/g, '');
   const hex = vehicleHex(color);
+  const id = (name: string) => `${name}${uid}`;
 
   if (walking || style === 'arrow') {
-    const fill = walking ? '#16a34a' : color === 'white' ? '#2563eb' : hex;
+    const fill = walking ? '#16a34a' : color === 'white' ? '#1a8cff' : hex;
     return (
-      <View style={styles.arrowWrap} accessibilityLabel={walking ? 'You (walking)' : 'You'}>
-        <View style={[styles.arrowHalo, { backgroundColor: fill + '38' }]} />
-        <View style={[styles.arrowRing, { borderColor: fill + 'aa' }]} />
-        <View style={styles.arrowDisc}>
-          <View style={[styles.arrow, { borderBottomColor: fill }]} />
-          <View style={styles.arrowNotch} />
-        </View>
-      </View>
+      <Svg width={56 * size} height={56 * size} viewBox="0 0 56 56" accessibilityLabel={walking ? 'You (walking)' : 'You'}>
+        <Defs>
+          <RadialGradient id={id('halo')} cx="50%" cy="50%" r="50%">
+            <Stop offset="0.55" stopColor={fill} stopOpacity="0.35" />
+            <Stop offset="1" stopColor={fill} stopOpacity="0" />
+          </RadialGradient>
+          <LinearGradient id={id('arrow')} x1="0" y1="0" x2="0" y2="1">
+            <Stop offset="0" stopColor={shade(fill, 0.25)} />
+            <Stop offset="1" stopColor={shade(fill, -0.25)} />
+          </LinearGradient>
+        </Defs>
+        <Circle cx="28" cy="28" r="28" fill={`url(#${id('halo')})`} />
+        <Circle cx="28" cy="29" r="15" fill="#000" opacity="0.25" />
+        <Circle cx="28" cy="28" r="15" fill="#ffffff" />
+        <Path d="M28 15 L38 37 L28 32 L18 37 Z" fill={`url(#${id('arrow')})`} stroke={shade(fill, -0.4)} strokeWidth="0.8" />
+      </Svg>
     );
   }
 
-  if (style === 'moto') return <Moto hex={hex} lights={lights} />;
+  const w = VW * size;
+  const h = VH * size;
 
-  const neon = style === 'neon';
-  const dims = {
-    sedan: { long: 44, wide: 22, nose: 10 },
-    sports: { long: 46, wide: 21, nose: 14 },
-    suv: { long: 48, wide: 25, nose: 6 },
-    pickup: { long: 50, wide: 25, nose: 6 },
-    neon: { long: 45, wide: 22, nose: 12 },
-  }[style];
-  const body = neon ? '#0b1020' : hex;
-  const edge = neon ? hex : LIGHT_BODY.has(color) ? '#475569' : 'rgba(255,255,255,0.85)';
-  const glass = neon ? hex + '55' : color === 'black' ? '#4b5563' : '#1e293b';
-  const width = dims.wide + 18;
+  if (style === 'race') {
+    const accent = shade(hex, -0.45);
+    const y0 = CY - 28;
+    return (
+      <Svg width={w} height={h} viewBox={`0 0 ${VW} ${VH}`} accessibilityLabel="You">
+        <Defs>
+          <LinearGradient id={id('beam')} x1="0" y1="1" x2="0" y2="0">
+            <Stop offset="0" stopColor="#ffe08a" stopOpacity="0.5" />
+            <Stop offset="1" stopColor="#ffe08a" stopOpacity="0" />
+          </LinearGradient>
+          <LinearGradient id={id('body')} x1="0" y1="0" x2="1" y2="0">
+            <Stop offset="0" stopColor={shade(hex, -0.35)} />
+            <Stop offset="0.5" stopColor={shade(hex, 0.2)} />
+            <Stop offset="1" stopColor={shade(hex, -0.35)} />
+          </LinearGradient>
+        </Defs>
+        {lights && <Polygon points={`${CX - 4},${y0 + 2} ${CX + 4},${y0 + 2} ${CX + 12},${y0 - 30} ${CX - 12},${y0 - 30}`} fill={`url(#${id('beam')})`} />}
+        <Ellipse cx={CX + 1} cy={CY + 2} rx="16" ry="31" fill="#000" opacity="0.3" />
+        {/* front wing, wheels, rear wing */}
+        <Rect x={CX - 15} y={y0 + 1} width="30" height="4" rx="1.5" fill={accent} />
+        <Rect x={CX - 18} y={y0 + 8} width="7" height="12" rx="2.5" fill="#0d0d0f" />
+        <Rect x={CX + 11} y={y0 + 8} width="7" height="12" rx="2.5" fill="#0d0d0f" />
+        <Rect x={CX - 19} y={y0 + 38} width="8" height="14" rx="3" fill="#0d0d0f" />
+        <Rect x={CX + 11} y={y0 + 38} width="8" height="14" rx="3" fill="#0d0d0f" />
+        <Path
+          d={`M${CX} ${y0} Q${CX + 4} ${y0 + 4} ${CX + 4} ${y0 + 16} L${CX + 10} ${y0 + 30} L${CX + 10} ${y0 + 50} Q${CX} ${y0 + 56} ${CX - 10} ${y0 + 50} L${CX - 10} ${y0 + 30} L${CX - 4} ${y0 + 16} Q${CX - 4} ${y0 + 4} ${CX} ${y0} Z`}
+          fill={`url(#${id('body')})`}
+          stroke={accent}
+          strokeWidth="0.6"
+        />
+        <Rect x={CX - 1.2} y={y0 + 4} width="2.4" height="44" fill={accent} opacity="0.6" />
+        {/* cockpit and helmet */}
+        <Ellipse cx={CX} cy={y0 + 27} rx="4.5" ry="7" fill="#0d0d0f" />
+        <Circle cx={CX} cy={y0 + 26} r="3.2" fill="#ffcc00" stroke="#ffffff" strokeWidth="0.6" />
+        <Rect x={CX - 13} y={y0 + 54} width="26" height="5" rx="1.5" fill={accent} />
+        <Rect x={CX - 6} y={y0 + 56} width="12" height="1.6" fill="#ef4444" />
+      </Svg>
+    );
+  }
+
+  const s = SHAPES[style];
+  const x0 = CX - s.W / 2;
+  const y0 = CY - s.L / 2;
+  const ext = s.extras ?? {};
+  const glassTop = y0 + s.ws;
+  const roofTop = glassTop + s.wl;
+  const rearTop = roofTop + s.rl;
+  const tyre = ext.fatTyres ? 5.5 : 4;
 
   return (
-    <View style={{ width, height: dims.long + BEAM * 2, alignItems: 'center' }} accessibilityLabel="You">
-      {/* glow on the road underneath */}
-      <View
-        style={[
-          styles.glow,
-          {
-            top: BEAM - 6,
-            width: dims.wide + 18,
-            height: dims.long + 12,
-            backgroundColor: neon ? hex + '66' : hex + '33',
-          },
-        ]}
+    <Svg width={w} height={h} viewBox={`0 0 ${VW} ${VH}`} accessibilityLabel="You">
+      <Defs>
+        <LinearGradient id={id('body')} x1="0" y1="0" x2="1" y2="0">
+          <Stop offset="0" stopColor={shade(hex, -0.4)} />
+          <Stop offset="0.2" stopColor={shade(hex, -0.06)} />
+          <Stop offset="0.5" stopColor={shade(hex, 0.22)} />
+          <Stop offset="0.8" stopColor={shade(hex, -0.06)} />
+          <Stop offset="1" stopColor={shade(hex, -0.4)} />
+        </LinearGradient>
+        <LinearGradient id={id('glass')} x1="0" y1="0" x2="0" y2="1">
+          <Stop offset="0" stopColor="#a5f3fc" />
+          <Stop offset="1" stopColor="#0e6f86" />
+        </LinearGradient>
+        <LinearGradient id={id('roof')} x1="0" y1="0" x2="1" y2="0">
+          <Stop offset="0" stopColor={shade(hex, -0.15)} />
+          <Stop offset="0.5" stopColor={shade(hex, 0.3)} />
+          <Stop offset="1" stopColor={shade(hex, -0.15)} />
+        </LinearGradient>
+        <LinearGradient id={id('beam')} x1="0" y1="1" x2="0" y2="0">
+          <Stop offset="0" stopColor="#ffe08a" stopOpacity="0.55" />
+          <Stop offset="1" stopColor="#ffe08a" stopOpacity="0" />
+        </LinearGradient>
+      </Defs>
+
+      {lights && (
+        <Polygon
+          points={`${x0 + 3},${y0 + 3} ${x0 + s.W - 3},${y0 + 3} ${x0 + s.W + 8},${Math.max(2, y0 - 36)} ${x0 - 8},${Math.max(2, y0 - 36)}`}
+          fill={`url(#${id('beam')})`}
+        />
+      )}
+      {/* shadow on the road */}
+      <Rect x={x0 - 1} y={y0 + 2} width={s.W + 4} height={s.L + 3} rx={s.r + 2} fill="#000" opacity="0.32" />
+      {/* tyres just showing past the body */}
+      <G fill="#0d0d0f">
+        <Rect x={x0 - tyre / 2} y={y0 + s.L * 0.15} width={tyre} height="10" rx="2" />
+        <Rect x={x0 + s.W - tyre / 2} y={y0 + s.L * 0.15} width={tyre} height="10" rx="2" />
+        <Rect x={x0 - tyre / 2} y={y0 + s.L * 0.72} width={tyre} height="10" rx="2" />
+        <Rect x={x0 + s.W - tyre / 2} y={y0 + s.L * 0.72} width={tyre} height="10" rx="2" />
+      </G>
+      {ext.spare && <Circle cx={CX} cy={y0 + s.L + 1} r="5" fill="#0d0d0f" stroke="#3f3f46" strokeWidth="1" />}
+      {/* mirrors */}
+      <Ellipse cx={x0 - 1} cy={glassTop + 2} rx="2" ry="1.4" fill={shade(hex, -0.2)} />
+      <Ellipse cx={x0 + s.W + 1} cy={glassTop + 2} rx="2" ry="1.4" fill={shade(hex, -0.2)} />
+      {/* body */}
+      <Rect x={x0} y={y0} width={s.W} height={s.L} rx={s.r} fill={`url(#${id('body')})`} stroke={shade(hex, -0.55)} strokeWidth="0.6" />
+      {/* bonnet shine */}
+      <Ellipse cx={CX} cy={y0 + s.ws * 0.5} rx={s.W * 0.22} ry={s.ws * 0.3} fill="#ffffff" opacity="0.18" />
+      {/* glass and roof */}
+      <Path
+        d={`M${x0 + 5} ${glassTop} L${x0 + s.W - 5} ${glassTop} L${x0 + s.W - 3} ${roofTop} L${x0 + 3} ${roofTop} Z`}
+        fill={`url(#${id('glass')})`}
       />
-      {/* headlight beams */}
-      {lights && <Beam width={dims.wide - 4} />}
-      <View style={{ marginTop: lights ? 0 : BEAM }}>
-        {/* wheels and mirrors stick out past the body */}
-        <View style={[styles.wheel, { left: -3, top: dims.nose - 2 }]} />
-        <View style={[styles.wheel, { right: -3, top: dims.nose - 2 }]} />
-        <View style={[styles.wheel, { left: -3, bottom: 6 }]} />
-        <View style={[styles.wheel, { right: -3, bottom: 6 }]} />
-        <View style={[styles.mirror, { left: -4, top: dims.nose + 6, backgroundColor: body, borderColor: edge }]} />
-        <View style={[styles.mirror, { right: -4, top: dims.nose + 6, backgroundColor: body, borderColor: edge }]} />
-        {style === 'sports' && <View style={[styles.spoiler, { width: dims.wide + 6, left: -3 }]} />}
-
-        <View
-          style={[
-            styles.body,
-            {
-              width: dims.wide,
-              height: dims.long,
-              backgroundColor: body,
-              borderColor: edge,
-              borderWidth: neon ? 2 : 1.5,
-              borderTopLeftRadius: style === 'suv' || style === 'pickup' ? 7 : 12,
-              borderTopRightRadius: style === 'suv' || style === 'pickup' ? 7 : 12,
-              shadowColor: neon ? hex : '#000',
-              shadowOpacity: neon ? 0.9 : 0.35,
-              shadowRadius: neon ? 6 : 3,
-            },
-          ]}
-        >
-          <View style={styles.headlights}>
-            <View style={styles.headlight} />
-            <View style={styles.headlight} />
-          </View>
-          {/* gloss along one side of the bonnet */}
-          {!neon && <View style={styles.gloss} />}
-          {style === 'sports' && (
-            <View style={styles.stripes}>
-              <View style={styles.stripe} />
-              <View style={styles.stripe} />
-            </View>
-          )}
-          <View style={{ height: dims.nose - 6 }} />
-          <View style={[styles.windshield, { backgroundColor: glass, borderColor: neon ? hex : 'transparent' }]} />
-          {style === 'pickup' ? (
-            <>
-              <View style={[styles.roof, { height: 6 }]} />
-              <View style={[styles.rearGlass, { backgroundColor: glass }]} />
-              <View style={[styles.bed, { borderColor: edge }]}>
-                <View style={styles.bedRib} />
-                <View style={styles.bedRib} />
-              </View>
-            </>
-          ) : (
-            <>
-              <View style={[styles.roof, { height: style === 'suv' ? 17 : style === 'sports' ? 9 : 12 }]}>
-                {style === 'suv' && (
-                  <>
-                    <View style={[styles.rail, { left: 2 }]} />
-                    <View style={[styles.rail, { right: 2 }]} />
-                  </>
-                )}
-                {neon && <View style={[styles.neonLine, { backgroundColor: hex }]} />}
-              </View>
-              <View style={[styles.rearGlass, { backgroundColor: glass }]} />
-            </>
-          )}
-          <View style={styles.flexFill} />
-          <View style={styles.taillights}>
-            <View style={styles.taillight} />
-            <View style={styles.taillight} />
-          </View>
-        </View>
-      </View>
-    </View>
-  );
-}
-
-// Headlight light on the road ahead: a cone widening forward, a faint outer
-// one with a brighter one inside it (drawn as trapezoids with borders).
-function Beam({ width }: { width: number }) {
-  return (
-    <View style={{ height: BEAM, alignItems: 'center', justifyContent: 'flex-end' }}>
-      <View style={[styles.cone, { width, borderLeftWidth: 11, borderRightWidth: 11, borderTopWidth: BEAM, borderTopColor: 'rgba(255,224,120,0.22)' }]} />
-      <View
-        style={[
-          styles.cone,
-          { position: 'absolute', bottom: 0, width, borderLeftWidth: 5, borderRightWidth: 5, borderTopWidth: BEAM * 0.6, borderTopColor: 'rgba(255,236,150,0.4)' },
-        ]}
+      <Rect x={x0 + 3.5} y={roofTop} width={s.W - 7} height={s.rl} rx="2.5" fill={`url(#${id('roof')})`} />
+      {ext.roofLights &&
+        [-6, 0, 6].map((dx) => <Circle key={dx} cx={CX + dx} cy={roofTop + 2.5} r="1.6" fill="#fff7d6" stroke="#0d0d0f" strokeWidth="0.5" />)}
+      <Path
+        d={`M${x0 + 3} ${rearTop} L${x0 + s.W - 3} ${rearTop} L${x0 + s.W - 5} ${rearTop + s.rwl} L${x0 + 5} ${rearTop + s.rwl} Z`}
+        fill={`url(#${id('glass')})`}
+        opacity="0.85"
       />
-    </View>
+      {/* lights */}
+      <Ellipse cx={x0 + 4.5} cy={y0 + 2.2} rx="3" ry="1.4" fill="#fffbe6" />
+      <Ellipse cx={x0 + s.W - 4.5} cy={y0 + 2.2} rx="3" ry="1.4" fill="#fffbe6" />
+      <Rect x={x0 + 2.5} y={y0 + s.L - 2.6} width="5" height="1.8" rx="0.9" fill="#ff3b3b" />
+      <Rect x={x0 + s.W - 7.5} y={y0 + s.L - 2.6} width="5" height="1.8" rx="0.9" fill="#ff3b3b" />
+      {ext.chrome && (
+        <G fill="#e5e7eb">
+          <Rect x={x0 + 1} y={y0 - 1.2} width={s.W - 2} height="2" rx="1" />
+          <Rect x={x0 + 1} y={y0 + s.L - 0.8} width={s.W - 2} height="2" rx="1" />
+        </G>
+      )}
+      {ext.spoiler && <Rect x={x0 - 2} y={y0 + s.L - 4} width={s.W + 4} height="3.2" rx="1.2" fill="#121214" />}
+    </Svg>
   );
 }
-
-function Moto({ hex, lights }: { hex: string; lights: boolean }) {
-  return (
-    <View style={{ width: 30, height: 36 + BEAM * 2, alignItems: 'center' }} accessibilityLabel="You">
-      <View style={[styles.glow, { top: BEAM - 4, width: 26, height: 44, backgroundColor: hex + '40' }]} />
-      {lights ? <Beam width={4} /> : <View style={{ height: BEAM }} />}
-      {/* front wheel, frame with tank, rider, rear wheel */}
-      <View style={styles.motoWheel} />
-      <View style={[styles.motoBar]} />
-      <View style={[styles.motoTank, { backgroundColor: hex }]} />
-      <View style={[styles.motoRider, { backgroundColor: hex, borderColor: '#ffffff' }]}>
-        <View style={styles.motoVisor} />
-      </View>
-      <View style={[styles.motoTail, { backgroundColor: hex }]} />
-      <View style={styles.motoWheel} />
-      <View style={styles.motoTaillight} />
-    </View>
-  );
-}
-
-const styles = StyleSheet.create({
-  arrowWrap: { width: 52, height: 52, alignItems: 'center', justifyContent: 'center' },
-  arrowHalo: { position: 'absolute', width: 52, height: 52, borderRadius: 26 },
-  arrowRing: { position: 'absolute', width: 40, height: 40, borderRadius: 20, borderWidth: 2 },
-  arrowDisc: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: '#ffffff',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.35,
-    shadowRadius: 3,
-    elevation: 4,
-  },
-  arrow: {
-    width: 0,
-    height: 0,
-    marginTop: -3,
-    borderLeftWidth: 10,
-    borderRightWidth: 10,
-    borderBottomWidth: 22,
-    borderLeftColor: 'transparent',
-    borderRightColor: 'transparent',
-  },
-  // the notch at the back of the arrow, in white, like a nav chevron
-  arrowNotch: {
-    position: 'absolute',
-    bottom: 6,
-    width: 0,
-    height: 0,
-    borderLeftWidth: 7,
-    borderRightWidth: 7,
-    borderBottomWidth: 6,
-    borderLeftColor: 'transparent',
-    borderRightColor: 'transparent',
-    borderBottomColor: '#ffffff',
-  },
-  glow: { position: 'absolute', borderRadius: 999 },
-  cone: { height: 0, borderLeftColor: 'transparent', borderRightColor: 'transparent' },
-  wheel: { position: 'absolute', width: 6, height: 11, borderRadius: 2.5, backgroundColor: '#0f172a', zIndex: -1 },
-  mirror: { position: 'absolute', width: 5, height: 4, borderRadius: 2, borderWidth: 1, zIndex: -1 },
-  spoiler: { position: 'absolute', bottom: -2, height: 4, borderRadius: 2, backgroundColor: '#0f172a', zIndex: 2 },
-  body: { alignItems: 'center', overflow: 'hidden', borderBottomLeftRadius: 7, borderBottomRightRadius: 7, elevation: 4 },
-  headlights: { position: 'absolute', top: 1, flexDirection: 'row', justifyContent: 'space-between', width: '84%' },
-  headlight: { width: 6, height: 3, borderRadius: 1.5, backgroundColor: '#fefce8' },
-  gloss: { position: 'absolute', top: 3, left: 3, width: 3, height: '45%', borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.35)' },
-  stripes: { position: 'absolute', top: 0, bottom: 0, flexDirection: 'row', gap: 3 },
-  stripe: { width: 2.5, height: '100%', backgroundColor: 'rgba(255,255,255,0.9)' },
-  windshield: { width: '80%', height: 9, borderTopLeftRadius: 5, borderTopRightRadius: 5, borderRadius: 2, borderWidth: 1 },
-  roof: { width: '72%', marginVertical: 1.5, backgroundColor: 'rgba(255,255,255,0.14)', borderRadius: 3 },
-  rail: { position: 'absolute', top: 1, bottom: 1, width: 1.5, backgroundColor: 'rgba(0,0,0,0.4)' },
-  neonLine: { position: 'absolute', left: '45%', top: 1, bottom: 1, width: 1.5, borderRadius: 1 },
-  rearGlass: { width: '72%', height: 5, borderRadius: 2 },
-  bed: { flex: 1, width: '80%', marginTop: 2, borderWidth: 1.5, borderRadius: 2, backgroundColor: 'rgba(0,0,0,0.3)', justifyContent: 'space-evenly' },
-  bedRib: { height: 1, backgroundColor: 'rgba(255,255,255,0.25)' },
-  flexFill: { flex: 1 },
-  taillights: { flexDirection: 'row', justifyContent: 'space-between', width: '86%', marginBottom: 1 },
-  taillight: { width: 6, height: 2.5, borderRadius: 1, backgroundColor: '#ef4444' },
-  motoWheel: { width: 6, height: 11, borderRadius: 3, backgroundColor: '#0f172a' },
-  motoBar: { width: 20, height: 3, borderRadius: 1.5, backgroundColor: '#1f2937', marginTop: -2 },
-  motoTank: { width: 9, height: 7, borderRadius: 3 },
-  motoRider: { width: 13, height: 13, borderRadius: 7, borderWidth: 1.5, alignItems: 'center' },
-  motoVisor: { width: 8, height: 3, marginTop: 2, borderRadius: 2, backgroundColor: '#0f172a' },
-  motoTail: { width: 7, height: 6, borderRadius: 2 },
-  motoTaillight: { width: 5, height: 2, borderRadius: 1, backgroundColor: '#ef4444', marginTop: -1 },
-});

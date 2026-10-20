@@ -11,12 +11,15 @@ export function VehicleMarker({
   style,
   color,
   walking,
+  onPress,
 }: {
   position: LatLng;
   heading: number;
   style: VehicleStyle;
   color: VehicleColor;
   walking: boolean;
+  // tapping yourself opens the avatar picker, as in Google Maps
+  onPress?: () => void;
 }) {
   return (
     <Marker
@@ -30,6 +33,7 @@ export function VehicleMarker({
       tracksViewChanges={false}
       zIndex={1000}
       title="You"
+      onPress={onPress}
     >
       <VehicleIcon style={style} color={color} walking={walking} />
     </Marker>

@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { DEFAULT_VEHICLE, getVehicle, nextHeading, parseVehicle, setVehicle } from '../vehiclePreference';
+import { DEFAULT_VEHICLE, getVehicle, nextHeading, parseVehicle, setVehicle, shade, vehicleColorName, vehicleStyleName } from '../vehiclePreference';
 import { maneuverGlyph } from '../navigation';
 
 describe('vehicle choice', () => {
@@ -9,10 +9,31 @@ describe('vehicle choice', () => {
 
   it('defaults to the blue arrow, remembers a choice, and ignores junk', async () => {
     expect(await getVehicle()).toEqual(DEFAULT_VEHICLE);
-    await setVehicle({ style: 'pickup', color: 'silver' });
-    expect(await getVehicle()).toEqual({ style: 'pickup', color: 'silver' });
+    await setVehicle({ style: 'race', color: 'silver' });
+    expect(await getVehicle()).toEqual({ style: 'race', color: 'silver' });
     expect(parseVehicle('{"style":"tank","color":"red"}')).toEqual({ style: 'arrow', color: 'red' });
     expect(parseVehicle('not json')).toEqual(DEFAULT_VEHICLE);
+  });
+
+  it('carries a choice from the earlier set over to its nearest new avatar', () => {
+    expect(parseVehicle('{"style":"suv","color":"black"}')).toEqual({ style: 'offroad', color: 'black' });
+    expect(parseVehicle('{"style":"pickup","color":"white"}').style).toBe('offroad');
+    expect(parseVehicle('{"style":"neon","color":"purple"}').style).toBe('sports');
+    expect(parseVehicle('{"style":"moto","color":"green"}').style).toBe('compact');
+  });
+
+  it('names avatars and colours the way the picker shows them', () => {
+    expect(vehicleColorName('black')).toBe('Night black');
+    expect(vehicleColorName('green')).toBe('Deep teal');
+    expect(vehicleStyleName('race')).toBe('Race car');
+    expect(vehicleStyleName('offroad')).toBe('Off-road');
+  });
+
+  it('shades colours lighter and darker for the drawings', () => {
+    expect(shade('#808080', 0)).toBe('#808080');
+    expect(shade('#808080', 1)).toBe('#ffffff');
+    expect(shade('#808080', -1)).toBe('#000000');
+    expect(shade('#ff0000', -0.5)).toBe('#800000');
   });
 });
 

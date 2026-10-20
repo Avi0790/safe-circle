@@ -564,9 +564,20 @@ development mode is also inherently slower than a real build, and running over
   dependency), lying flat on the map and turned to your heading. The heading
   comes from the GPS, or from your last two positions when it gives none,
   and is kept when you stop (`lib/vehiclePreference.ts`, per device).
-  Walking shows a green walker arrow. Vehicles have headlight cones, taillights,
-  mirrors and a coloured glow; styles: arrow, car, sports (stripes, spoiler),
-  SUV, pickup, neon (glowing outline) and motorbike, in eight colours.
+  Walking shows a green walker arrow.
+- **Choose driving avatar** (`components/AvatarPicker.tsx`), like Google
+  Maps': opened from Options → Driving avatar or by tapping your car on the
+  map. Swipe through seven avatars (navigation arrow, sports car, compact,
+  classic, race car, sedan, off-road); the middle one stands on a glowing
+  platform. Eight named colours (Polar white, Night black, Slate grey, Coral
+  red, Ocean blue, Sunshine yellow, Deep teal, Orchid); Done saves, ✕ keeps
+  what you had, Reset goes back to the blue arrow. The avatars are drawn with
+  `react-native-svg` (in Expo Go; a dev build needs one rebuild), not 3D
+  models: a shaded three-quarter view in the picker (`AvatarArt.tsx`) and a
+  top-down view on the map (`VehicleIcon.tsx`) with curved-body shading,
+  tinted glass, fading headlight beams and taillights, so any colour works
+  and no art is downloaded. Choices from the earlier set carry over (SUV and
+  pickup become off-road, and so on).
 - **Lane guidance**: OSRM sends turn lanes for junctions mapped with
   OpenStreetMap `turn:lanes` (the manoeuvre's first intersection). Within
   half a mile of such a turn the green card shows one arrow per lane with the
