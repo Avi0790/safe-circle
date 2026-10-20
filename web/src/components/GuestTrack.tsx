@@ -3,8 +3,9 @@ import { CircleMarker, MapContainer, TileLayer, useMap } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import { supabase } from '../lib/supabase'
 import { formatTimeLeft, isDriving, isLowBattery, speedToMph, timeAgo } from '../lib/format'
+import { guestTripSummary, type GuestTripFields } from '../lib/guestTrip'
 
-interface SharedLocation {
+export interface SharedLocation extends GuestTripFields {
   first_name: string
   latitude: number | null
   longitude: number | null
@@ -25,7 +26,8 @@ function Recenter({ position }: { position: [number, number] }) {
 }
 
 // What someone sees when they open a guest link (/track/<token>) — no
-// account, no app. Only the latest location and a first name; the
+// account, no app. Only the latest location and a first name (plus, for a
+// link sent from navigation, where they're headed and their ETA); the
 // get_shared_location function returns nothing at all for an unknown,
 // expired or revoked token, so this page can't tell those apart either.
 export function GuestTrack({ token }: { token: string }) {
@@ -71,6 +73,12 @@ export function GuestTrack({ token }: { token: string }) {
     )
   }
 
+  return <GuestTrackView data={data} />
+}
+
+// The page itself, given what get_shared_location returned.
+export function GuestTrackView({ data }: { data: SharedLocation }) {
+  const trip = guestTripSummary(data)
   const hasLocation = data.latitude != null && data.longitude != null
   const position: [number, number] | null = hasLocation ? [data.latitude!, data.longitude!] : null
   const mph = speedToMph(data.speed)
@@ -78,9 +86,10 @@ export function GuestTrack({ token }: { token: string }) {
   return (
     <div className="guest-track">
       <header className="guest-header">
-        <h1>{data.first_name}'s live location</h1>
+        <h1>{trip ? trip.title : `${data.first_name}'s live location`}</h1>
+        {trip && trip.detail && <p className={trip.arrived ? 'hint' : 'guest-trip'}>{trip.detail}</p>}
         <p className="hint">
-          {data.recorded_at ? `Updated ${timeAgo(data.recorded_at)}` : 'No location yet'}
+          {trip?.arrived ? '' : data.recorded_at ? `Updated ${timeAgo(data.recorded_at)}` : 'No location yet'}
           {isDriving(data.speed) ? ` · 🚗 Driving${mph != null ? ` ${Math.round(mph)} mph` : ''}` : ''}
           {data.battery_level != null && (
             <span className={isLowBattery(data.battery_level) ? 'low-battery' : undefined}>
@@ -89,7 +98,9 @@ export function GuestTrack({ token }: { token: string }) {
             </span>
           )}
         </p>
-        <p className="hint">Link expires in {formatTimeLeft(data.expires_at)}</p>
+        <p className="hint">
+          {trip && !trip.arrived ? 'Ends when they arrive' : `Link expires in ${formatTimeLeft(data.expires_at)}`}
+        </p>
       </header>
 
       {position ? (
@@ -107,7 +118,11 @@ export function GuestTrack({ token }: { token: string }) {
         </MapContainer>
       ) : (
         <div className="centered">
-          <p className="hint">{data.first_name} hasn't shared a location yet. This page updates on its own.</p>
+          <p className="hint">
+            {trip?.arrived
+              ? `${data.first_name}'s trip is over.`
+              : `${data.first_name} hasn't shared a location yet. This page updates on its own.`}
+          </p>
         </div>
       )}
 

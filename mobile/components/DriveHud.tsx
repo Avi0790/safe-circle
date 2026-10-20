@@ -16,6 +16,8 @@ export interface DriveHudProps {
   muted: boolean;
   // e.g. "Family" while this trip is being shared with that circle
   sharingWith?: string | null;
+  // a live ETA link is out (Share ETA with anyone)
+  linkShared?: boolean;
   notice?: string | null;
   topInset: number;
   bottomInset: number;
@@ -38,6 +40,7 @@ export function DriveHud(p: DriveHudProps) {
           {p.rerouting ? 'Rerouting…' : p.instruction}
         </Text>
         {p.sharingWith ? <Text style={styles.sharing}>👪 Sharing this trip with {p.sharingWith}</Text> : null}
+        {p.linkShared ? <Text style={styles.sharing}>🔗 Live ETA link on, until you arrive</Text> : null}
         {p.stopTitle ? <Text style={styles.sharing}>Via {p.stopTitle}</Text> : null}
         {p.alert ? <Text style={styles.alert}>{p.alert}</Text> : null}
         {p.notice ? <Text style={styles.notice}>{p.notice}</Text> : null}

@@ -66,7 +66,7 @@ export const PRIVACY_SECTIONS: PrivacySection[] = [
     emoji: '🔗',
     title: 'Guest links are narrow and expire',
     body:
-      "A guest link lasts 15 minutes to 24 hours and you can revoke it any time. Whoever holds it sees only your latest location and first name — no history, no circle. Links are stored only as a hash, and you can see how many times each was opened.",
+      "A guest link lasts 15 minutes to 24 hours and you can revoke it any time. Whoever holds it sees only your latest location and first name — no history, no circle. Links are stored only as a hash, and you can see how many times each was opened. A link sent from Directions with Share ETA with anyone also shows where you're headed and your ETA; when you arrive it says so and stops showing your location, and if you stop navigating it ends at once.",
     action: { label: 'Guest tracking link', route: '/share-link' },
   },
   {

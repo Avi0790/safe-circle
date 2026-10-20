@@ -1,5 +1,5 @@
 import React from 'react';
-import { Alert, Linking, Switch, TextInput } from 'react-native';
+import { Alert, Linking, Share, Switch, TextInput } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { act, create, type ReactTestRenderer } from 'react-test-renderer';
 import * as Speech from 'expo-speech';
@@ -55,6 +55,16 @@ jest.mock('@/lib/supabase', () => {
   };
 });
 jest.mock('expo-speech', () => ({ speak: jest.fn(), stop: jest.fn() }));
+// A live ETA link needs location sharing on; the device side of that is faked.
+const mockTracking = { active: true, start: jest.fn(async () => ({ ok: true as const, backgroundGranted: true })) };
+jest.mock('@/lib/locationTracking', () => ({
+  isTrackingActive: async () => mockTracking.active,
+  isBackgroundTaskActive: async () => true,
+  getShareUntil: async () => null,
+  setShareUntil: async () => {},
+  startBackgroundTracking: () => mockTracking.start(),
+  stopBackgroundTracking: async () => {},
+}));
 jest.mock('expo-keep-awake', () => ({ activateKeepAwakeAsync: jest.fn(), deactivateKeepAwake: jest.fn() }));
 jest.mock('expo-location', () => ({
   Accuracy: { Balanced: 3, BestForNavigation: 6 },
@@ -131,8 +141,17 @@ beforeEach(async () => {
   mockRpc.mockReset();
   mockPush.mockReset();
   mockReports.current = [];
+  mockTracking.active = true;
+  mockTracking.start.mockClear();
   mockRpc.mockImplementation(async (name: string) => ({
-    data: name === 'start_shared_trip' ? 'trip-1' : name === 'report_road_incident' ? 'rep-1' : null,
+    data:
+      name === 'start_shared_trip'
+        ? 'trip-1'
+        : name === 'report_road_incident'
+          ? 'rep-1'
+          : name === 'create_trip_share_link'
+            ? [{ id: 'link-1', token: 'tok123' }]
+            : null,
     error: null,
   }));
   mockCircle.current = null;
@@ -597,10 +616,11 @@ describe('Drive screen: options while driving (audio, Share ETA, report, add a s
     expect(allText(r)).not.toContain('Report an incident');
   });
 
-  it('offers no Share ETA without a circle', async () => {
+  it('offers no circle Share ETA without a circle, but still sharing with anyone', async () => {
     const r = await startDrive();
     await openOptions(r);
-    expect(allText(r)).not.toContain('Share ETA');
+    expect(allText(r)).not.toContain('Share ETA with Family');
+    expect(allText(r)).toContain('Share ETA with anyone');
   });
 
   describe('audio', () => {
@@ -808,5 +828,135 @@ describe('Drive screen: options while driving (audio, Share ETA, report, add a s
       });
       expect(allText(r)).toContain('Nothing found near the road ahead.');
     });
+  });
+});
+
+describe('Drive screen: Share ETA with anyone (outside the app)', () => {
+  const calls = (name: string) => mockRpc.mock.calls.filter((c) => c[0] === name);
+
+  async function startDrive(): Promise<ReactTestRenderer> {
+    const r = await mountAndPlan();
+    await search(r, 'walmart');
+    await press(r, 'Walmart Supercenter');
+    await press(r, 'Start');
+    await act(async () => {
+      await Promise.resolve();
+    });
+    await emit(route[0][0], route[0][1], 13, 9_000);
+    return r;
+  }
+
+  async function choose(r: ReactTestRenderer, option: string) {
+    const alert = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+    await press(r, 'More options');
+    await press(r, 'Share ETA with anyone');
+    const [title, , buttons] = alert.mock.calls[0] as [string, string, { text: string; onPress?: () => Promise<void> }[]];
+    expect(title).toBe('Share your ETA');
+    expect(buttons.map((b) => b.text)).toEqual(['Live link (until I arrive)', 'Just the ETA as a message', 'Cancel']);
+    await act(async () => {
+      await buttons.find((b) => b.text === option)!.onPress!();
+    });
+    for (let i = 0; i < 4; i++) {
+      await act(async () => {
+        await Promise.resolve();
+      });
+    }
+    alert.mockRestore();
+  }
+
+  it('just the ETA: a plain message, and nothing goes to the server', async () => {
+    const share = jest.spyOn(Share, 'share').mockResolvedValue({ action: 'sharedAction' } as never);
+    const r = await startDrive();
+    await choose(r, 'Just the ETA as a message');
+    expect(share).toHaveBeenCalledTimes(1);
+    const message = (share.mock.calls[0][0] as { message: string }).message;
+    expect(message).toMatch(/^I'm on my way to Walmart Supercenter, arriving around \d{1,2}:\d{2}/);
+    expect(message).not.toContain('http');
+    expect(calls('create_trip_share_link')).toHaveLength(0);
+    share.mockRestore();
+  });
+
+  it('live link: creates it, sends it, keeps the ETA current, and tells them when you arrive', async () => {
+    const share = jest.spyOn(Share, 'share').mockResolvedValue({ action: 'sharedAction' } as never);
+    const r = await startDrive();
+    await choose(r, 'Live link (until I arrive)');
+
+    const create = calls('create_trip_share_link');
+    expect(create).toHaveLength(1);
+    expect(create[0][1]).toMatchObject({ p_destination: 'Walmart Supercenter', p_mode: 'drive' });
+    const etaMin = (new Date(create[0][1].p_eta).getTime() - Date.now()) / 60_000;
+    expect(etaMin).toBeGreaterThan(5);
+    expect(etaMin).toBeLessThan(15);
+    const message = (share.mock.calls[0][0] as { message: string }).message;
+    expect(message).toMatch(/Follow along live until I get there: http:\/\/localhost:5173\/track\/tok123$/);
+    expect(allText(r)).toContain('Live ETA link on, until you arrive');
+    expect(allText(r)).toContain("only opens on this network"); // no deployed web URL in tests
+
+    for (let i = 1; i < 40; i++) await emit(route[i][0], route[i][1], 13, 10_000 + i * 1_000);
+    expect(calls('update_trip_share_link')).toHaveLength(0); // too soon
+    await act(async () => {
+      jest.advanceTimersByTime(180_000);
+    });
+    await emit(route[41][0], route[41][1], 13, 60_000);
+    expect(calls('update_trip_share_link')).toHaveLength(1);
+    expect(calls('update_trip_share_link')[0][1].p_id).toBe('link-1');
+
+    for (let i = 42; i < route.length; i++) await emit(route[i][0], route[i][1], 13, 61_000 + i * 1_000);
+    expect(calls('finish_trip_share_link')).toEqual([['finish_trip_share_link', { p_id: 'link-1', p_arrived: true }]]);
+    share.mockRestore();
+  });
+
+  it('works without a circle', async () => {
+    const share = jest.spyOn(Share, 'share').mockResolvedValue({ action: 'sharedAction' } as never);
+    mockCircle.current = null;
+    const r = await startDrive();
+    await choose(r, 'Live link (until I arrive)');
+    expect(calls('create_trip_share_link')).toHaveLength(1);
+    share.mockRestore();
+  });
+
+  it('the card can stop the link, which ends it without saying you arrived', async () => {
+    const share = jest.spyOn(Share, 'share').mockResolvedValue({ action: 'sharedAction' } as never);
+    const r = await startDrive();
+    await choose(r, 'Live link (until I arrive)');
+    await press(r, 'More options');
+    expect(allText(r)).not.toContain('Share ETA with anyone');
+    await press(r, 'Stop the live ETA link');
+    expect(calls('finish_trip_share_link')).toEqual([['finish_trip_share_link', { p_id: 'link-1', p_arrived: false }]]);
+    expect(allText(r)).not.toContain('Live ETA link on');
+    share.mockRestore();
+  });
+
+  it('ending navigation ends the link', async () => {
+    const share = jest.spyOn(Share, 'share').mockResolvedValue({ action: 'sharedAction' } as never);
+    const r = await startDrive();
+    await choose(r, 'Live link (until I arrive)');
+    await press(r, 'End navigation');
+    expect(calls('finish_trip_share_link')).toEqual([['finish_trip_share_link', { p_id: 'link-1', p_arrived: false }]]);
+    share.mockRestore();
+  });
+
+  it('turns location sharing on for the trip if it was off, so the link has a position to show', async () => {
+    const share = jest.spyOn(Share, 'share').mockResolvedValue({ action: 'sharedAction' } as never);
+    mockTracking.active = false;
+    const r = await startDrive();
+    await choose(r, 'Live link (until I arrive)');
+    expect(mockTracking.start).toHaveBeenCalled();
+    const windows = calls('set_share_window');
+    expect(windows).toHaveLength(1);
+    expect(windows[0][1].p_minutes).toBeGreaterThanOrEqual(15);
+    expect(calls('create_trip_share_link')).toHaveLength(1);
+    share.mockRestore();
+  });
+
+  it("says why when the link can't be made, and sends nothing", async () => {
+    const share = jest.spyOn(Share, 'share').mockResolvedValue({ action: 'sharedAction' } as never);
+    const r = await startDrive();
+    mockRpc.mockImplementation(async () => ({ data: null, error: { message: 'You already have 5 active links. Revoke one first.' } }));
+    await choose(r, 'Live link (until I arrive)');
+    expect(allText(r)).toContain('You already have 5 active links. Revoke one first.');
+    expect(share).not.toHaveBeenCalled();
+    expect(allText(r)).not.toContain('Live ETA link on');
+    share.mockRestore();
   });
 });

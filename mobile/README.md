@@ -557,6 +557,17 @@ development mode is also inherently slower than a real build, and running over
     arriving; the speaker button is a quick mute that goes back to the level
     you had.
   - **Share ETA** mid-drive, or stop sharing (no arrival push when stopped).
+  - **Share ETA with anyone** (`lib/tripLink.ts`, backend `...000062`), for
+    people without the app, through the phone's share sheet: either just the
+    ETA as a message ("I'm on my way to Walmart, arriving around 3:41 PM."),
+    or a live link (a guest link that also carries the trip). The page shows
+    "🚗 Alex is heading to Walmart · arriving in about 12 min" and the live
+    position; the phone keeps the ETA current (same throttling as circle
+    trips). On arrival it shows "✅ Alex arrived" for 15 minutes **without**
+    a location; ending navigation (or leaving the screen) ends it at once;
+    otherwise it expires 30 minutes after the ETA. Sharing is switched on for
+    the trip if it was off, since the page shows your latest location. Links
+    count toward the 5-active-links limit.
   - **Report an incident** (`lib/roadReports.ts`, backend `...000061`): crash,
     hazard, speed check, road closed, one tap, at your current position.
     Visible to whoever can see your location (Ghost mode and sharing windows

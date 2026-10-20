@@ -17,6 +17,10 @@ export interface DrivePanelProps {
   circleName: string | null;
   sharing: boolean;
   onToggleShare: () => void;
+  // Share ETA with anyone (a message, or a live link) outside the app.
+  onShareAnyone: () => void;
+  linkShared: boolean;
+  onStopLink: () => void;
   onReport: (kind: RoadReportKind) => void;
   reporting: boolean;
   stopTitle: string | null;
@@ -106,6 +110,16 @@ export function DrivePanel(p: DrivePanelProps) {
             {p.circleName && (
               <Pressable style={[styles.action, p.sharing && styles.actionOn]} onPress={p.onToggleShare}>
                 <Text style={styles.actionText}>{p.sharing ? `👪 Stop sharing ETA with ${p.circleName}` : `👪 Share ETA with ${p.circleName}`}</Text>
+              </Pressable>
+            )}
+
+            {p.linkShared ? (
+              <Pressable style={[styles.action, styles.actionOn]} onPress={p.onStopLink}>
+                <Text style={styles.actionText}>🔗 Stop the live ETA link</Text>
+              </Pressable>
+            ) : (
+              <Pressable style={styles.action} onPress={p.onShareAnyone}>
+                <Text style={styles.actionText}>📤 Share ETA with anyone…</Text>
               </Pressable>
             )}
 

@@ -92,6 +92,10 @@ if you haven't already.
   they arrive, stop sharing, or their phone goes quiet for 10 minutes. Your
   own trip isn't shown, and people who've hidden from you (Ghost mode) or
   stopped sharing are filtered out by the database, not this page.
+- **Guest trip page** (`GuestTrack.tsx`, `lib/guestTrip.ts`) — a guest link
+  sent with "Share ETA with anyone" shows "🚗 Alex is heading to Walmart" and
+  "arriving in about 12 min (3:41 PM)" above the live map; once they arrive
+  it says "✅ Alex arrived at Walmart" and no longer shows a location.
 - **Road reports** (`lib/roadReports.ts`) — read-only: crashes, hazards,
   speed checks and closed roads reported from the mobile app while driving
   show on the map as red-ringed markers (💥 ⚠️ 🚓 🚧) for the selected

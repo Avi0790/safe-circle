@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, Linking, Platform, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Share, Linking, Platform, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import * as Location from 'expo-location';
 import * as Speech from 'expo-speech';
@@ -45,6 +45,9 @@ import {
 import { endSharedTrip, shouldSendEtaUpdate, startSharedTrip, updateSharedTrip } from '@/lib/sharedTrips';
 import { supabase } from '@/lib/supabase';
 import { getTravelMode, setTravelMode, type PlanMode } from '@/lib/travelMode';
+import { createTripLink, finishTripLink, tripShareMessage, updateTripLink } from '@/lib/tripLink';
+import { getWebBaseUrl, isLocalUrl } from '@/lib/shareLink';
+import { ensureSharingFor } from '@/lib/sharingWindow';
 import { reportIncident, reportInfo, upcomingReport, type RoadReport, type RoadReportKind } from '@/lib/roadReports';
 import { searchStops, STOP_CATEGORIES, type StopCategory, type StopResult } from '@/lib/stops';
 import { getVoiceMode, setVoiceMode, shouldSpeak, type SpeechKind, type VoiceMode } from '@/lib/voicePreference';
@@ -112,6 +115,7 @@ export default function DriveScreen() {
   const [voiceMode, setVoiceModeState] = useState<VoiceMode>('all');
   const [panel, setPanel] = useState<null | 'main' | 'stops'>(null);
   const [reporting, setReporting] = useState(false);
+  const [linkShared, setLinkShared] = useState(false);
   const [stop, setStop] = useState<(StopResult & { emoji: string }) | null>(null);
   const [stopCategory, setStopCategory] = useState<StopCategory | null>(null);
   const [stopResults, setStopResults] = useState<StopResult[]>([]);
@@ -135,6 +139,10 @@ export default function DriveScreen() {
   const alertedReports = useRef(new Set<string>());
   const stopSearchId = useRef(0);
   const sharePending = useRef(false);
+  // A live ETA link sent outside the app, if any (lib/tripLink.ts).
+  const linkId = useRef<string | null>(null);
+  const lastLinkEta = useRef<{ at: number; eta: number } | null>(null);
+  const linkPending = useRef(false);
   const modeRef = useRef<TravelMode>('drive');
   const fixRef = useRef<Fix | null>(null);
   const prevFix = useRef<Fix | null>(null);
@@ -219,13 +227,25 @@ export default function DriveScreen() {
     endSharedTrip(id, arrived);
   }, []);
 
+  // Ends the live ETA link: arriving tells whoever has it you got there;
+  // stopping navigation just turns it off.
+  const closeLink = useCallback((arrived: boolean) => {
+    const id = linkId.current;
+    if (!id) return;
+    linkId.current = null;
+    lastLinkEta.current = null;
+    setLinkShared(false);
+    finishTripLink(id, arrived);
+  }, []);
+
   const finishArrival = useCallback(() => {
     if (phaseRef.current !== 'driving') return;
     setPhase('arrived');
     phaseRef.current = 'arrived';
     closeTrip(true);
+    closeLink(true);
     speak('You have arrived at your destination.', 'alert');
-  }, [speak, closeTrip]);
+  }, [speak, closeTrip, closeLink]);
 
   // Swap in a new route (reroute, stop added or removed) and start announcing
   // it from scratch.
@@ -277,6 +297,15 @@ export default function DriveScreen() {
         if (shouldSendEtaUpdate(lastEta.current?.at ?? null, lastEta.current?.eta ?? null, now, etaMs)) {
           lastEta.current = { at: now, eta: etaMs };
           updateSharedTrip(sharedId, etaMs);
+        }
+      }
+      const link = linkId.current;
+      if (link) {
+        const now = Date.now();
+        const etaMs = now + s.remainingS * 1000;
+        if (shouldSendEtaUpdate(lastLinkEta.current?.at ?? null, lastLinkEta.current?.eta ?? null, now, etaMs)) {
+          lastLinkEta.current = { at: now, eta: etaMs };
+          updateTripLink(link, etaMs);
         }
       }
 
@@ -378,9 +407,12 @@ export default function DriveScreen() {
   useEffect(
     () => () => {
       Speech.stop();
-      // Leaving the screen mid-drive must not leave the trip showing.
+      // Leaving the screen mid-drive must not leave the trip (or a live ETA
+      // link) showing.
       const id = tripId.current;
       if (id) endSharedTrip(id, false);
+      const link = linkId.current;
+      if (link) finishTripLink(link, false);
     },
     [],
   );
@@ -585,6 +617,70 @@ export default function DriveScreen() {
     beginSharing(Date.now() + remaining * 1000);
   }
 
+  // Share ETA with anyone, outside the app: just a message, or a live link
+  // that keeps the ETA current and shows where you are until you arrive.
+  function shareEtaWithAnyone() {
+    Alert.alert('Share your ETA', 'Send it to anyone, even if they don\'t have Safe Circle.', [
+      { text: 'Live link (until I arrive)', onPress: () => sendLiveLink() },
+      { text: 'Just the ETA as a message', onPress: () => sendEtaMessage() },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
+  }
+
+  function currentEtaMs() {
+    const remaining = nav?.remainingS ?? preparedRef.current?.route.durationS ?? 0;
+    return Date.now() + remaining * 1000;
+  }
+
+  async function sendEtaMessage() {
+    const target = destRef.current;
+    if (!target) return;
+    setPanel(null);
+    try {
+      await Share.share({ message: tripShareMessage(target.title, currentEtaMs(), mode) });
+    } catch {
+      // Closing the share sheet isn't an error.
+    }
+  }
+
+  async function sendLiveLink() {
+    const target = destRef.current;
+    if (!target || linkId.current || linkPending.current) return;
+    linkPending.current = true;
+    setPanel(null);
+    const etaMs = currentEtaMs();
+    // The link shows your latest location, so something has to be sending
+    // it for the length of the trip (a no-op if sharing is already on).
+    const sharing = await ensureSharingFor(Math.max(15, Math.ceil((etaMs - Date.now()) / 60_000)));
+    if (!sharing.ok) {
+      linkPending.current = false;
+      setTripNotice(sharing.reason);
+      return;
+    }
+    const res = await createTripLink(target.title, etaMs, mode);
+    linkPending.current = false;
+    if (!res.ok) {
+      setTripNotice(res.error);
+      return;
+    }
+    if (phaseRef.current !== 'driving') {
+      // Navigation ended while the link was being made.
+      finishTripLink(res.id, false);
+      return;
+    }
+    linkId.current = res.id;
+    lastLinkEta.current = { at: Date.now(), eta: etaMs };
+    setLinkShared(true);
+    if (isLocalUrl(getWebBaseUrl())) {
+      setTripNotice("The web page isn't deployed, so this link only opens on this network.");
+    }
+    try {
+      await Share.share({ message: tripShareMessage(target.title, etaMs, mode, res.url) });
+    } catch {
+      // Closing the sheet isn't an error; the link stays on until you stop it or arrive.
+    }
+  }
+
   function chooseVoice(next: VoiceMode) {
     setVoiceModeState(next);
     voiceRef.current = next;
@@ -661,6 +757,7 @@ export default function DriveScreen() {
 
   function endDriving() {
     closeTrip(false);
+    closeLink(false);
     setTripNotice(null);
     setPanel(null);
     stopRef.current = null;
@@ -955,6 +1052,7 @@ export default function DriveScreen() {
           rerouting={rerouting}
           muted={voiceMode === 'off'}
           sharingWith={sharingWith}
+          linkShared={linkShared}
           notice={tripNotice}
           stopTitle={stop ? `${stop.emoji} ${stop.title}` : null}
           alert={alertAhead}
@@ -975,6 +1073,12 @@ export default function DriveScreen() {
           circleName={selectedCircle?.name ?? null}
           sharing={sharingWith != null}
           onToggleShare={toggleShareEta}
+          onShareAnyone={shareEtaWithAnyone}
+          linkShared={linkShared}
+          onStopLink={() => {
+            closeLink(false);
+            setPanel(null);
+          }}
           onReport={report}
           reporting={reporting}
           stopTitle={stop?.title ?? null}
