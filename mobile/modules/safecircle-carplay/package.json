@@ -1,0 +1,9 @@
+{
+  "name": "safecircle-carplay",
+  "version": "1.0.0",
+  "description": "Safe Circle's CarPlay screens (Driving Task category)",
+  "main": "index.ts",
+  "license": "MIT",
+  "author": "Surendra B K",
+  "homepage": "https://github.com/surendr7a/SafeCircle"
+}

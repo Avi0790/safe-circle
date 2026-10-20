@@ -64,9 +64,14 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
 const withSceneManifest = (config) =>
   withInfoPlist(config, (c) => {
+    // Merge, so other scene roles (CarPlay, plugins/withCarPlay.js) survive
+    // whichever plugin runs first.
+    const manifest = c.modResults.UIApplicationSceneManifest ?? {};
     c.modResults.UIApplicationSceneManifest = {
+      ...manifest,
       UIApplicationSupportsMultipleScenes: false,
       UISceneConfigurations: {
+        ...(manifest.UISceneConfigurations ?? {}),
         UIWindowSceneSessionRoleApplication: [
           {
             UISceneConfigurationName: 'Default Configuration',

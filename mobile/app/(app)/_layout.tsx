@@ -8,6 +8,7 @@ import { CircleProvider, useCircles } from '@/contexts/CircleContext';
 import { CircleMembersProvider } from '@/contexts/CircleMembersContext';
 import { ShakeSettingsProvider, useShakeSettings } from '@/contexts/ShakeSettingsContext';
 import { useShakeToSos } from '@/hooks/useShakeToSos';
+import { CarPlayBridge } from '@/components/CarPlayBridge';
 import { canEnterApp } from '@/lib/accountType';
 import { offerTextForHelp, sendSos } from '@/lib/sos';
 
@@ -19,6 +20,7 @@ export default function AppLayout() {
           <ShakeSettingsProvider>
             <MembersScope>
               <AppNavigator />
+              <CarPlayBridge />
             </MembersScope>
           </ShakeSettingsProvider>
         </CircleProvider>

@@ -62,6 +62,8 @@ module.exports = {
       withPushOnlyWhenPaid,
       // iOS 27 requires the scene lifecycle; Expo 57's template lacks it.
       './plugins/withSceneLifecycle',
+      // CarPlay screens; the entitlement only with SAFECIRCLE_CARPLAY=1.
+      './plugins/withCarPlay',
       'expo-router',
       'expo-status-bar',
       [

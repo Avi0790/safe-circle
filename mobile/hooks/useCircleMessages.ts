@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import * as Location from 'expo-location';
+import { checkInToCircle } from '@/lib/circleCheckIn';
 import { supabase } from '@/lib/supabase';
 import type { Message } from '@/lib/types';
 
@@ -70,25 +70,9 @@ export function useCircleMessages(circleId: string | null) {
     return { ok: true };
   }
 
-  // Life360-style "Check in": a normal chat message that also carries where
-  // you are, so the circle gets a map link instead of having to open the map.
-  async function checkIn(): Promise<SendResult> {
-    if (!circleId) return { ok: false, error: 'No circle selected.' };
-    try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') return { ok: false, error: 'Location permission denied.' };
-      const position = await Location.getCurrentPositionAsync({});
-      const { error } = await supabase.from('messages').insert({
-        circle_id: circleId,
-        body: '📍 Checked in',
-        latitude: position.coords.latitude,
-        longitude: position.coords.longitude,
-      });
-      if (error) return { ok: false, error: error.message };
-      return { ok: true };
-    } catch {
-      return { ok: false, error: 'Could not get your location.' };
-    }
+  // "Check in": a chat message with where you are (lib/circleCheckIn.ts).
+  function checkIn(): Promise<SendResult> {
+    return checkInToCircle(circleId);
   }
 
   return { messages, isLoading, error, send, checkIn };
