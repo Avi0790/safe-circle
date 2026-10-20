@@ -564,7 +564,11 @@ development mode is also inherently slower than a real build, and running over
     refreshes instead of stacking; 5 per 10 minutes. Circle-mates see reports
     as map markers on their route, a banner "💥 Crash reported 0.3 mi ahead",
     and hear "Crash reported ahead." once when it's within 800 m on their
-    route (never about their own reports).
+    route (never about their own reports). They also appear on the **Map
+    tab** (`components/RoadReportMarker.tsx`): reports from the selected
+    circle's members and your own, until they expire; tapping one says who
+    reported it, when, and how long it has left, and your own can be taken
+    back from there.
   - **Add a stop** (`lib/stops.ts`): ⛽ Gas, ☕ Coffee, 🍔 Food, 🅿️ Parking,
     💊 Pharmacy along the next 15 km of road (within 1.5 km of it), least
     detour first, never one you've passed, via Nominatim (OpenStreetMap's

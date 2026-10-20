@@ -21,6 +21,7 @@ import { ChatFeed } from './ChatFeed'
 import { SosBanner } from './SosBanner'
 import { WalkRideBanner } from './WalkRideBanner'
 import { TripBanner } from './TripBanner'
+import { reportsForCircle, type RoadReport } from '../lib/roadReports'
 import type { SharedTrip } from '../lib/sharedTrips'
 import { fetchWeather, type Weather } from '../lib/weather'
 
@@ -45,6 +46,8 @@ export function Dashboard({ myUserId }: { myUserId: string }) {
   const [rides, setRides] = useState<RideRequest[]>([])
   const [trips, setTrips] = useState<SharedTrip[]>([])
   const [pins, setPins] = useState<MapPin[]>([])
+  const [reports, setReports] = useState<RoadReport[]>([])
+  const [now, setNow] = useState(() => Date.now())
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [historyMemberId, setHistoryMemberId] = useState<string | null>(null)
@@ -306,6 +309,32 @@ export function Dashboard({ myUserId }: { myUserId: string }) {
       supabase.removeChannel(channel)
     }
   }, [selectedCircleId, loadTrips])
+
+  // Road reports (crash, hazard, speed check, closed road) made from the
+  // mobile app while driving. Not circle-scoped on the server (you see
+  // reports from anyone whose location you can see); the map narrows them to
+  // the selected circle. They expire without any database change, so a
+  // minute tick drops expired ones between loads.
+  const loadReports = useCallback(async () => {
+    const { data } = await supabase
+      .from('road_reports')
+      .select('id, reporter_id, kind, latitude, longitude, created_at, expires_at, profiles(full_name)')
+      .order('created_at', { ascending: false })
+    setReports((data as unknown as RoadReport[]) ?? [])
+  }, [])
+
+  useEffect(() => {
+    loadReports()
+    const channel = supabase
+      .channel('road-reports')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'road_reports' }, () => loadReports())
+      .subscribe()
+    const tick = setInterval(() => setNow(Date.now()), 60_000)
+    return () => {
+      supabase.removeChannel(channel)
+      clearInterval(tick)
+    }
+  }, [loadReports])
 
   // Meetup pins (mobile-only to drop/remove; this dashboard only shows
   // them, same as everything else). Circle-scoped, unlike walks/rides.
@@ -579,6 +608,8 @@ export function Dashboard({ myUserId }: { myUserId: string }) {
           history={history}
           presenceByPlace={presenceByPlace}
           pins={pins}
+          reports={reportsForCircle(reports, members.map((m) => m.id), myUserId, now)}
+          myUserId={myUserId}
         />
       </main>
     </div>

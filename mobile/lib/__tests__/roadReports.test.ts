@@ -1,7 +1,7 @@
 import fixture from './fixtures/osrm-jonesboro.json';
 import { prepareRoute } from '../navigation';
 import { parseOsrmRoute } from '../routing';
-import { reportIncident, upcomingReport, type RoadReport } from '../roadReports';
+import { reportDetails, reportIncident, reportsForCircle, upcomingReport, type RoadReport } from '../roadReports';
 import { supabase } from '../supabase';
 
 jest.mock('../supabase', () => ({ supabase: { rpc: jest.fn() } }));
@@ -66,5 +66,35 @@ describe('reportIncident', () => {
   it("passes on the server's refusal", async () => {
     (supabase.rpc as jest.Mock).mockResolvedValue({ data: null, error: { message: "That's a lot of reports" } });
     expect(await reportIncident('crash', { latitude: 35, longitude: -90 })).toEqual({ ok: false, error: "That's a lot of reports" });
+  });
+});
+
+describe('reports on the Map tab', () => {
+  const base = (id: string, reporter: string, over: Partial<RoadReport> = {}): RoadReport => ({
+    id, reporter_id: reporter, kind: 'crash', latitude: 35, longitude: -90,
+    created_at: new Date(now - 12 * 60_000).toISOString(), expires_at: new Date(now + 48 * 60_000).toISOString(),
+    profiles: { full_name: 'Sam' }, ...over,
+  });
+
+  it("shows this circle's members' reports and mine, still live; not other circles' or expired ones", () => {
+    const list = [
+      base('member', 'sam'),
+      base('mine', 'me'),
+      base('other-circle', 'pat'),
+      base('expired', 'sam', { expires_at: new Date(now - 1).toISOString() }),
+    ];
+    expect(reportsForCircle(list, ['sam', 'me'], 'me', now).map((r) => r.id)).toEqual(['member', 'mine']);
+    expect(reportsForCircle(list, ['pat'], 'me', now).map((r) => r.id)).toEqual(['mine', 'other-circle']);
+  });
+
+  it('says what, who and how long', () => {
+    jest.useFakeTimers().setSystemTime(now);
+    const d = reportDetails(base('r', 'sam'), 'me', now);
+    expect(d.title).toBe('💥 Crash reported');
+    expect(d.body).toBe('By Sam · 12m ago · clears in 48 min');
+    expect(reportDetails(base('r', 'me', { kind: 'closure' }), 'me', now)).toMatchObject({ title: '🚧 Road closed reported' });
+    expect(reportDetails(base('r', 'me'), 'me', now).body).toMatch(/^By you · /);
+    expect(reportDetails(base('r', 'x', { profiles: null }), 'me', now).body).toMatch(/^By someone in your circle · /);
+    jest.useRealTimers();
   });
 });

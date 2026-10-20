@@ -13,9 +13,9 @@ export function useRoadReports(enabled = true) {
   const load = useCallback(async () => {
     const { data } = await supabase
       .from('road_reports')
-      .select('id, reporter_id, kind, latitude, longitude, created_at, expires_at')
+      .select('id, reporter_id, kind, latitude, longitude, created_at, expires_at, profiles(full_name)')
       .order('created_at', { ascending: false });
-    setReports((data as RoadReport[] | null) ?? []);
+    setReports((data as unknown as RoadReport[] | null) ?? []);
   }, []);
 
   useEffect(() => {

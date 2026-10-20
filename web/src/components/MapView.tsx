@@ -6,6 +6,7 @@ import type { LatestLocation, MapPin, MemberWithLocation, Place } from '../lib/t
 import { formatTimeLeft, isDriving, isLowBattery, speedToMph, timeAgo } from '../lib/format'
 import { getAvatarColor, getInitials, isSafeAvatarUrl } from '../lib/avatar'
 import { placeIcon } from '../lib/places'
+import { reportDetails, reportInfo, type RoadReport } from '../lib/roadReports'
 
 // Vite bundles Leaflet's default marker images at hashed URLs, which breaks
 // the library's hardcoded relative paths. Point at the CDN copies instead.
@@ -54,6 +55,15 @@ function pinIcon(emoji: string): L.DivIcon {
   })
 }
 
+function reportIcon(emoji: string): L.DivIcon {
+  return L.divIcon({
+    className: 'map-pin-marker',
+    html: `<div class="map-report-ring">${escapeHtml(emoji)}</div>`,
+    iconSize: [34, 34],
+    iconAnchor: [17, 17],
+  })
+}
+
 function FitToMembers({ members }: { members: MemberWithLocation[] }) {
   const map = useMap()
 
@@ -91,12 +101,17 @@ export function MapView({
   history = [],
   presenceByPlace = {},
   pins = [],
+  reports = [],
+  myUserId,
 }: {
   members: MemberWithLocation[]
   places?: Place[]
   history?: LatestLocation[]
   presenceByPlace?: Record<string, string[]>
   pins?: MapPin[]
+  // already narrowed to the selected circle (lib/roadReports.ts)
+  reports?: RoadReport[]
+  myUserId?: string
 }) {
   const located = members.filter((m) => m.location)
 
@@ -168,6 +183,18 @@ export function MapView({
           </Popup>
         </Marker>
       ))}
+      {reports.map((report) => {
+        const { title, body } = reportDetails(report, myUserId)
+        return (
+          <Marker key={report.id} position={[report.latitude, report.longitude]} icon={reportIcon(reportInfo(report.kind).emoji)}>
+            <Popup>
+              <strong>{title}</strong>
+              <br />
+              {body}
+            </Popup>
+          </Marker>
+        )
+      })}
       {located.map((member) => (
         <Marker
           key={member.id}

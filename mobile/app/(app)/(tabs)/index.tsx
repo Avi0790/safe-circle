@@ -9,6 +9,10 @@ import { useCircles } from '@/contexts/CircleContext';
 import { useCircleMembers } from '@/hooks/useCircleMembers';
 import { useActiveSosEvents } from '@/hooks/useActiveSosEvents';
 import { useMapPins } from '@/hooks/useMapPins';
+import { useNow } from '@/hooks/useNow';
+import { useRoadReports } from '@/hooks/useRoadReports';
+import { RoadReportMarker } from '@/components/RoadReportMarker';
+import { reportsForCircle } from '@/lib/roadReports';
 import { SosBanner } from '@/components/SosBanner';
 import { SosButton } from '@/components/SosButton';
 import { WalkBanner } from '@/components/WalkBanner';
@@ -157,6 +161,9 @@ export default function MapTab() {
   const { timers, refresh: refreshTimers } = useActiveSafetyTimers();
   const { requests: rideRequests, refresh: refreshRides } = useRideRequests();
   const { pins, refresh: refreshPins } = useMapPins(selectedCircleId);
+  // Crashes, hazards and the like reported by people in this circle while driving.
+  const { reports, refresh: refreshReports } = useRoadReports();
+  const now = useNow(60_000);
   const mapRef = useRef<MapView>(null);
   const insets = useSafeAreaInsets();
   const [mapType, setMapTypeState] = useState<MapType>(STANDARD_MAP_TYPE);
@@ -299,6 +306,9 @@ export default function MapTab() {
           ))}
           {pins.map((pin) => (
             <PinMarker key={pin.id} pin={pin} isMine={pin.created_by === session?.user.id} onRemoved={refreshPins} />
+          ))}
+          {reportsForCircle(reports, members.map((m) => m.id), session?.user.id, now).map((report) => (
+            <RoadReportMarker key={report.id} report={report} myUserId={session?.user.id} onChanged={refreshReports} />
           ))}
         </MapView>
       ) : (

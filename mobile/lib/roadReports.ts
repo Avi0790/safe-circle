@@ -1,3 +1,4 @@
+import { formatTimeLeft, timeAgo } from '@/lib/format';
 import { projectOnRoute, type LatLng, type PreparedRoute } from '@/lib/navigation';
 import { supabase } from '@/lib/supabase';
 
@@ -13,6 +14,7 @@ export interface RoadReport extends LatLng {
   kind: RoadReportKind;
   created_at: string;
   expires_at: string;
+  profiles?: { full_name: string } | null;
 }
 
 export const ROAD_REPORT_KINDS: { kind: RoadReportKind; emoji: string; label: string; spoken: string }[] = [
@@ -49,6 +51,31 @@ export function upcomingReport(
     if (!best || aheadM < best.aheadM) best = { report, aheadM };
   }
   return best;
+}
+
+// For the Map tab: reports from people in the circle you're looking at (and
+// your own), still live. The server already limits reports to people whose
+// location you can see; this keeps the map about one circle, like its pins.
+export function reportsForCircle(
+  reports: RoadReport[],
+  memberIds: string[],
+  myUserId: string | undefined,
+  nowMs: number = Date.now(),
+): RoadReport[] {
+  const ids = new Set(memberIds);
+  return reports.filter(
+    (r) => (r.reporter_id === myUserId || ids.has(r.reporter_id)) && new Date(r.expires_at).getTime() > nowMs,
+  );
+}
+
+// "💥 Crash reported" / "By Sam · 12m ago · clears in 48 min".
+export function reportDetails(r: RoadReport, myUserId: string | undefined, nowMs: number = Date.now()) {
+  const info = reportInfo(r.kind);
+  const who = r.reporter_id === myUserId ? 'you' : (r.profiles?.full_name ?? 'someone in your circle');
+  return {
+    title: `${info.emoji} ${info.label} reported`,
+    body: `By ${who} · ${timeAgo(r.created_at)} · clears in ${formatTimeLeft(r.expires_at, nowMs)}`,
+  };
 }
 
 export type ReportResult = { ok: true; id: string } | { ok: false; error: string };

@@ -92,6 +92,13 @@ if you haven't already.
   they arrive, stop sharing, or their phone goes quiet for 10 minutes. Your
   own trip isn't shown, and people who've hidden from you (Ghost mode) or
   stopped sharing are filtered out by the database, not this page.
+- **Road reports** (`lib/roadReports.ts`) — read-only: crashes, hazards,
+  speed checks and closed roads reported from the mobile app while driving
+  show on the map as red-ringed markers (💥 ⚠️ 🚓 🚧) for the selected
+  circle's members (and your own), with a popup saying who reported it, when,
+  and how long it has left. They update live and drop off when they expire
+  (an hour; three for a closed road). Reporting and taking a report back stay
+  mobile-only.
 - **Quick status chips and SOS acknowledgements** — read-only: a member's
   chip ("🚗 On my way") shows next to their name in `MemberList.tsx` while
   it's still active; an active SOS shows who's tapped "I'm on my way" on
