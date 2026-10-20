@@ -11,11 +11,20 @@ import { supabase } from '@/lib/supabase';
 
 export type CreateTripLinkResult = { ok: true; id: string; url: string } | { ok: false; error: string };
 
-export async function createTripLink(destination: string, etaMs: number, mode: TripMode): Promise<CreateTripLinkResult> {
+// With a tripId (a bus, train or flight from Share a trip) the link follows
+// that trip on the server (migration ...000063): running late, arriving and
+// stopping all carry over to the link without the app having to be open.
+export async function createTripLink(
+  destination: string,
+  etaMs: number,
+  mode: TripMode,
+  tripId?: string,
+): Promise<CreateTripLinkResult> {
   const { data, error } = await supabase.rpc('create_trip_share_link', {
     p_destination: destination,
     p_eta: new Date(etaMs).toISOString(),
     p_mode: mode,
+    ...(tripId ? { p_trip: tripId } : {}),
   });
   const row = (data as { id: string; token: string }[] | null)?.[0];
   if (error || !row) return { ok: false, error: error?.message ?? "Couldn't create the link." };

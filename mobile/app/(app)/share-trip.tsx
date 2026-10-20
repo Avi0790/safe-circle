@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useEffect, useState } from 'react';
+import { Alert, Pressable, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
 import { Stack } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '@/components/Button';
@@ -10,6 +10,10 @@ import { useActiveTrips } from '@/hooks/useActiveTrips';
 import { useNow } from '@/hooks/useNow';
 import { formatClockTime } from '@/lib/format';
 import { getShareUntil } from '@/lib/locationTracking';
+import { getWebBaseUrl, isLocalUrl } from '@/lib/shareLink';
+import { ensureSharingFor } from '@/lib/sharingWindow';
+import { supabase } from '@/lib/supabase';
+import { createTripLink, finishTripLink, tripShareMessage } from '@/lib/tripLink';
 import {
   defaultTripMinutes,
   endSharedTrip,
@@ -46,6 +50,9 @@ export default function ShareTripScreen() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [windowEnded, setWindowEnded] = useState(false);
+  // A live link sent for this trip (it follows the trip on the server).
+  const [link, setLink] = useState<{ id: string; expires_at: string } | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
   const mine = myManualTrips(trips, session?.user.id, now)[0] ?? null;
   const mineCircle = mine ? circles.find((c) => c.id === mine.circle_id)?.name : undefined;
@@ -55,6 +62,85 @@ export default function ShareTripScreen() {
   useEffect(() => {
     getShareUntil().then((until) => setWindowEnded(until != null && until.getTime() < Date.now()));
   }, []);
+
+  const mineId = mine?.id ?? null;
+  const loadLink = useCallback(async () => {
+    if (!mineId) {
+      setLink(null);
+      return;
+    }
+    const { data } = await supabase
+      .from('share_links')
+      .select('id, expires_at')
+      .eq('shared_trip_id', mineId)
+      .is('revoked_at', null)
+      .gt('expires_at', new Date().toISOString())
+      .limit(1);
+    setLink((data as { id: string; expires_at: string }[] | null)?.[0] ?? null);
+  }, [mineId]);
+
+  useEffect(() => {
+    loadLink();
+  }, [loadLink]);
+
+  // Share ETA with anyone, as on the Directions screen: just a message, or a
+  // live link that follows this trip until you arrive.
+  function shareWithAnyone() {
+    if (!mine) return;
+    Alert.alert('Share your ETA', "Send it to anyone, even if they don't have Safe Circle.", [
+      { text: 'Live link (until I arrive)', onPress: () => sendLiveLink() },
+      { text: 'Just the ETA as a message', onPress: () => sendMessage() },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
+  }
+
+  async function sendMessage() {
+    if (!mine) return;
+    try {
+      await Share.share({ message: tripShareMessage(mine.destination, new Date(mine.eta).getTime(), mine.mode) });
+    } catch {
+      // Closing the share sheet isn't an error.
+    }
+  }
+
+  async function sendLiveLink() {
+    if (!mine) return;
+    setBusy(true);
+    setError(null);
+    setNotice(null);
+    const etaMs = new Date(mine.eta).getTime();
+    // The page shows your latest location, so make sure something is sending
+    // it (a no-op if sharing is already on; a sharing window is at most a day).
+    const sharing = await ensureSharingFor(Math.min(1430, Math.max(15, Math.ceil((etaMs - Date.now()) / 60_000))));
+    if (!sharing.ok) {
+      setError(sharing.reason);
+      setBusy(false);
+      return;
+    }
+    const res = await createTripLink(mine.destination, etaMs, mine.mode, mine.id);
+    await loadLink();
+    setBusy(false);
+    if (!res.ok) {
+      setError(res.error);
+      return;
+    }
+    if (isLocalUrl(getWebBaseUrl())) {
+      setNotice("The web page isn't deployed, so this link only opens on this network.");
+    }
+    try {
+      await Share.share({ message: tripShareMessage(mine.destination, etaMs, mine.mode, res.url) });
+    } catch {
+      // The link stays on until the trip ends or you stop it.
+    }
+  }
+
+  async function stopLink() {
+    if (!link) return;
+    setBusy(true);
+    await finishTripLink(link.id, false);
+    await loadLink();
+    setBusy(false);
+  }
 
   function chooseMode(next: ManualMode) {
     setMode(next);
@@ -92,6 +178,8 @@ export default function ShareTripScreen() {
   const handleDone = (arrived: boolean) =>
     run(async () => {
       if (mine) await endSharedTrip(mine.id, arrived);
+      // Its live link, if any, ended with it on the server.
+      setLink(null);
       return { ok: true };
     });
 
@@ -111,6 +199,17 @@ export default function ShareTripScreen() {
             <Button title="I've arrived" onPress={() => handleDone(true)} loading={busy} />
             <Button title="Running late (+15 min)" variant="secondary" onPress={handleLate} disabled={busy} />
             <Button title="Stop sharing" variant="secondary" onPress={() => handleDone(false)} disabled={busy} />
+            {link ? (
+              <>
+                <Text style={typography.caption}>
+                  🔗 A live link is out for this trip. Whoever has it sees your ETA and where you are
+                  until you arrive or stop sharing.
+                </Text>
+                <Button title="Stop the live link" variant="secondary" onPress={stopLink} disabled={busy} />
+              </>
+            ) : (
+              <Button title="📤 Share ETA with anyone…" variant="secondary" onPress={shareWithAnyone} disabled={busy} />
+            )}
           </View>
         ) : !selectedCircle ? (
           <Text style={typography.body}>Join or create a circle first, then you can share trips with it.</Text>
@@ -195,6 +294,7 @@ export default function ShareTripScreen() {
             <Button title="Share trip" onPress={handleStart} loading={busy} />
           </>
         )}
+        {notice && <Text style={typography.caption}>{notice}</Text>}
         {error && <Text style={styles.error}>{error}</Text>}
       </ScrollView>
     </SafeAreaView>

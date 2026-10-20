@@ -1,5 +1,5 @@
 import React from 'react';
-import { TextInput } from 'react-native';
+import { Alert, Share, TextInput } from 'react-native';
 import { act, create, type ReactTestRenderer } from 'react-test-renderer';
 
 // The Share a trip screen with the real screen and real trip rules; only the
@@ -10,6 +10,9 @@ const mockRefresh = jest.fn(async () => {});
 const mockTrips: { current: unknown[] } = { current: [] };
 const mockCircle: { current: null | { id: string; name: string } } = { current: { id: 'c1', name: 'Family' } };
 const mockShareUntil: { current: Date | null } = { current: null };
+// Live links the server holds for my trip (share_links rows).
+const mockLinks: { current: { id: string; expires_at: string }[] } = { current: [] };
+const mockTracking = { active: true, start: jest.fn(async () => ({ ok: true as const, backgroundGranted: true })) };
 
 jest.mock('expo-router', () => ({ Stack: { Screen: () => null } }));
 jest.mock('react-native-safe-area-context', () => {
@@ -21,8 +24,23 @@ jest.mock('@/contexts/CircleContext', () => ({
   useCircles: () => ({ circles: [{ id: 'c1', name: 'Family' }], selectedCircle: mockCircle.current }),
 }));
 jest.mock('@/hooks/useActiveTrips', () => ({ useActiveTrips: () => ({ trips: mockTrips.current, refresh: mockRefresh }) }));
-jest.mock('@/lib/locationTracking', () => ({ getShareUntil: async () => mockShareUntil.current }));
-jest.mock('@/lib/supabase', () => ({ supabase: { rpc: (...a: unknown[]) => mockRpc(...a) } }));
+jest.mock('@/lib/locationTracking', () => ({
+  getShareUntil: async () => mockShareUntil.current,
+  setShareUntil: async () => {},
+  isTrackingActive: async () => mockTracking.active,
+  isBackgroundTaskActive: async () => true,
+  startBackgroundTracking: () => mockTracking.start(),
+  stopBackgroundTracking: async () => {},
+}));
+jest.mock('@/lib/supabase', () => {
+  const q: any = new Proxy({}, {
+    get: (_t, prop) =>
+      prop === 'then'
+        ? (resolve: (v: unknown) => void) => resolve({ data: mockLinks.current, error: null })
+        : () => q,
+  });
+  return { supabase: { rpc: (...a: unknown[]) => mockRpc(...a), from: () => q } };
+});
 
 import ShareTripScreen from '../../app/(app)/share-trip';
 
@@ -67,7 +85,17 @@ const myTrip = (over: Record<string, unknown> = {}) => ({
 beforeEach(() => {
   jest.useFakeTimers();
   mockRpc.mockReset();
-  mockRpc.mockResolvedValue({ data: 'trip-1', error: null });
+  mockRpc.mockImplementation(async (name: string) => {
+    if (name === 'create_trip_share_link') {
+      mockLinks.current = [{ id: 'link-1', expires_at: new Date(Date.now() + 3 * 3_600_000).toISOString() }];
+      return { data: [{ id: 'link-1', token: 'tok123' }], error: null };
+    }
+    if (name === 'finish_trip_share_link') mockLinks.current = [];
+    return { data: 'trip-1', error: null };
+  });
+  mockLinks.current = [];
+  mockTracking.active = true;
+  mockTracking.start.mockClear();
   mockRefresh.mockClear();
   mockTrips.current = [];
   mockCircle.current = { id: 'c1', name: 'Family' };
@@ -204,6 +232,101 @@ describe('Share a trip screen', () => {
       const t = new Date(calls('update_shared_trip')[0][1].p_eta).getTime();
       expect(t).toBeGreaterThan(Date.now() + 14 * 60_000);
       expect(t).toBeLessThan(Date.now() + 16 * 60_000);
+    });
+  });
+
+  describe('Share ETA with anyone', () => {
+    async function choose(r: ReactTestRenderer, option: string) {
+      const alert = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+      await press(r, 'Share ETA with anyone');
+      const [title, , buttons] = alert.mock.calls[0] as [string, string, { text: string; onPress?: () => Promise<void> }[]];
+      expect(title).toBe('Share your ETA');
+      await act(async () => {
+        await buttons.find((b) => b.text === option)!.onPress!();
+      });
+      for (let i = 0; i < 4; i++) {
+        await act(async () => {
+          await Promise.resolve();
+        });
+      }
+      alert.mockRestore();
+    }
+
+    it('is offered once a trip is up, not before', async () => {
+      let r = await mount();
+      expect(allText(r)).not.toContain('Share ETA with anyone');
+      mockTrips.current = [myTrip()];
+      r = await mount();
+      expect(allText(r)).toContain('Share ETA with anyone');
+    });
+
+    it('just the ETA: a message, nothing sent to the server', async () => {
+      const share = jest.spyOn(Share, 'share').mockResolvedValue({ action: 'sharedAction' } as never);
+      mockTrips.current = [myTrip()];
+      const r = await mount();
+      await choose(r, 'Just the ETA as a message');
+      expect((share.mock.calls[0][0] as { message: string }).message).toMatch(/^I'm flying to Denver, landing around \d{1,2}:\d{2}/);
+      expect(calls('create_trip_share_link')).toHaveLength(0);
+      share.mockRestore();
+    });
+
+    it('live link: tied to this trip, sent through the share sheet, and shown as on', async () => {
+      const share = jest.spyOn(Share, 'share').mockResolvedValue({ action: 'sharedAction' } as never);
+      mockTrips.current = [myTrip()];
+      const r = await mount();
+      await choose(r, 'Live link (until I arrive)');
+      expect(calls('create_trip_share_link')[0][1]).toMatchObject({ p_destination: 'Denver', p_mode: 'flight', p_trip: 'trip-1' });
+      expect((share.mock.calls[0][0] as { message: string }).message).toMatch(
+        /landing around .*\. Follow along live until I get there: http:\/\/localhost:5173\/track\/tok123$/,
+      );
+      expect(allText(r)).toContain('A live link is out for this trip');
+      expect(allText(r)).not.toContain('Share ETA with anyone');
+      share.mockRestore();
+    });
+
+    it('the link can be stopped on its own, leaving the trip shared with the circle', async () => {
+      const share = jest.spyOn(Share, 'share').mockResolvedValue({ action: 'sharedAction' } as never);
+      mockTrips.current = [myTrip()];
+      mockLinks.current = [{ id: 'link-1', expires_at: new Date(Date.now() + 3_600_000).toISOString() }];
+      const r = await mount();
+      expect(allText(r)).toContain('A live link is out for this trip'); // found on the server, after coming back to the screen
+      await press(r, 'Stop the live link');
+      expect(calls('finish_trip_share_link')).toEqual([['finish_trip_share_link', { p_id: 'link-1', p_arrived: false }]]);
+      expect(calls('end_shared_trip')).toHaveLength(0);
+      expect(allText(r)).toContain('Share ETA with anyone');
+      share.mockRestore();
+    });
+
+    it("arriving ends the trip; the server takes the link with it, so the app doesn't have to", async () => {
+      mockTrips.current = [myTrip()];
+      mockLinks.current = [{ id: 'link-1', expires_at: new Date(Date.now() + 3_600_000).toISOString() }];
+      const r = await mount();
+      await press(r, "I've arrived");
+      expect(calls('end_shared_trip')[0][1]).toEqual({ p_trip: 'trip-1', p_arrived: true });
+      expect(calls('finish_trip_share_link')).toHaveLength(0);
+    });
+
+    it('turns sharing on for the trip if it was off, never for more than a day', async () => {
+      const share = jest.spyOn(Share, 'share').mockResolvedValue({ action: 'sharedAction' } as never);
+      mockTracking.active = false;
+      mockTrips.current = [myTrip({ eta: new Date(Date.now() + 30 * 3_600_000).toISOString() })]; // a long flight
+      const r = await mount();
+      await choose(r, 'Live link (until I arrive)');
+      expect(mockTracking.start).toHaveBeenCalled();
+      expect(calls('set_share_window')[0][1].p_minutes).toBeLessThanOrEqual(1440);
+      expect(calls('create_trip_share_link')).toHaveLength(1);
+      share.mockRestore();
+    });
+
+    it("says why when the link can't be made", async () => {
+      const share = jest.spyOn(Share, 'share').mockResolvedValue({ action: 'sharedAction' } as never);
+      mockTrips.current = [myTrip()];
+      const r = await mount();
+      mockRpc.mockImplementation(async () => ({ data: null, error: { message: 'You already have 5 active links. Revoke one first.' } }));
+      await choose(r, 'Live link (until I arrive)');
+      expect(allText(r)).toContain('You already have 5 active links. Revoke one first.');
+      expect(share).not.toHaveBeenCalled();
+      share.mockRestore();
     });
   });
 });

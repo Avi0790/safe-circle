@@ -601,6 +601,14 @@ development mode is also inherently slower than a real build, and running over
   shows it with **I've arrived** (tells the circle), **Running late (+15 min)**
   and **Stop sharing**. If your temporary sharing window has ended, it warns
   that the circle can't see trips; it never turns on location tracking itself.
+  **Share ETA with anyone** works here too (a message, or a live link). The
+  link is tied to the trip on the server (backend `...000063`, a trigger on
+  `shared_trips`): Running late updates it, I've arrived switches it to
+  "arrived" without a location, and stopping, starting another trip or the
+  trip expiring ends it, all without the app being open. It lasts the trip's
+  grace period past the ETA (2 h for a flight), and a flight can be up to 48 h
+  ahead. Coming back to the screen shows whether a link is out, with Stop the
+  live link.
   **Saved destinations** (`lib/savedDestinations.ts`): on the route preview,
   save the place as Home, Work, or under its own name (up to 20). They are
   stored only on the phone, per account, so a home address is never uploaded or

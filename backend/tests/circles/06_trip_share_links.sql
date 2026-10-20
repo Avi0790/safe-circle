@@ -135,7 +135,7 @@ begin
   msg := msg || pg_temp.ok('anonymous visitors can read a link',
     has_function_privilege('anon', 'public.get_shared_location(text)', 'execute'));
   msg := msg || pg_temp.ok('...but not create, update or finish one',
-    not has_function_privilege('anon', 'public.create_trip_share_link(text,timestamptz,text)', 'execute')
+    not has_function_privilege('anon', 'public.create_trip_share_link(text,timestamptz,text,uuid)', 'execute')
     and not has_function_privilege('anon', 'public.update_trip_share_link(uuid,timestamptz)', 'execute')
     and not has_function_privilege('anon', 'public.finish_trip_share_link(uuid,boolean)', 'execute'));
 
