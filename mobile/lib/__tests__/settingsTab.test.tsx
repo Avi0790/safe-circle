@@ -39,6 +39,11 @@ jest.mock('@/contexts/CircleContext', () => ({
     refresh: mockCircles.refresh,
   }),
 }));
+const mockAccount: { orgs: { org_id: string; name: string; status: string }[]; pendingInvite: { org_id: string; name: string } | null } = {
+  orgs: [],
+  pendingInvite: null,
+};
+jest.mock('@/contexts/AccountContext', () => ({ useAccount: () => mockAccount }));
 jest.mock('@/contexts/ShakeSettingsContext', () => ({
   useShakeSettings: () => ({ enabled: mockShake.enabled, setEnabled: mockShake.set }),
 }));
@@ -90,6 +95,8 @@ beforeEach(async () => {
   mockLock.enabled = false;
   mockLock.set.mockClear();
   mockShake.set.mockClear();
+  mockAccount.orgs = [];
+  mockAccount.pendingInvite = null;
 });
 afterEach(unmountAll);
 
@@ -283,6 +290,34 @@ describe('Settings tab: circles', () => {
     await press(r, 'Share invite');
     expect(share).toHaveBeenCalledWith({ message: 'Join my Safe Circle "Family"! Use invite code ABCD-2345 in the app.' });
     share.mockRestore();
+  });
+});
+
+describe('Settings tab: work', () => {
+  it('any account can join or create an organization, keeping its circles', async () => {
+    const r = await render(<SettingsTab />);
+    expect(allText(r)).toContain("Use this same account for work");
+    await press(r, 'Join or create an organization');
+    expect(mockPush).toHaveBeenCalledWith('/add-org');
+  });
+
+  it('names the organizations you are in, and lets you join another', async () => {
+    mockAccount.orgs = [
+      { org_id: 'o1', name: 'Riverside Utilities', status: 'active' },
+      { org_id: 'o2', name: 'Pending Co', status: 'invited' },
+    ];
+    const r = await render(<SettingsTab />);
+    expect(allText(r)).toContain("You're in Riverside Utilities. Clock in and out from the Work tab.");
+    await press(r, 'Join another organization');
+    expect(mockPush).toHaveBeenCalledWith('/add-org');
+  });
+
+  it('brings you back to an invitation you have not answered yet', async () => {
+    mockAccount.pendingInvite = { org_id: 'o2', name: 'Pending Co' };
+    const r = await render(<SettingsTab />);
+    expect(allText(r)).toContain('You started joining Pending Co.');
+    await press(r, 'Finish joining Pending Co');
+    expect(mockPush).toHaveBeenCalledWith('/add-org');
   });
 });
 

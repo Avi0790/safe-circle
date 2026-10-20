@@ -16,6 +16,7 @@ import { Avatar } from '@/components/Avatar';
 import { Button } from '@/components/Button';
 import { InviteQr } from '@/components/InviteQr';
 import { TextField } from '@/components/TextField';
+import { useAccount } from '@/contexts/AccountContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCircles } from '@/contexts/CircleContext';
 import { supabase } from '@/lib/supabase';
@@ -35,6 +36,7 @@ import { formatClockTime } from '@/lib/format';
 import { deregisterPushNotifications, registerForPushNotifications } from '@/lib/pushNotifications';
 import { clearMembersCache } from '@/lib/membersCache';
 import { exportDataToFile } from '@/lib/dataExport';
+import { activeOrgs } from '@/lib/orgInfo';
 
 export default function SettingsTab() {
   const router = useRouter();
@@ -66,6 +68,8 @@ export default function SettingsTab() {
     }
   }
   const { circles, selectedCircle, setSelectedCircleId, refresh: refreshCircles } = useCircles();
+  const { orgs, pendingInvite } = useAccount();
+  const workOrgs = activeOrgs(orgs);
   const [inviteCode, setInviteCode] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -828,6 +832,30 @@ export default function SettingsTab() {
             title={circles.length === 0 ? 'Create or join a circle' : 'Add another circle'}
             variant="secondary"
             onPress={() => router.push('/add-circle')}
+          />
+        </View>
+
+        {/* One account for family and work: whatever was picked at signup,
+            anyone can join an organization here (app/(app)/add-org.tsx). */}
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>Work</Text>
+          <Text style={typography.caption}>
+            {pendingInvite
+              ? `You started joining ${pendingInvite.name}. See what they can see before you decide.`
+              : workOrgs.length === 0
+                ? "Use this same account for work: join your workplace with a code, or create an organization for your crew. Your circles stay as they are, and your workplace sees you only while you're clocked in."
+                : `You're in ${workOrgs.map((o) => o.name).join(', ')}. Clock in and out from the Work tab.`}
+          </Text>
+          <Button
+            title={
+              pendingInvite
+                ? `Finish joining ${pendingInvite.name}`
+                : workOrgs.length === 0
+                  ? 'Join or create an organization'
+                  : 'Join another organization'
+            }
+            variant="secondary"
+            onPress={() => router.push('/add-org')}
           />
         </View>
 

@@ -3,18 +3,34 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Button } from '@/components/Button';
 import { TextField } from '@/components/TextField';
 import { useAccount } from '@/contexts/AccountContext';
-import { ORG_DISCLOSURE } from '@/lib/orgInfo';
+import { activeOrgs, ORG_DISCLOSURE } from '@/lib/orgInfo';
 import { supabase } from '@/lib/supabase';
 import { colors, spacing, typography } from '@/lib/theme';
 
 type Mode = 'choose' | 'create' | 'join' | 'created';
 
-// First-run onboarding for work-crew accounts: create an organization, or
-// join one with a code and accept the disclosure. Mirrors CircleOnboarding.
-// Joining only creates an invitation — nobody can see a worker until they
-// accept the disclosure below, which is what makes them an active member.
-export function OrgOnboarding() {
-  const { pendingInvite, refresh } = useAccount();
+// Create an organization, or join one with a code and accept the
+// disclosure. Mirrors CircleOnboarding, and like it is used twice: first-run
+// onboarding for work-crew accounts (app/(app)/circle-setup.tsx, no
+// `onDone`), and Settings → Work (app/(app)/add-org.tsx), so one account can
+// be in family circles and a work organization at once. The two stay
+// separate: circles follow circle rules, and an organization sees you only
+// while you're clocked in. Joining only creates an invitation — nobody can
+// see a worker until they accept the disclosure below, which is what makes
+// them an active member.
+export function OrgOnboarding({
+  heading = 'Welcome',
+  intro = 'Create an organization for your crew, or join one with the code your manager gave you.',
+  onDone,
+}: {
+  heading?: string;
+  intro?: string;
+  // Called once there's nothing more to do here. Left undefined for
+  // first-run onboarding, where becoming an active member is itself what
+  // takes you into the app (the guard in app/(app)/_layout.tsx).
+  onDone?: () => void;
+} = {}) {
+  const { orgs, pendingInvite, refresh } = useAccount();
   const [mode, setMode] = useState<Mode>('choose');
   const [orgName, setOrgName] = useState('');
   const [inviteCode, setInviteCode] = useState('');
@@ -62,6 +78,10 @@ export function OrgOnboarding() {
       setError('Invalid or expired invite code.');
       return;
     }
+    if (activeOrgs(orgs).some((o) => o.org_id === data)) {
+      setError("You're already in this organization.");
+      return;
+    }
     await refresh();
   }
 
@@ -78,6 +98,12 @@ export function OrgOnboarding() {
       return;
     }
     await refresh();
+    onDone?.();
+  }
+
+  async function handleDoneAfterCreate() {
+    await refresh();
+    onDone?.();
   }
 
   async function handleDecline() {
@@ -143,7 +169,7 @@ export function OrgOnboarding() {
         <Text selectable style={styles.code}>
           {createdCode}
         </Text>
-        <Button title="Done" onPress={refresh} />
+        <Button title="Done" onPress={handleDoneAfterCreate} />
       </View>
     );
   }
@@ -171,10 +197,8 @@ export function OrgOnboarding() {
 
   return (
     <View style={styles.content}>
-      <Text style={typography.title}>Welcome</Text>
-      <Text style={typography.body}>
-        Create an organization for your crew, or join one with the code your manager gave you.
-      </Text>
+      <Text style={typography.title}>{heading}</Text>
+      <Text style={typography.body}>{intro}</Text>
       <View style={styles.form}>
         <Button title="Create an organization" onPress={() => setMode('create')} />
         <Button title="Join with a code" variant="secondary" onPress={() => setMode('join')} />
