@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import MapView, { Marker, PROVIDER_DEFAULT } from 'react-native-maps';
-import type { MapType, Region } from 'react-native-maps';
+import type { Region } from 'react-native-maps';
 import * as Location from 'expo-location';
-import { ActivityIndicator, Alert, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Linking, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCircles } from '@/contexts/CircleContext';
@@ -21,12 +21,8 @@ import { RideBanner } from '@/components/RideBanner';
 import { TripBanner } from '@/components/TripBanner';
 import { useActiveTrips } from '@/hooks/useActiveTrips';
 import { QuickActions } from '@/components/QuickActions';
-import {
-  getMapType,
-  setMapType,
-  SATELLITE_MAP_TYPE,
-  STANDARD_MAP_TYPE,
-} from '@/lib/mapTypePreference';
+import { MapModesSheet } from '@/components/MapModesSheet';
+import { DEFAULT_MAP_MODE, getMapMode, mapViewProps, setMapMode, type MapModePreference } from '@/lib/mapMode';
 import { useActiveWalks } from '@/hooks/useActiveWalks';
 import { useActiveSafetyTimers } from '@/hooks/useActiveSafetyTimers';
 import { useRideRequests } from '@/hooks/useRideRequests';
@@ -166,16 +162,17 @@ export default function MapTab() {
   const now = useNow(60_000);
   const mapRef = useRef<MapView>(null);
   const insets = useSafeAreaInsets();
-  const [mapType, setMapTypeState] = useState<MapType>(STANDARD_MAP_TYPE);
+  // Explore / Driving / Satellite / 3D Flyover (lib/mapMode.ts).
+  const [mapMode, setMapModeState] = useState<MapModePreference>(DEFAULT_MAP_MODE);
+  const [modesOpen, setModesOpen] = useState(false);
 
   useEffect(() => {
-    getMapType().then(setMapTypeState);
+    getMapMode().then(setMapModeState);
   }, []);
 
-  function toggleMapType() {
-    const next = mapType === SATELLITE_MAP_TYPE ? STANDARD_MAP_TYPE : SATELLITE_MAP_TYPE;
-    setMapTypeState(next);
-    setMapType(next);
+  function chooseMapMode(next: MapModePreference) {
+    setMapModeState(next);
+    setMapMode(next);
   }
 
   async function handleAskEveryone() {
@@ -300,7 +297,7 @@ export default function MapTab() {
           provider={PROVIDER_DEFAULT}
           style={styles.map}
           initialRegion={initialRegion}
-          mapType={mapType}
+          {...mapViewProps(mapMode, Platform.OS)}
           showsUserLocation
           showsMyLocationButton
         >
@@ -330,14 +327,17 @@ export default function MapTab() {
 
       <Pressable
         style={[styles.mapTypeButton, { top: insets.top + spacing.sm }]}
-        onPress={toggleMapType}
-        accessibilityLabel={mapType === SATELLITE_MAP_TYPE ? 'Switch to standard map' : 'Switch to satellite map'}
+        onPress={() => setModesOpen(true)}
+        accessibilityLabel="Map modes"
       >
-        <Text style={styles.mapTypeButtonText}>{mapType === SATELLITE_MAP_TYPE ? '🗺️' : '🛰️'}</Text>
+        <Text style={styles.mapTypeButtonText}>{mapMode.mode === 'satellite' || mapMode.mode === 'flyover' ? '🛰️' : '🗺️'}</Text>
       </Pressable>
 
       <QuickActions onRideRequested={refreshRides} />
       <SosButton onSent={refreshSos} />
+      {modesOpen && (
+        <MapModesSheet value={mapMode} onChange={chooseMapMode} onClose={() => setModesOpen(false)} bottomInset={insets.bottom} />
+      )}
     </SafeAreaView>
   );
 }

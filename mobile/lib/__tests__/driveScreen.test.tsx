@@ -1,5 +1,5 @@
 import React from 'react';
-import { Alert, Linking, Share, Switch, TextInput } from 'react-native';
+import { Alert, Animated, Linking, Share, Switch, TextInput } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { act, create, type ReactTestRenderer } from 'react-test-renderer';
 import * as Speech from 'expo-speech';
@@ -98,7 +98,31 @@ jest.mock('react-native-maps', () => {
   },
   );
   const Marker = (p: Record<string, unknown>) => R.createElement(View, { ...p, testID: 'marker' });
-  return { __esModule: true, default: MapView, Marker, Polyline: () => null, PROVIDER_DEFAULT: 'default' };
+  // The animated marker and region the vehicle glides with: here the region
+  // just records each move (to, and over how long) and jumps there.
+  class AnimatedRegion {
+    latitude: number;
+    longitude: number;
+    moves: { latitude: number; longitude: number; duration: number }[] = [];
+    constructor(r: { latitude: number; longitude: number }) {
+      this.latitude = r.latitude;
+      this.longitude = r.longitude;
+    }
+    stopAnimation(cb?: () => void) {
+      cb?.();
+    }
+    timing(cfg: { latitude: number; longitude: number; duration: number }) {
+      return {
+        start: (cb?: () => void) => {
+          this.moves.push({ latitude: cfg.latitude, longitude: cfg.longitude, duration: cfg.duration });
+          this.latitude = cfg.latitude;
+          this.longitude = cfg.longitude;
+          cb?.();
+        },
+      };
+    }
+  }
+  return { __esModule: true, default: MapView, Marker, MarkerAnimated: Marker, AnimatedRegion, Polyline: () => null, PROVIDER_DEFAULT: 'default' };
 });
 
 import DriveScreen from '../../app/(app)/drive';
@@ -1010,6 +1034,14 @@ describe('Drive screen: Google-style navigation view', () => {
     expect(t).toContain('Report');
   });
 
+  async function emitWithHeading(_r: ReactTestRenderer, heading: number, t: number) {
+    await act(async () => {
+      mockWatchers.filter((w) => !w.removed).forEach((w) =>
+        w.cb({ coords: { latitude: route[3][1], longitude: route[3][0], speed: 13, heading }, timestamp: t }),
+      );
+    });
+  }
+
   // A fix whose GPS gives no heading (-1), so the screen works it out from movement.
   async function emitNoHeading(lon: number, lat: number, speed: number, t: number) {
     await act(async () => {
@@ -1021,23 +1053,50 @@ describe('Drive screen: Google-style navigation view', () => {
 
   // How the car is drawn (iOS: Apple Maps can't rotate or flatten markers, so
   // the drawing itself is turned and tilted, lib/avatarPose.ts).
-  const pose = (r: ReactTestRenderer) => {
+  // React Native's native animation driver doesn't run in tests, so turns
+  // complete at once here; what each was asked for (angle, time) is kept.
+  const turns: { toValue: number; duration: number }[] = [];
+  let timingSpy: jest.SpyInstance;
+  beforeEach(() => {
+    turns.length = 0;
+    timingSpy = jest.spyOn(Animated, 'timing').mockImplementation(((value: Animated.Value, cfg: { toValue: number; duration: number }) => ({
+      start: (cb?: (r: { finished: boolean }) => void) => {
+        turns.push({ toValue: cfg.toValue, duration: cfg.duration });
+        value.setValue(cfg.toValue);
+        cb?.({ finished: true });
+      },
+      stop: () => {},
+      reset: () => {},
+    })) as unknown as typeof Animated.timing);
+  });
+  afterEach(() => timingSpy.mockRestore());
+
+  // Let the turn animation finish, then read the drawn angle.
+  const pose = async (r: ReactTestRenderer) => {
+    await act(async () => {
+      jest.advanceTimersByTime(1000);
+    });
+    return poseNow(r);
+  };
+  const poseNow = (r: ReactTestRenderer) => {
     const top = r.root.findAll((n) => n.props.testID === 'avatar-top' && typeof n.type !== 'string')[0];
-    const t = (top.props.style.transform as Record<string, string>[]).reduce((a, x) => ({ ...a, ...x }), {} as Record<string, string>);
-    return { rotate: parseFloat(t.rotateZ), tilt: parseFloat(t.rotateX) };
+    const t = (top.props.style.transform as Record<string, unknown>[]).reduce((a, x) => ({ ...a, ...x }), {} as Record<string, unknown>);
+    // the turn is animated: read where it is heading (after the animation)
+    const z = t.rotateZ as string | { __getValue: () => string };
+    return { rotate: parseFloat(typeof z === 'string' ? z : z.__getValue()), tilt: parseFloat(t.rotateX as string) };
   };
 
   it('uses the GPS heading when the phone has one', async () => {
     const r = await startDrive();
     await press(r, 'Heading up'); // north up, so the car has to point its own way
     await emit(route[1][0], route[1][1], 13, 10_000); // the fake GPS reports heading 90
-    expect(pose(r).rotate).toBe(90);
+    expect((await pose(r)).rotate).toBe(90);
   });
 
   it('heading up: the map turns, so the car points up the screen; tilted like the map', async () => {
     const r = await startDrive();
     await emit(route[1][0], route[1][1], 13, 10_000);
-    expect(pose(r)).toEqual({ rotate: 0, tilt: 45 });
+    expect((await pose(r))).toEqual({ rotate: 0, tilt: 45 });
     expect(vehicleMarker(r).props.rotation).toBeUndefined(); // Google-only on iOS: not relied on
   });
 
@@ -1050,7 +1109,7 @@ describe('Drive screen: Google-style navigation view', () => {
       map(r).props.onRegionChangeComplete?.();
       await Promise.resolve();
     });
-    expect(pose(r)).toEqual({ rotate: 60, tilt: 20 }); // 90 heading on a map turned 30°
+    expect((await pose(r))).toEqual({ rotate: 60, tilt: 20 }); // 90 heading on a map turned 30°
   });
 
   it('you are a vehicle that turns with your heading, not the blue dot', async () => {
@@ -1059,7 +1118,7 @@ describe('Drive screen: Google-style navigation view', () => {
     await press(r, 'Heading up'); // north up, so the drawing shows the real direction
     for (let i = 0; i < 6; i++) await emitNoHeading(route[i][0], route[i][1], 13, 10_000 + i * 1_000);
     expect(vehicleMarker(r)).toBeDefined();
-    const rotation = ((pose(r).rotate % 360) + 360) % 360;
+    const rotation = (((await pose(r)).rotate % 360) + 360) % 360;
     // the marker points along the road, i.e. towards the next position
     const [lon0, lat0] = route[4];
     const [lon1, lat1] = route[5];
@@ -1075,10 +1134,46 @@ describe('Drive screen: Google-style navigation view', () => {
     const r = await startDrive();
     await press(r, 'Heading up'); // north up
     for (let i = 0; i < 6; i++) await emitNoHeading(route[i][0], route[i][1], 13, 10_000 + i * 1_000);
-    const before = pose(r).rotate;
+    const before = (await pose(r)).rotate;
     expect(before).not.toBe(0);
     await emitNoHeading(route[5][0], route[5][1], 0, 20_000); // stopped at a light
-    expect(pose(r).rotate).toBe(before);
+    expect((await pose(r)).rotate).toBe(before);
+  });
+
+  it('glides to each new fix over the time since the last one, and turns smoothly the short way', async () => {
+    const r = await startDrive();
+    await emit(route[0][0], route[0][1], 13, 10_000);
+    await emit(route[1][0], route[1][1], 13, 11_000);
+    await emit(route[2][0], route[2][1], 13, 11_800);
+    const region = vehicleMarker(r).props.coordinate as { moves: { duration: number }[]; latitude: number };
+    const durations = region.moves.map((m) => m.duration);
+    expect(durations.slice(-2)).toEqual([1000, 800]); // matches the gaps between fixes
+    expect(region.latitude).toBeCloseTo(route[2][1], 6); // ends where the fix is
+    // the camera moves in step with the car, so it stays centred
+    expect(mockAnimate.mock.calls[mockAnimate.mock.calls.length - 1][1]).toEqual({ duration: 800 });
+    // turns are eased, not instant
+    expect(turns.length).toBeGreaterThan(0);
+    for (const t of turns) expect(t.duration).toBeGreaterThanOrEqual(200);
+  });
+
+  it('snaps instead of sliding after a big jump', async () => {
+    const r = await startDrive();
+    await emit(route[0][0], route[0][1], 13, 10_000);
+    await emit(route[0][0] + 0.01, route[0][1], 13, 11_000); // ~900 m away a second later
+    const region = vehicleMarker(r).props.coordinate as { moves: { duration: number }[] };
+    expect(region.moves[region.moves.length - 1].duration).toBe(0);
+  });
+
+  it('turns from 170° to 190° by +20°, not back round by 340°', async () => {
+    const r = await startDrive();
+    await press(r, 'Heading up'); // north up: the drawing shows the real heading
+    // (relative angles are kept within ±180°, so this is where the long way
+    // round would happen: 170° to -170°)
+    await emitWithHeading(r, 170, 10_000);
+    await emitWithHeading(r, 190, 11_000);
+    const last = turns[turns.length - 1].toValue;
+    const prev = turns[turns.length - 2].toValue;
+    expect(last - prev).toBeCloseTo(20, 5);
   });
 
   it('opens Choose driving avatar from the options card; Done saves the avatar and colour', async () => {

@@ -1,4 +1,4 @@
-import { StyleSheet, View } from 'react-native';
+import { Animated, StyleSheet } from 'react-native';
 import { CarSlice, carSlices } from '@/components/CarSlices';
 import { VehicleIcon } from '@/components/VehicleIcon';
 import { sliceLift } from '@/lib/avatarPose';
@@ -22,39 +22,44 @@ export function TiltedAvatar({
   style: VehicleStyle;
   color: VehicleColor;
   walking: boolean;
-  rotate: number;
+  // degrees, or an animated value in degrees (VehicleMarker glides it)
+  rotate: number | Animated.Value;
   tilt: number;
 }) {
+  const rotateZ =
+    typeof rotate === 'number'
+      ? `${rotate}deg`
+      : rotate.interpolate({ inputRange: [-36000, 36000], outputRange: ['-36000deg', '36000deg'] });
   const transform = (lift: number) => [
     { translateY: -lift },
     { perspective: PERSPECTIVE },
     { rotateX: `${tilt}deg` },
-    { rotateZ: `${rotate}deg` },
+    { rotateZ },
   ];
   const slices = walking || tilt < 1 ? [] : carSlices(style);
 
   if (slices.length === 0) {
     return (
-      <View style={{ transform: transform(0) }} testID="avatar-top">
+      <Animated.View style={{ transform: transform(0) }} testID="avatar-top">
         <VehicleIcon style={style} color={color} walking={walking} />
-      </View>
+      </Animated.View>
     );
   }
 
   return (
-    <View>
+    <Animated.View>
       {slices.map((slice, i) => {
         const top = i === slices.length - 1;
         return (
-          <View
+          <Animated.View
             key={`${slice.part}-${slice.z}`}
             style={[i === 0 ? null : StyleSheet.absoluteFill, { transform: transform(sliceLift(slice.z, tilt)) }]}
             testID={top ? 'avatar-top' : 'avatar-slice'}
           >
             <CarSlice style={style} color={color} slice={slice} />
-          </View>
+          </Animated.View>
         );
       })}
-    </View>
+    </Animated.View>
   );
 }

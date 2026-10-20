@@ -47,7 +47,13 @@ describe('TiltedAvatar', () => {
   }
   const lifts = (r: ReactTestRenderer) =>
     r.root
-      .findAll((n) => (n.props.testID === 'avatar-slice' || n.props.testID === 'avatar-top') && typeof n.type !== 'string')
+      .findAll(
+        (n) =>
+          (n.props.testID === 'avatar-slice' || n.props.testID === 'avatar-top') &&
+          typeof n.type !== 'string' &&
+          // an animated view and the view inside it both carry the testID: count the inner one
+          n.findAll((x) => x !== n && x.props.testID === n.props.testID && typeof x.type !== 'string').length === 0,
+      )
       .map((n) => {
         const style = Array.isArray(n.props.style) ? n.props.style[n.props.style.length - 1] : n.props.style;
         return -(style.transform.find((t: Record<string, number>) => 'translateY' in t).translateY as number);

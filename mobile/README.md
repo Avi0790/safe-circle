@@ -579,6 +579,21 @@ development mode is also inherently slower than a real build, and running over
   comes from the GPS, or from your last two positions when it gives none,
   and is kept when you stop (`lib/vehiclePreference.ts`).
   Walking shows a green walker arrow.
+- **Smooth movement**: between GPS fixes (about one a second) the avatar
+  glides to each new position over the time since the previous fix, on
+  react-native-maps' `AnimatedRegion` + `MarkerAnimated`, so the stacked
+  drawing isn't re-rendered every frame; the camera uses the same duration so
+  the car stays centred. Turns are eased the short way round (an `Animated`
+  value on the native driver, `lib/glide.ts`). Jumps over 250 m (GPS glitch,
+  tunnel) snap, and with Reduce Motion on everything snaps. (Android's native
+  marker rotation isn't eased.)
+- **Map Modes** (`lib/mapMode.ts`, `components/MapModesSheet.tsx`), like Apple
+  Maps': Explore, Driving (muted map, live traffic, fewer pins), Satellite
+  (Labels on/off) and 3D Flyover (Apple's photo-realistic 3D where Apple has
+  it; Terrain on Android), with a Traffic switch. From the Map tab's map
+  button and from navigation's options card; one saved choice for both. The
+  old satellite toggle carries over. Apple's Transit mode isn't available
+  through react-native-maps, so it isn't offered.
 - **Choose driving avatar** (`components/AvatarPicker.tsx`), like Google
   Maps': opened from Options → Driving avatar or by tapping your car on the
   map. Swipe through seven avatars (navigation arrow, sports car, compact,
@@ -716,15 +731,11 @@ development mode is also inherently slower than a real build, and running over
   error now offers **Text for help** instead of just failing (button and
   shake-to-SOS both).
 
-- **Satellite map** (Map tab, top-right 🛰️/🗺️ button, `lib/mapTypePreference.ts`)
-  — toggles react-native-maps' built-in `mapType` between standard and
-  `hybrid` (satellite imagery with road/place labels kept on top). Apple
-  Maps (iOS) and Google Maps (Android) both include this for free through
-  react-native-maps — no separate API key or paid tier, unlike most
-  "satellite view" integrations. Per-device preference (`AsyncStorage`),
-  not persisted per circle. Only on the main Map tab for now — the
-  member-history trail screens still use the standard map.
-
+- **Satellite map**: now part of **Map Modes** (Map tab, top-right map
+  button; see Map Modes above): Satellite with or without labels, and 3D
+  Flyover on iPhone. All through react-native-maps' built-in map types, so
+  no API key or paid tier. The earlier satellite toggle's saved choice
+  (`safecircle.mapType.v1`) carries over.
 - **Opens on your own location** — the Map tab used to open on a hardcoded
   San Francisco region and only recenter once the circle's locations had
   loaded from the server, which could be slow or (if you'd never shared)

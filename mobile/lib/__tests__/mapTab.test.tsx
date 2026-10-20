@@ -254,11 +254,46 @@ describe('Map tab', () => {
     expect(markerTitles(r)).toEqual(['Me', 'Sam']);
   });
 
-  it('remembers the satellite view', async () => {
-    const r = await mount();
-    const btn = r.root.findAll((n) => n.props.accessibilityLabel === 'Switch to satellite map' && typeof n.props.onPress === 'function')[0];
-    await act(async () => btn.props.onPress());
-    expect(map(r).props.mapType).toBe('hybrid');
-    expect(await AsyncStorage.getItem('safecircle.mapType.v1')).toBe('hybrid');
+  describe('map modes', () => {
+    const tap = async (r: ReactTestRenderer, label: string) => {
+      const hit = r.root.findAll((n) => n.props.accessibilityLabel === label && typeof n.props.onPress === 'function')[0];
+      await act(async () => hit.props.onPress());
+    };
+    const toggle = async (r: ReactTestRenderer, label: string, value: boolean) => {
+      const sw = r.root.findAll((n) => n.props.accessibilityLabel === label && typeof n.props.onValueChange === 'function')[0];
+      await act(async () => sw.props.onValueChange(value));
+    };
+
+    it('opens Map Modes and switches to satellite, with or without labels, remembered', async () => {
+      const r = await mount();
+      expect(map(r).props.mapType).toBe('standard');
+      await tap(r, 'Map modes');
+      expect(allText(r)).toContain('Map Modes');
+      await tap(r, 'Map mode: Satellite');
+      expect(map(r).props.mapType).toBe('hybrid'); // labels on by default
+      await toggle(r, 'Labels', false);
+      expect(map(r).props.mapType).toBe('satellite');
+      expect(JSON.parse((await AsyncStorage.getItem('safecircle.mapMode.v1'))!)).toEqual({ mode: 'satellite', labels: false, traffic: false });
+      await tap(r, 'Close');
+      expect(allText(r)).not.toContain('Map Modes');
+    });
+
+    it('Driving shows traffic on a calmer map, and 3D Flyover uses Apple\'s 3D satellite', async () => {
+      const r = await mount();
+      await tap(r, 'Map modes');
+      await tap(r, 'Map mode: Driving');
+      expect(map(r).props).toMatchObject({ mapType: 'mutedStandard', showsTraffic: true, showsPointsOfInterest: false });
+      expect(r.root.findAll((n) => n.props.accessibilityLabel === 'Traffic' && typeof n.props.onValueChange === 'function')).toHaveLength(0);
+      await tap(r, 'Map mode: 3D Flyover');
+      expect(map(r).props.mapType).toBe('hybridFlyover');
+      await toggle(r, 'Traffic', true);
+      expect(map(r).props.showsTraffic).toBe(true);
+    });
+
+    it('carries over the satellite choice from before map modes', async () => {
+      await AsyncStorage.setItem('safecircle.mapType.v1', 'hybrid');
+      const r = await mount();
+      expect(map(r).props.mapType).toBe('hybrid');
+    });
   });
 });

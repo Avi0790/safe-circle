@@ -12,6 +12,9 @@ import { DrivePanel } from '@/components/DrivePanel';
 import type { CameraMode } from '@/components/DriveHud';
 import { VehicleMarker } from '@/components/VehicleMarker';
 import { AvatarPicker } from '@/components/AvatarPicker';
+import { MapModesSheet } from '@/components/MapModesSheet';
+import { DEFAULT_MAP_MODE, getMapMode, mapViewProps, setMapMode, type MapModePreference } from '@/lib/mapMode';
+import { glideDuration } from '@/lib/glide';
 import { useRoadReports } from '@/hooks/useRoadReports';
 import { TextField } from '@/components/TextField';
 import { useAuth } from '@/contexts/AuthContext';
@@ -127,9 +130,15 @@ export default function DriveScreen() {
   const [heading, setHeading] = useState(0);
   const [cameraMode, setCameraMode] = useState<CameraMode>('heading');
   const [avatarOpen, setAvatarOpen] = useState(false);
+  // the same Map Modes as the Map tab, shared through the saved preference
+  const [mapMode, setMapModeState] = useState<MapModePreference>(DEFAULT_MAP_MODE);
+  const [modesOpen, setModesOpen] = useState(false);
   // Which way the map itself points and how far it's tilted, so your avatar
   // can turn and tilt with it (Apple Maps can't do that for a marker).
   const [mapCam, setMapCam] = useState({ heading: 0, pitch: 0 });
+  // How long the car (and camera) take to move to each new fix: about the
+  // time since the previous one, so movement looks continuous (lib/glide.ts).
+  const [glideMs, setGlideMs] = useState(0);
   const lastFollowMode = useRef<'heading' | 'north'>('heading');
   // The posted limit of the road you're on, when the map has one.
   const [speedLimit, setSpeedLimit] = useState<number | null>(null);
@@ -398,6 +407,7 @@ export default function DriveScreen() {
       }
       setSpeedMps((p) => smoothSpeed(p, raw ?? 0));
       setHeading((h) => nextHeading(h, { ...f, speed: raw ?? f.speed }, prev));
+      setGlideMs(glideDuration(prev ? prev.timestamp : null, f.timestamp));
       prevFix.current = f;
       fixRef.current = f;
       setFix(f);
@@ -472,9 +482,10 @@ export default function DriveScreen() {
         zoom: walking ? 18 : 17,
         altitude: walking ? 300 : 700,
       },
-      { duration: 700 },
+      // the same time the car takes to glide there, so it stays centred
+      { duration: glideMs || 700 },
     );
-  }, [phase, mapReady, fix, speedMps, mode, cameraMode, heading]);
+  }, [phase, mapReady, fix, speedMps, mode, cameraMode, heading, glideMs]);
 
   useEffect(() => {
     let cancelled = false;
@@ -485,6 +496,21 @@ export default function DriveScreen() {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    getMapMode().then((m) => {
+      if (!cancelled) setMapModeState(m);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  function chooseMapMode(next: MapModePreference) {
+    setMapModeState(next);
+    setMapMode(next);
+  }
 
   function chooseVehicle(v: VehiclePreference) {
     setVehicleState(v);
@@ -841,6 +867,7 @@ export default function DriveScreen() {
     closeLink(false);
     setSpeedLimit(null);
     setAvatarOpen(false);
+    setModesOpen(false);
     limitLookup.current = { at: null, step: null, inFlight: false };
     setTripNotice(null);
     setPanel(null);
@@ -1050,6 +1077,7 @@ export default function DriveScreen() {
           // While navigating you're the vehicle marker instead of the dot.
           showsUserLocation={phase !== 'driving'}
           showsCompass={false}
+          {...mapViewProps(mapMode, Platform.OS)}
           onMapReady={() => setMapReady(true)}
           // The map may have been turned or tilted by a gesture or an overview:
           // read where it really points now.
@@ -1068,6 +1096,7 @@ export default function DriveScreen() {
               heading={heading}
               cameraHeading={mapCam.heading}
               cameraPitch={mapCam.pitch}
+              glideMs={glideMs}
               style={vehicle.style}
               color={vehicle.color}
               walking={mode === 'walk'}
@@ -1189,6 +1218,10 @@ export default function DriveScreen() {
         />
       )}
 
+      {phase === 'driving' && modesOpen && (
+        <MapModesSheet value={mapMode} onChange={chooseMapMode} onClose={() => setModesOpen(false)} bottomInset={insets.bottom} />
+      )}
+
       {phase === 'driving' && avatarOpen && (
         <AvatarPicker
           value={vehicle}
@@ -1208,6 +1241,10 @@ export default function DriveScreen() {
           onOpenAvatar={() => {
             setPanel(null);
             setAvatarOpen(true);
+          }}
+          onOpenMapModes={() => {
+            setPanel(null);
+            setModesOpen(true);
           }}
           bottomInset={insets.bottom}
           voiceMode={voiceMode}

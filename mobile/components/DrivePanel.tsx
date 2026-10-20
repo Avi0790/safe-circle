@@ -16,6 +16,8 @@ export interface DrivePanelProps {
   vehicle?: VehiclePreference;
   // opens the Choose driving avatar sheet
   onOpenAvatar?: () => void;
+  // opens Map Modes (Explore, Driving, Satellite, 3D Flyover)
+  onOpenMapModes?: () => void;
   bottomInset: number;
   voiceMode: VoiceMode;
   onVoiceMode: (mode: VoiceMode) => void;
@@ -144,6 +146,12 @@ export function DrivePanel(p: DrivePanelProps) {
                   </Text>
                 </View>
                 <Text style={styles.chevron}>›</Text>
+              </Pressable>
+            )}
+
+            {p.onOpenMapModes && (
+              <Pressable style={styles.action} onPress={p.onOpenMapModes} accessibilityRole="button" accessibilityLabel="Map mode">
+                <Text style={styles.actionText}>🗺️ Map mode ›</Text>
               </Pressable>
             )}
 
