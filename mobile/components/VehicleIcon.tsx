@@ -7,12 +7,12 @@ import { shade, vehicleHex, type VehicleColor, type VehicleStyle } from '@/lib/v
 // taillights. Points up; VehicleMarker.tsx lays it flat and turns it to your
 // heading. The beams sit above the car and the same space below it, so the
 // middle of the drawing is the middle of the car (the marker's anchor).
-const VW = 48;
-const VH = 128;
-const CX = VW / 2;
-const CY = VH / 2;
+export const VW = 48;
+export const VH = 128;
+export const CX = VW / 2;
+export const CY = VH / 2;
 
-interface Shape {
+export interface Shape {
   L: number; // length
   W: number; // width
   r: number; // corner rounding
@@ -23,7 +23,7 @@ interface Shape {
   extras?: { spoiler?: boolean; chrome?: boolean; roofLights?: boolean; spare?: boolean; fatTyres?: boolean };
 }
 
-const SHAPES: Record<Exclude<VehicleStyle, 'arrow' | 'race'>, Shape> = {
+export const SHAPES: Record<Exclude<VehicleStyle, 'arrow' | 'race'>, Shape> = {
   sports: { L: 54, W: 24, r: 10, ws: 17, wl: 9, rl: 10, rwl: 6, extras: { spoiler: true } },
   compact: { L: 44, W: 24, r: 8, ws: 10, wl: 8, rl: 17, rwl: 4 },
   classic: { L: 56, W: 24, r: 5, ws: 15, wl: 7, rl: 16, rwl: 6, extras: { chrome: true } },
@@ -37,7 +37,7 @@ export function VehicleIcon({
   walking = false,
   lights = true,
   size = 1,
-  variant = 'full',
+  parts = 'all',
 }: {
   style: VehicleStyle;
   color: VehicleColor;
@@ -45,10 +45,11 @@ export function VehicleIcon({
   lights?: boolean;
   // 1 = map size; previews can draw it bigger
   size?: number;
-  // 'side': just the solid, darker body outline, stacked under a tilted car
-  // to give it sides (VehicleMarker.tsx)
-  variant?: 'full' | 'side';
+  // 'deck': the car at waist height for the stacked 3D view (CarSlices.tsx):
+  // no beams, shadow or tyres, which are drawn on their own lower layers
+  parts?: 'all' | 'deck';
 }) {
+  const all = parts === 'all';
   const uid = useId().replace(/[^a-zA-Z0-9]/g, '');
   const hex = vehicleHex(color);
   const id = (name: string) => `${name}${uid}`;
@@ -78,31 +79,6 @@ export function VehicleIcon({
   const w = VW * size;
   const h = VH * size;
 
-  if (variant === 'side') {
-    const side = shade(hex, -0.6);
-    if (style === 'race') {
-      const y0 = CY - 28;
-      return (
-        <Svg width={w} height={h} viewBox={`0 0 ${VW} ${VH}`}>
-          <Path
-            d={`M${CX} ${y0} Q${CX + 4} ${y0 + 4} ${CX + 4} ${y0 + 16} L${CX + 10} ${y0 + 30} L${CX + 10} ${y0 + 50} Q${CX} ${y0 + 56} ${CX - 10} ${y0 + 50} L${CX - 10} ${y0 + 30} L${CX - 4} ${y0 + 16} Q${CX - 4} ${y0 + 4} ${CX} ${y0} Z`}
-            fill={side}
-          />
-          <Rect x={CX - 19} y={y0 + 8} width="38" height="12" rx="3" fill="#050506" />
-          <Rect x={CX - 19} y={y0 + 38} width="38" height="14" rx="3" fill="#050506" />
-        </Svg>
-      );
-    }
-    const sh = SHAPES[style];
-    return (
-      <Svg width={w} height={h} viewBox={`0 0 ${VW} ${VH}`}>
-        <Rect x={CX - sh.W / 2 - 1.5} y={CY - sh.L / 2 + sh.L * 0.15} width={sh.W + 3} height="10" rx="2" fill="#050506" />
-        <Rect x={CX - sh.W / 2 - 1.5} y={CY - sh.L / 2 + sh.L * 0.72} width={sh.W + 3} height="10" rx="2" fill="#050506" />
-        <Rect x={CX - sh.W / 2} y={CY - sh.L / 2} width={sh.W} height={sh.L} rx={sh.r} fill={side} />
-      </Svg>
-    );
-  }
-
   if (style === 'race') {
     const accent = shade(hex, -0.45);
     const y0 = CY - 28;
@@ -119,14 +95,18 @@ export function VehicleIcon({
             <Stop offset="1" stopColor={shade(hex, -0.35)} />
           </LinearGradient>
         </Defs>
-        {lights && <Polygon points={`${CX - 4},${y0 + 2} ${CX + 4},${y0 + 2} ${CX + 12},${y0 - 30} ${CX - 12},${y0 - 30}`} fill={`url(#${id('beam')})`} />}
-        <Ellipse cx={CX + 1} cy={CY + 2} rx="16" ry="31" fill="#000" opacity="0.3" />
+        {all && lights && <Polygon points={`${CX - 4},${y0 + 2} ${CX + 4},${y0 + 2} ${CX + 12},${y0 - 30} ${CX - 12},${y0 - 30}`} fill={`url(#${id('beam')})`} />}
+        {all && <Ellipse cx={CX + 1} cy={CY + 2} rx="16" ry="31" fill="#000" opacity="0.3" />}
         {/* front wing, wheels, rear wing */}
         <Rect x={CX - 15} y={y0 + 1} width="30" height="4" rx="1.5" fill={accent} />
-        <Rect x={CX - 18} y={y0 + 8} width="7" height="12" rx="2.5" fill="#0d0d0f" />
-        <Rect x={CX + 11} y={y0 + 8} width="7" height="12" rx="2.5" fill="#0d0d0f" />
-        <Rect x={CX - 19} y={y0 + 38} width="8" height="14" rx="3" fill="#0d0d0f" />
-        <Rect x={CX + 11} y={y0 + 38} width="8" height="14" rx="3" fill="#0d0d0f" />
+        {all && (
+          <G fill="#0d0d0f">
+            <Rect x={CX - 18} y={y0 + 8} width="7" height="12" rx="2.5" />
+            <Rect x={CX + 11} y={y0 + 8} width="7" height="12" rx="2.5" />
+            <Rect x={CX - 19} y={y0 + 38} width="8" height="14" rx="3" />
+            <Rect x={CX + 11} y={y0 + 38} width="8" height="14" rx="3" />
+          </G>
+        )}
         <Path
           d={`M${CX} ${y0} Q${CX + 4} ${y0 + 4} ${CX + 4} ${y0 + 16} L${CX + 10} ${y0 + 30} L${CX + 10} ${y0 + 50} Q${CX} ${y0 + 56} ${CX - 10} ${y0 + 50} L${CX - 10} ${y0 + 30} L${CX - 4} ${y0 + 16} Q${CX - 4} ${y0 + 4} ${CX} ${y0} Z`}
           fill={`url(#${id('body')})`}
@@ -177,22 +157,22 @@ export function VehicleIcon({
         </LinearGradient>
       </Defs>
 
-      {lights && (
+      {all && lights && (
         <Polygon
           points={`${x0 + 3},${y0 + 3} ${x0 + s.W - 3},${y0 + 3} ${x0 + s.W + 8},${Math.max(2, y0 - 36)} ${x0 - 8},${Math.max(2, y0 - 36)}`}
           fill={`url(#${id('beam')})`}
         />
       )}
       {/* shadow on the road */}
-      <Rect x={x0 - 1} y={y0 + 2} width={s.W + 4} height={s.L + 3} rx={s.r + 2} fill="#000" opacity="0.32" />
+      {all && <Rect x={x0 - 1} y={y0 + 2} width={s.W + 4} height={s.L + 3} rx={s.r + 2} fill="#000" opacity="0.32" />}
       {/* tyres just showing past the body */}
-      <G fill="#0d0d0f">
+      <G fill="#0d0d0f" opacity={all ? 1 : 0}>
         <Rect x={x0 - tyre / 2} y={y0 + s.L * 0.15} width={tyre} height="10" rx="2" />
         <Rect x={x0 + s.W - tyre / 2} y={y0 + s.L * 0.15} width={tyre} height="10" rx="2" />
         <Rect x={x0 - tyre / 2} y={y0 + s.L * 0.72} width={tyre} height="10" rx="2" />
         <Rect x={x0 + s.W - tyre / 2} y={y0 + s.L * 0.72} width={tyre} height="10" rx="2" />
       </G>
-      {ext.spare && <Circle cx={CX} cy={y0 + s.L + 1} r="5" fill="#0d0d0f" stroke="#3f3f46" strokeWidth="1" />}
+      {all && ext.spare && <Circle cx={CX} cy={y0 + s.L + 1} r="5" fill="#0d0d0f" stroke="#3f3f46" strokeWidth="1" />}
       {/* mirrors */}
       <Ellipse cx={x0 - 1} cy={glassTop + 2} rx="2" ry="1.4" fill={shade(hex, -0.2)} />
       <Ellipse cx={x0 + s.W + 1} cy={glassTop + 2} rx="2" ry="1.4" fill={shade(hex, -0.2)} />

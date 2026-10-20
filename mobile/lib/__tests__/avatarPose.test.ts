@@ -1,4 +1,4 @@
-import { avatarPose, normalizeAngle, sideDepth } from '../avatarPose';
+import { avatarPose, normalizeAngle, sliceLift } from '../avatarPose';
 
 describe('avatarPose', () => {
   it('on Google Maps (Android) the marker lies flat and rotates natively', () => {
@@ -26,9 +26,10 @@ describe('helpers', () => {
     expect(normalizeAngle(180)).toBe(180);
   });
 
-  it('gives a tilted car sides, and a top-down one none', () => {
-    expect(sideDepth(0)).toBe(0);
-    expect(sideDepth(45)).toBeGreaterThan(4);
-    expect(sideDepth(60)).toBeGreaterThan(sideDepth(45));
+  it('lifts higher parts of the car further up the screen the lower the angle', () => {
+    expect(sliceLift(15, 0)).toBe(0); // straight down: everything lines up
+    expect(sliceLift(15, 45)).toBeCloseTo(10.61, 1);
+    expect(sliceLift(15, 60)).toBeGreaterThan(sliceLift(15, 45));
+    expect(sliceLift(0, 60)).toBe(0); // the road stays on the road
   });
 });

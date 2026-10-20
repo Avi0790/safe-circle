@@ -1095,7 +1095,7 @@ describe('Drive screen: Google-style navigation view', () => {
     expect(JSON.parse((await AsyncStorage.getItem('safecircle.vehicle.v1'))!)).toEqual({ style: 'offroad', color: 'red' });
     await emit(route[0][0], route[0][1], 13, 10_000);
     const icon = vehicleMarker(r).findAll((n) => typeof n.type === 'function' && (n.type as { name?: string }).name === 'VehicleIcon')[0];
-    expect(icon.props).toMatchObject({ style: 'offroad', color: 'red', walking: false });
+    expect(icon.props).toMatchObject({ style: 'offroad', color: 'red' }); // drawn as slices when tilted
   });
 
   it('tapping your car on the map opens the avatar picker too', async () => {

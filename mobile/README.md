@@ -566,7 +566,14 @@ development mode is also inherently slower than a real build, and running over
   Maps) a marker can't: react-native-maps' `flat` and `rotation` are
   Google-only there, so the drawing itself is turned by your heading
   relative to the map's heading and laid back in perspective by the map's
-  tilt, with three darker copies stacked just below it for the car's sides.
+  tilt. To show the car's **sides at low angles** it is built by "sprite
+  stacking" (`CarSlices.tsx`): about a dozen horizontal slices (shadow and
+  beams on the road, wheels, body sides darkening towards the road, the car's
+  top at waist height, a graded band of windows, the roof; the race car has
+  tall wheels, a raised helmet and a high wing), each lifted up the screen by
+  its height × sin(tilt) (`avatarPose.sliceLift`). Straight down they line up
+  into the top-down drawing; tilted, the side profile, windows and wheels
+  appear from whichever way the car faces. The arrow stays flat.
   The screen knows the camera it asked for, and re-reads the real camera
   after any map movement (including your own pinch/rotate). The heading
   comes from the GPS, or from your last two positions when it gives none,

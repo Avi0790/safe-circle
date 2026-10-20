@@ -32,8 +32,9 @@ export function avatarPose(platform: string, heading: number, cameraHeading: num
   };
 }
 
-// Screen-space depth for the stacked layers that give a tilted car its
-// sides: none when looking straight down, up to a few pixels when tilted.
-export function sideDepth(tilt: number): number {
-  return Math.round((Math.sin((tilt * Math.PI) / 180) * 7) * 10) / 10;
+// How far up the screen a slice of the car at height z (drawing units) is
+// drawn: nothing looking straight down, more the lower the viewing angle.
+// That shift is what shows the car's sides (components/CarSlices.tsx).
+export function sliceLift(z: number, tilt: number): number {
+  return Math.round(z * Math.sin((tilt * Math.PI) / 180) * 100) / 100;
 }
