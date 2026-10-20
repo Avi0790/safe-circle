@@ -60,6 +60,8 @@ module.exports = {
       // First on purpose: Expo runs entitlement steps last-plugin-first, so
       // this one runs after expo-notifications has added the push entitlement.
       withPushOnlyWhenPaid,
+      // iOS 27 requires the scene lifecycle; Expo 57's template lacks it.
+      './plugins/withSceneLifecycle',
       'expo-router',
       'expo-status-bar',
       [
