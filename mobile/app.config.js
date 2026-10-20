@@ -5,6 +5,22 @@ const path = require('path');
 // EXPO_PUBLIC_SUPABASE_URL / EXPO_PUBLIC_SUPABASE_ANON_KEY per-package.
 const rootEnv = dotenv.config({ path: path.resolve(__dirname, '..', '.env') }).parsed ?? {};
 
+// Push notifications need Apple's paid developer program: a free Personal
+// Team can't sign an app that asks for them ("Personal development teams ...
+// do not support the Push Notifications capability"). So the push entitlement
+// is left out unless SAFECIRCLE_PUSH=1, which eas.json sets for its builds.
+// Without it the app still runs; only remote push (SOS, arrival alerts) is
+// unavailable, and the app says so when you try to turn push on. On-phone
+// reminders (walk, check-in) are local notifications and still work.
+const { withEntitlementsPlist } = require('expo/config-plugins');
+const withPushOnlyWhenPaid = (config) =>
+  process.env.SAFECIRCLE_PUSH === '1'
+    ? config
+    : withEntitlementsPlist(config, (c) => {
+        delete c.modResults['aps-environment'];
+        return c;
+      });
+
 module.exports = {
   expo: {
     name: 'Safe Circle',
@@ -16,6 +32,11 @@ module.exports = {
     icon: './assets/icon.png',
     userInterfaceStyle: 'automatic',
     ios: {
+      // The app's unique name on iOS; needed to build it in Xcode.
+      bundleIdentifier: 'com.surendrabk.safecircle',
+      // Signing team (Xcode → Settings → Apple Accounts). Not a secret: it's in
+      // every app signed with it.
+      appleTeamId: 'W7PA9ZY7S9',
       supportsTablet: true,
       infoPlist: {
         NSLocationWhenInUseUsageDescription:
@@ -23,6 +44,7 @@ module.exports = {
       },
     },
     android: {
+      package: 'com.surendrabk.safecircle',
       adaptiveIcon: {
         backgroundColor: '#E6F4FE',
         foregroundImage: './assets/android-icon-foreground.png',
@@ -35,6 +57,9 @@ module.exports = {
       favicon: './assets/favicon.png',
     },
     plugins: [
+      // First on purpose: Expo runs entitlement steps last-plugin-first, so
+      // this one runs after expo-notifications has added the push entitlement.
+      withPushOnlyWhenPaid,
       'expo-router',
       'expo-status-bar',
       [
