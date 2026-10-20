@@ -560,10 +560,17 @@ development mode is also inherently slower than a real build, and running over
   bubble bottom-left; and a dark sheet with the time left in green, distance
   and arrival, and a red Exit. While navigating you're a **vehicle** instead
   of the blue dot (`components/VehicleIcon.tsx`, `VehicleMarker.tsx`):
-  arrow, car, SUV or pickup in five colours, drawn from plain views (no SVG
-  dependency), lying flat on the map and turned to your heading. The heading
+  the avatar you pick (below), **tilting and turning with the map**
+  (`lib/avatarPose.ts`, `TiltedAvatar.tsx`, `VehicleMarker.tsx`). On Android
+  (Google Maps) the marker lies flat on the map natively. On iPhone (Apple
+  Maps) a marker can't: react-native-maps' `flat` and `rotation` are
+  Google-only there, so the drawing itself is turned by your heading
+  relative to the map's heading and laid back in perspective by the map's
+  tilt, with three darker copies stacked just below it for the car's sides.
+  The screen knows the camera it asked for, and re-reads the real camera
+  after any map movement (including your own pinch/rotate). The heading
   comes from the GPS, or from your last two positions when it gives none,
-  and is kept when you stop (`lib/vehiclePreference.ts`, per device).
+  and is kept when you stop (`lib/vehiclePreference.ts`).
   Walking shows a green walker arrow.
 - **Choose driving avatar** (`components/AvatarPicker.tsx`), like Google
   Maps': opened from Options → Driving avatar or by tapping your car on the

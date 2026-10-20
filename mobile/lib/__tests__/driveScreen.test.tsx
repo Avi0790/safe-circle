@@ -20,6 +20,7 @@ const mockFetch = jest.fn();
 const mockRpc = jest.fn();
 const mockPush = jest.fn();
 const mockAnimate = jest.fn();
+const mockCamera: { current: { heading: number; pitch: number } } = { current: { heading: 0, pitch: 0 } };
 const mockFit = jest.fn();
 const mockReports: { current: unknown[] } = { current: [] };
 // What Nominatim's reverse lookup says about the road you're on (speed limits).
@@ -85,15 +86,15 @@ jest.mock('react-native-maps', () => {
   const R = require('react');
   const { View } = require('react-native');
   const MapView = R.forwardRef(
-    (p: { children?: unknown; showsUserLocation?: boolean; onMapReady?: () => void }, ref: React.Ref<unknown>) => {
-    R.useImperativeHandle(ref, () => ({ animateCamera: mockAnimate, fitToCoordinates: mockFit }));
+    (p: { children?: unknown; showsUserLocation?: boolean; onMapReady?: () => void; onRegionChangeComplete?: () => void }, ref: React.Ref<unknown>) => {
+    R.useImperativeHandle(ref, () => ({ animateCamera: mockAnimate, fitToCoordinates: mockFit, getCamera: async () => mockCamera.current }));
     // A real map reports when it's ready; the screen waits for that before moving the camera.
     R.useEffect(() => {
       p.onMapReady?.();
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
     // Rendered (not null) so the vehicle marker and the map's props can be checked.
-    return R.createElement(View, { testID: 'map', showsUserLocation: p.showsUserLocation }, p.children);
+    return R.createElement(View, { testID: 'map', showsUserLocation: p.showsUserLocation, onRegionChangeComplete: p.onRegionChangeComplete }, p.children);
   },
   );
   const Marker = (p: Record<string, unknown>) => R.createElement(View, { ...p, testID: 'marker' });
@@ -1018,20 +1019,47 @@ describe('Drive screen: Google-style navigation view', () => {
     });
   }
 
+  // How the car is drawn (iOS: Apple Maps can't rotate or flatten markers, so
+  // the drawing itself is turned and tilted, lib/avatarPose.ts).
+  const pose = (r: ReactTestRenderer) => {
+    const top = r.root.findAll((n) => n.props.testID === 'avatar-top' && typeof n.type !== 'string')[0];
+    const t = (top.props.style.transform as Record<string, string>[]).reduce((a, x) => ({ ...a, ...x }), {} as Record<string, string>);
+    return { rotate: parseFloat(t.rotateZ), tilt: parseFloat(t.rotateX) };
+  };
+
   it('uses the GPS heading when the phone has one', async () => {
     const r = await startDrive();
+    await press(r, 'Heading up'); // north up, so the car has to point its own way
     await emit(route[1][0], route[1][1], 13, 10_000); // the fake GPS reports heading 90
-    expect(vehicleMarker(r).props.rotation).toBe(90);
+    expect(pose(r).rotate).toBe(90);
+  });
+
+  it('heading up: the map turns, so the car points up the screen; tilted like the map', async () => {
+    const r = await startDrive();
+    await emit(route[1][0], route[1][1], 13, 10_000);
+    expect(pose(r)).toEqual({ rotate: 0, tilt: 45 });
+    expect(vehicleMarker(r).props.rotation).toBeUndefined(); // Google-only on iOS: not relied on
+  });
+
+  it('follows the map when it is turned or tilted by hand', async () => {
+    const r = await startDrive();
+    await press(r, 'Heading up'); // north up
+    await emit(route[1][0], route[1][1], 13, 10_000);
+    mockCamera.current = { heading: 30, pitch: 20 };
+    await act(async () => {
+      map(r).props.onRegionChangeComplete?.();
+      await Promise.resolve();
+    });
+    expect(pose(r)).toEqual({ rotate: 60, tilt: 20 }); // 90 heading on a map turned 30°
   });
 
   it('you are a vehicle that turns with your heading, not the blue dot', async () => {
     const r = await startDrive();
     expect(map(r).props.showsUserLocation).toBe(false);
+    await press(r, 'Heading up'); // north up, so the drawing shows the real direction
     for (let i = 0; i < 6; i++) await emitNoHeading(route[i][0], route[i][1], 13, 10_000 + i * 1_000);
-    const m = vehicleMarker(r);
-    expect(m).toBeDefined();
-    expect(m.props.flat).toBe(true);
-    expect(typeof m.props.rotation).toBe('number');
+    expect(vehicleMarker(r)).toBeDefined();
+    const rotation = ((pose(r).rotate % 360) + 360) % 360;
     // the marker points along the road, i.e. towards the next position
     const [lon0, lat0] = route[4];
     const [lon1, lat1] = route[5];
@@ -1040,15 +1068,17 @@ describe('Drive screen: Google-style navigation view', () => {
       Math.cos((lat0 * Math.PI) / 180) * Math.sin((lat1 * Math.PI) / 180) -
         Math.sin((lat0 * Math.PI) / 180) * Math.cos((lat1 * Math.PI) / 180) * Math.cos(((lon1 - lon0) * Math.PI) / 180),
     ) * 180) / Math.PI + 360) % 360;
-    expect(Math.abs(m.props.rotation - expected)).toBeLessThan(5);
+    expect(Math.abs(rotation - expected)).toBeLessThan(5);
   });
 
   it('keeps pointing the way you were going when you stop', async () => {
     const r = await startDrive();
-    for (let i = 0; i < 6; i++) await emit(route[i][0], route[i][1], 13, 10_000 + i * 1_000);
-    const before = vehicleMarker(r).props.rotation;
+    await press(r, 'Heading up'); // north up
+    for (let i = 0; i < 6; i++) await emitNoHeading(route[i][0], route[i][1], 13, 10_000 + i * 1_000);
+    const before = pose(r).rotate;
+    expect(before).not.toBe(0);
     await emitNoHeading(route[5][0], route[5][1], 0, 20_000); // stopped at a light
-    expect(vehicleMarker(r).props.rotation).toBe(before);
+    expect(pose(r).rotate).toBe(before);
   });
 
   it('opens Choose driving avatar from the options card; Done saves the avatar and colour', async () => {

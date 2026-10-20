@@ -37,6 +37,7 @@ export function VehicleIcon({
   walking = false,
   lights = true,
   size = 1,
+  variant = 'full',
 }: {
   style: VehicleStyle;
   color: VehicleColor;
@@ -44,6 +45,9 @@ export function VehicleIcon({
   lights?: boolean;
   // 1 = map size; previews can draw it bigger
   size?: number;
+  // 'side': just the solid, darker body outline, stacked under a tilted car
+  // to give it sides (VehicleMarker.tsx)
+  variant?: 'full' | 'side';
 }) {
   const uid = useId().replace(/[^a-zA-Z0-9]/g, '');
   const hex = vehicleHex(color);
@@ -73,6 +77,31 @@ export function VehicleIcon({
 
   const w = VW * size;
   const h = VH * size;
+
+  if (variant === 'side') {
+    const side = shade(hex, -0.6);
+    if (style === 'race') {
+      const y0 = CY - 28;
+      return (
+        <Svg width={w} height={h} viewBox={`0 0 ${VW} ${VH}`}>
+          <Path
+            d={`M${CX} ${y0} Q${CX + 4} ${y0 + 4} ${CX + 4} ${y0 + 16} L${CX + 10} ${y0 + 30} L${CX + 10} ${y0 + 50} Q${CX} ${y0 + 56} ${CX - 10} ${y0 + 50} L${CX - 10} ${y0 + 30} L${CX - 4} ${y0 + 16} Q${CX - 4} ${y0 + 4} ${CX} ${y0} Z`}
+            fill={side}
+          />
+          <Rect x={CX - 19} y={y0 + 8} width="38" height="12" rx="3" fill="#050506" />
+          <Rect x={CX - 19} y={y0 + 38} width="38" height="14" rx="3" fill="#050506" />
+        </Svg>
+      );
+    }
+    const sh = SHAPES[style];
+    return (
+      <Svg width={w} height={h} viewBox={`0 0 ${VW} ${VH}`}>
+        <Rect x={CX - sh.W / 2 - 1.5} y={CY - sh.L / 2 + sh.L * 0.15} width={sh.W + 3} height="10" rx="2" fill="#050506" />
+        <Rect x={CX - sh.W / 2 - 1.5} y={CY - sh.L / 2 + sh.L * 0.72} width={sh.W + 3} height="10" rx="2" fill="#050506" />
+        <Rect x={CX - sh.W / 2} y={CY - sh.L / 2} width={sh.W} height={sh.L} rx={sh.r} fill={side} />
+      </Svg>
+    );
+  }
 
   if (style === 'race') {
     const accent = shade(hex, -0.45);

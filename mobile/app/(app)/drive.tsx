@@ -127,6 +127,9 @@ export default function DriveScreen() {
   const [heading, setHeading] = useState(0);
   const [cameraMode, setCameraMode] = useState<CameraMode>('heading');
   const [avatarOpen, setAvatarOpen] = useState(false);
+  // Which way the map itself points and how far it's tilted, so your avatar
+  // can turn and tilt with it (Apple Maps can't do that for a marker).
+  const [mapCam, setMapCam] = useState({ heading: 0, pitch: 0 });
   const lastFollowMode = useRef<'heading' | 'north'>('heading');
   // The posted limit of the road you're on, when the map has one.
   const [speedLimit, setSpeedLimit] = useState<number | null>(null);
@@ -454,11 +457,18 @@ export default function DriveScreen() {
     if (phase !== 'driving' || !mapReady || !fix || cameraMode === 'overview') return;
     const walking = mode === 'walk';
     const moving = (speedMps ?? 0) >= (walking ? 0.6 : 1);
+    const camHeading = cameraMode === 'north' ? 0 : moving ? heading : undefined;
+    const camPitch = walking ? 0 : 45;
+    setMapCam((c) =>
+      c.pitch === camPitch && (camHeading == null || c.heading === camHeading)
+        ? c
+        : { heading: camHeading ?? c.heading, pitch: camPitch },
+    );
     mapRef.current?.animateCamera(
       {
         center: { latitude: fix.latitude, longitude: fix.longitude },
-        heading: cameraMode === 'north' ? 0 : moving ? heading : undefined,
-        pitch: walking ? 0 : 45,
+        heading: camHeading,
+        pitch: camPitch,
         zoom: walking ? 18 : 17,
         altitude: walking ? 300 : 700,
       },
@@ -1041,6 +1051,14 @@ export default function DriveScreen() {
           showsUserLocation={phase !== 'driving'}
           showsCompass={false}
           onMapReady={() => setMapReady(true)}
+          // The map may have been turned or tilted by a gesture or an overview:
+          // read where it really points now.
+          onRegionChangeComplete={() => {
+            mapRef.current
+              ?.getCamera?.()
+              .then((c) => setMapCam((m) => (m.heading === c.heading && m.pitch === c.pitch ? m : { heading: c.heading, pitch: c.pitch })))
+              .catch(() => {});
+          }}
         >
           <Polyline coordinates={prepared.route.coords} strokeColor={colors.accent} strokeWidth={6} />
           <Marker coordinate={dest} title={dest.title} />
@@ -1048,6 +1066,8 @@ export default function DriveScreen() {
             <VehicleMarker
               position={fix}
               heading={heading}
+              cameraHeading={mapCam.heading}
+              cameraPitch={mapCam.pitch}
               style={vehicle.style}
               color={vehicle.color}
               walking={mode === 'walk'}
