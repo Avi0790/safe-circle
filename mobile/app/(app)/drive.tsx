@@ -9,6 +9,8 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Button } from '@/components/Button';
 import { DriveHud } from '@/components/DriveHud';
 import { DrivePanel } from '@/components/DrivePanel';
+import type { CameraMode } from '@/components/DriveHud';
+import { VehicleMarker } from '@/components/VehicleMarker';
 import { useRoadReports } from '@/hooks/useRoadReports';
 import { TextField } from '@/components/TextField';
 import { useAuth } from '@/contexts/AuthContext';
@@ -22,6 +24,7 @@ import {
   formatArrivalClock,
   formatNavDistance,
   formatNavDuration,
+  maneuverGlyph,
   navState,
   nextAnnouncement,
   OFF_ROUTE_METERS,
@@ -51,6 +54,7 @@ import { ensureSharingFor } from '@/lib/sharingWindow';
 import { reportIncident, reportInfo, upcomingReport, type RoadReport, type RoadReportKind } from '@/lib/roadReports';
 import { searchStops, STOP_CATEGORIES, type StopCategory, type StopResult } from '@/lib/stops';
 import { getVoiceMode, setVoiceMode, shouldSpeak, type SpeechKind, type VoiceMode } from '@/lib/voicePreference';
+import { DEFAULT_VEHICLE, getVehicle, nextHeading, setVehicle, type VehiclePreference } from '@/lib/vehiclePreference';
 import { colors, radius, spacing, typography } from '@/lib/theme';
 
 type Phase = 'plan' | 'preview' | 'driving' | 'arrived';
@@ -113,7 +117,13 @@ export default function DriveScreen() {
   const [error, setError] = useState<string | null>(null);
   const [nav, setNav] = useState<NavState | null>(null);
   const [voiceMode, setVoiceModeState] = useState<VoiceMode>('all');
-  const [panel, setPanel] = useState<null | 'main' | 'stops'>(null);
+  const [panel, setPanel] = useState<null | 'main' | 'stops' | 'report'>(null);
+  // How you appear on the map while navigating, which way you're facing, and
+  // how the camera follows you (heading up, north up, or the whole route).
+  const [vehicle, setVehicleState] = useState<VehiclePreference>(DEFAULT_VEHICLE);
+  const [heading, setHeading] = useState(0);
+  const [cameraMode, setCameraMode] = useState<CameraMode>('heading');
+  const lastFollowMode = useRef<'heading' | 'north'>('heading');
   const [reporting, setReporting] = useState(false);
   const [linkShared, setLinkShared] = useState(false);
   const [stop, setStop] = useState<(StopResult & { emoji: string }) | null>(null);
@@ -365,6 +375,7 @@ export default function DriveScreen() {
         }
       }
       setSpeedMps((p) => smoothSpeed(p, raw ?? 0));
+      setHeading((h) => nextHeading(h, { ...f, speed: raw ?? f.speed }, prev));
       prevFix.current = f;
       fixRef.current = f;
       setFix(f);
@@ -417,23 +428,64 @@ export default function DriveScreen() {
     [],
   );
 
-  // The camera follows you, turned to your heading once you are moving. A
-  // walker is slower, closer to the ground and looking straight down.
+  // The camera follows you, turned to your heading once you are moving (or
+  // kept north-up if you chose that). A walker is slower, closer to the
+  // ground and looking straight down. In route overview it stays put.
   useEffect(() => {
-    if (phase !== 'driving' || !mapReady || !fix) return;
+    if (phase !== 'driving' || !mapReady || !fix || cameraMode === 'overview') return;
     const walking = mode === 'walk';
     const moving = (speedMps ?? 0) >= (walking ? 0.6 : 1);
     mapRef.current?.animateCamera(
       {
         center: { latitude: fix.latitude, longitude: fix.longitude },
-        heading: moving && fix.heading != null && fix.heading >= 0 ? fix.heading : undefined,
+        heading: cameraMode === 'north' ? 0 : moving ? heading : undefined,
         pitch: walking ? 0 : 45,
         zoom: walking ? 18 : 17,
         altitude: walking ? 300 : 700,
       },
       { duration: 700 },
     );
-  }, [phase, mapReady, fix, speedMps, mode]);
+  }, [phase, mapReady, fix, speedMps, mode, cameraMode, heading]);
+
+  useEffect(() => {
+    let cancelled = false;
+    getVehicle().then((v) => {
+      if (!cancelled) setVehicleState(v);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  function chooseVehicle(v: VehiclePreference) {
+    setVehicleState(v);
+    setVehicle(v);
+  }
+
+  // The compass: heading up <-> north up (and back from the overview).
+  function toggleCompass() {
+    const next = cameraMode === 'heading' ? 'north' : 'heading';
+    lastFollowMode.current = next;
+    setCameraMode(next);
+  }
+
+  // Route overview: the rest of the route on one screen; tap again to follow.
+  function toggleOverview() {
+    if (cameraMode === 'overview') {
+      setCameraMode(lastFollowMode.current);
+      return;
+    }
+    const prep = preparedRef.current;
+    if (!prep) return;
+    const along = alongHint.current ?? 0;
+    const ahead = prep.route.coords.filter((_, i) => prep.cum[i] >= along);
+    const points = fixRef.current ? [fixRef.current, ...ahead] : ahead;
+    setCameraMode('overview');
+    mapRef.current?.fitToCoordinates(points.length > 1 ? points : prep.route.coords, {
+      edgePadding: { top: 220, right: 90, bottom: 240, left: 60 },
+      animated: true,
+    });
+  }
 
   // ---------------------------------------------------------------- plan
   useEffect(() => {
@@ -950,7 +1002,9 @@ export default function DriveScreen() {
   // route line carry over without remounting.
   const remainingM = nav?.remainingM ?? prepared?.totalM ?? 0;
   const remainingS = nav?.remainingS ?? prepared?.route.durationS ?? 0;
-  const nextStep = prepared && nav ? prepared.route.steps[nav.nextStepIndex] : prepared?.route.steps[1];
+  const nextIndex = nav ? nav.nextStepIndex : 1;
+  const nextStep = prepared?.route.steps[nextIndex];
+  const thenStep = prepared?.route.steps[nextIndex + 1];
 
   return (
     <View style={styles.full}>
@@ -961,12 +1015,22 @@ export default function DriveScreen() {
           provider={PROVIDER_DEFAULT}
           style={StyleSheet.absoluteFill}
           initialRegion={region}
-          showsUserLocation
+          // While navigating you're the vehicle marker instead of the dot.
+          showsUserLocation={phase !== 'driving'}
           showsCompass={false}
           onMapReady={() => setMapReady(true)}
         >
           <Polyline coordinates={prepared.route.coords} strokeColor={colors.accent} strokeWidth={6} />
           <Marker coordinate={dest} title={dest.title} />
+          {phase === 'driving' && fix && (
+            <VehicleMarker
+              position={fix}
+              heading={heading}
+              style={vehicle.style}
+              color={vehicle.color}
+              walking={mode === 'walk'}
+            />
+          )}
           {stop && (
             <Marker coordinate={stop} title={`Stop: ${stop.title}`}>
               <Text style={styles.mapEmoji}>{stop.emoji}</Text>
@@ -1060,6 +1124,14 @@ export default function DriveScreen() {
           bottomInset={insets.bottom}
           onToggleMute={toggleMute}
           onMore={() => setPanel('main')}
+          glyph={maneuverGlyph(nextStep ?? { type: 'continue' })}
+          thenGlyph={thenStep ? maneuverGlyph(thenStep) : null}
+          voiceMode={voiceMode}
+          cameraMode={cameraMode}
+          onCompass={toggleCompass}
+          onOverview={toggleOverview}
+          onSearch={() => setPanel('stops')}
+          onReport={() => setPanel('report')}
           onEnd={endDriving}
         />
       )}
@@ -1067,6 +1139,8 @@ export default function DriveScreen() {
       {phase === 'driving' && panel && (
         <DrivePanel
           view={panel}
+          vehicle={vehicle}
+          onVehicle={chooseVehicle}
           bottomInset={insets.bottom}
           voiceMode={voiceMode}
           onVoiceMode={chooseVoice}

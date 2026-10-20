@@ -550,7 +550,22 @@ development mode is also inherently slower than a real build, and running over
   directions (Apple Maps `dirflg=r`; on Android a Google Maps universal link,
   since `google.navigation:` has no transit option). The typing lock for a
   moving vehicle doesn't apply, since you're a passenger.
-- **Options while navigating** (tap the trip summary, "⌃ Options";
+- **Navigation view** (`components/DriveHud.tsx`), laid out like Google
+  Maps: the next turn in a green card with its arrow
+  (`navigation.maneuverGlyph`: ↱ ↰ ↗ ↖ ↻ 🏁 …) and a "Then" tab for the turn
+  after; status pills under it (incident ahead, sharing, live link, via a
+  stop); round buttons down the right (compass: heading up / north up;
+  🔍 add a stop; sound: quick mute; route overview, which shows the rest of
+  the route and stops following until Re-center) and a Report pill; a speed
+  bubble bottom-left; and a dark sheet with the time left in green, distance
+  and arrival, and a red Exit. While navigating you're a **vehicle** instead
+  of the blue dot (`components/VehicleIcon.tsx`, `VehicleMarker.tsx`):
+  arrow, car, SUV or pickup in five colours, drawn from plain views (no SVG
+  dependency), lying flat on the map and turned to your heading. The heading
+  comes from the GPS, or from your last two positions when it gives none,
+  and is kept when you stop (`lib/vehiclePreference.ts`, per device).
+  Walking shows a green walker arrow.
+- **Options while navigating** (tap the bottom sheet;
   `components/DrivePanel.tsx`), modelled on Apple Maps:
   - **Audio** (`lib/voicePreference.ts`): All voice / Alerts only / No voice,
     remembered per device. Alerts only keeps just an incident ahead and

@@ -18,6 +18,8 @@ const mockStart = { latitude: 35.8423, longitude: -90.7043 };
 const mockFetch = jest.fn();
 const mockRpc = jest.fn();
 const mockPush = jest.fn();
+const mockAnimate = jest.fn();
+const mockFit = jest.fn();
 const mockReports: { current: unknown[] } = { current: [] };
 const mockUser: { current: null | string } = { current: null };
 const mockCircle: { current: null | { id: string; name: string } } = { current: null };
@@ -78,11 +80,21 @@ jest.mock('expo-location', () => ({
 }));
 jest.mock('react-native-maps', () => {
   const R = require('react');
-  const MapView = R.forwardRef((_p: unknown, ref: React.Ref<unknown>) => {
-    R.useImperativeHandle(ref, () => ({ animateCamera: jest.fn() }));
-    return null;
-  });
-  return { __esModule: true, default: MapView, Marker: () => null, Polyline: () => null, PROVIDER_DEFAULT: 'default' };
+  const { View } = require('react-native');
+  const MapView = R.forwardRef(
+    (p: { children?: unknown; showsUserLocation?: boolean; onMapReady?: () => void }, ref: React.Ref<unknown>) => {
+    R.useImperativeHandle(ref, () => ({ animateCamera: mockAnimate, fitToCoordinates: mockFit }));
+    // A real map reports when it's ready; the screen waits for that before moving the camera.
+    R.useEffect(() => {
+      p.onMapReady?.();
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+    // Rendered (not null) so the vehicle marker and the map's props can be checked.
+    return R.createElement(View, { testID: 'map', showsUserLocation: p.showsUserLocation }, p.children);
+  },
+  );
+  const Marker = (p: Record<string, unknown>) => R.createElement(View, { ...p, testID: 'marker' });
+  return { __esModule: true, default: MapView, Marker, Polyline: () => null, PROVIDER_DEFAULT: 'default' };
 });
 
 import DriveScreen from '../../app/(app)/drive';
@@ -140,6 +152,8 @@ beforeEach(async () => {
   mockFetch.mockReset();
   mockRpc.mockReset();
   mockPush.mockReset();
+  mockAnimate.mockClear();
+  mockFit.mockClear();
   mockReports.current = [];
   mockTracking.active = true;
   mockTracking.start.mockClear();
@@ -285,7 +299,7 @@ describe('Drive screen', () => {
     await act(async () => {
       await Promise.resolve();
     });
-    await press(r, 'End');
+    await press(r, 'End navigation'); // the Exit button
     expect(allText(r)).toContain('Where to?');
   });
 });
@@ -370,7 +384,7 @@ describe('Drive screen: sharing the trip with the circle', () => {
     await act(async () => {
       await Promise.resolve();
     });
-    await press(r, 'End');
+    await press(r, 'End navigation'); // the Exit button
     expect(calls('end_shared_trip')).toHaveLength(1);
     expect(calls('end_shared_trip')[0][1]).toEqual({ p_trip: 'trip-1', p_arrived: false });
   });
@@ -958,5 +972,147 @@ describe('Drive screen: Share ETA with anyone (outside the app)', () => {
     expect(share).not.toHaveBeenCalled();
     expect(allText(r)).not.toContain('Live ETA link on');
     share.mockRestore();
+  });
+});
+
+describe('Drive screen: Google-style navigation view', () => {
+  const vehicleMarker = (r: ReactTestRenderer) =>
+    r.root.findAll((n) => n.props.testID === 'marker' && n.props.title === 'You' && typeof n.type !== 'string')[0];
+  const map = (r: ReactTestRenderer) => r.root.findAll((n) => n.props.testID === 'map' && typeof n.type !== 'string')[0];
+
+  async function startDrive(): Promise<ReactTestRenderer> {
+    const r = await mountAndPlan();
+    await search(r, 'walmart');
+    await press(r, 'Walmart Supercenter');
+    await press(r, 'Start');
+    await act(async () => {
+      await Promise.resolve();
+    });
+    return r;
+  }
+
+  it('shows the next turn big with its arrow, the one after it, time, distance, arrival and Exit', async () => {
+    const r = await startDrive();
+    for (let i = 0; i < 20; i++) await emit(route[i][0], route[i][1], 13, 10_000 + i * 1_000);
+    const t = allText(r);
+    expect(t).toMatch(/[↑↱↰↗↖↘↙↶↻🏁]/); // a turn arrow in the green card
+    expect(t).toContain('Then');
+    expect(t).toMatch(/\d+ min/);
+    expect(t).toMatch(/mi · arrive \d{1,2}:\d{2}/);
+    expect(t).toContain('Exit');
+    expect(t).toContain('Report');
+  });
+
+  // A fix whose GPS gives no heading (-1), so the screen works it out from movement.
+  async function emitNoHeading(lon: number, lat: number, speed: number, t: number) {
+    await act(async () => {
+      mockWatchers.filter((w) => !w.removed).forEach((w) =>
+        w.cb({ coords: { latitude: lat, longitude: lon, speed, heading: -1 }, timestamp: t }),
+      );
+    });
+  }
+
+  it('uses the GPS heading when the phone has one', async () => {
+    const r = await startDrive();
+    await emit(route[1][0], route[1][1], 13, 10_000); // the fake GPS reports heading 90
+    expect(vehicleMarker(r).props.rotation).toBe(90);
+  });
+
+  it('you are a vehicle that turns with your heading, not the blue dot', async () => {
+    const r = await startDrive();
+    expect(map(r).props.showsUserLocation).toBe(false);
+    for (let i = 0; i < 6; i++) await emitNoHeading(route[i][0], route[i][1], 13, 10_000 + i * 1_000);
+    const m = vehicleMarker(r);
+    expect(m).toBeDefined();
+    expect(m.props.flat).toBe(true);
+    expect(typeof m.props.rotation).toBe('number');
+    // the marker points along the road, i.e. towards the next position
+    const [lon0, lat0] = route[4];
+    const [lon1, lat1] = route[5];
+    const expected = ((Math.atan2(
+      Math.sin(((lon1 - lon0) * Math.PI) / 180) * Math.cos((lat1 * Math.PI) / 180),
+      Math.cos((lat0 * Math.PI) / 180) * Math.sin((lat1 * Math.PI) / 180) -
+        Math.sin((lat0 * Math.PI) / 180) * Math.cos((lat1 * Math.PI) / 180) * Math.cos(((lon1 - lon0) * Math.PI) / 180),
+    ) * 180) / Math.PI + 360) % 360;
+    expect(Math.abs(m.props.rotation - expected)).toBeLessThan(5);
+  });
+
+  it('keeps pointing the way you were going when you stop', async () => {
+    const r = await startDrive();
+    for (let i = 0; i < 6; i++) await emit(route[i][0], route[i][1], 13, 10_000 + i * 1_000);
+    const before = vehicleMarker(r).props.rotation;
+    await emitNoHeading(route[5][0], route[5][1], 0, 20_000); // stopped at a light
+    expect(vehicleMarker(r).props.rotation).toBe(before);
+  });
+
+  it('lets you pick the vehicle and its colour, remembered on this phone', async () => {
+    const r = await startDrive();
+    await press(r, 'More options');
+    expect(allText(r)).toContain('Your vehicle');
+    await press(r, 'Vehicle: SUV');
+    await press(r, 'Colour: Red');
+    expect(JSON.parse((await AsyncStorage.getItem('safecircle.vehicle.v1'))!)).toEqual({ style: 'suv', color: 'red' });
+    await press(r, 'Done');
+    await emit(route[0][0], route[0][1], 13, 10_000);
+    const icon = vehicleMarker(r).findAll((n) => typeof n.type === 'function' && (n.type as { name?: string }).name === 'VehicleIcon')[0];
+    expect(icon.props).toMatchObject({ style: 'suv', color: 'red', walking: false });
+  });
+
+  it('the compass switches between heading up and north up', async () => {
+    const r = await startDrive();
+    for (let i = 0; i < 6; i++) await emit(route[i][0], route[i][1], 13, 10_000 + i * 1_000);
+    const headingUp = mockAnimate.mock.calls[mockAnimate.mock.calls.length - 1][0];
+    expect(headingUp.heading).not.toBe(0);
+    await press(r, 'Heading up');
+    await emit(route[6][0], route[6][1], 13, 20_000);
+    expect(mockAnimate.mock.calls[mockAnimate.mock.calls.length - 1][0].heading).toBe(0);
+    await press(r, 'North up');
+    await emit(route[7][0], route[7][1], 13, 21_000);
+    expect(mockAnimate.mock.calls[mockAnimate.mock.calls.length - 1][0].heading).not.toBe(0);
+  });
+
+  it('route overview shows the rest of the route and stops following; Re-center follows again', async () => {
+    const r = await startDrive();
+    for (let i = 0; i < 6; i++) await emit(route[i][0], route[i][1], 13, 10_000 + i * 1_000);
+    await press(r, 'Route overview');
+    expect(mockFit).toHaveBeenCalledTimes(1);
+    expect((mockFit.mock.calls[0][0] as unknown[]).length).toBeGreaterThan(10);
+    const followed = mockAnimate.mock.calls.length;
+    await emit(route[6][0], route[6][1], 13, 20_000);
+    expect(mockAnimate.mock.calls.length).toBe(followed); // the camera stays on the overview
+    await press(r, 'Re-center');
+    await emit(route[7][0], route[7][1], 13, 21_000);
+    expect(mockAnimate.mock.calls.length).toBeGreaterThan(followed);
+  });
+
+  it('the search button goes straight to adding a stop, and the Report pill to the incident buttons', async () => {
+    const r = await startDrive();
+    await press(r, 'Add a stop');
+    expect(allText(r)).toContain('Gas');
+    expect(allText(r)).toContain('Coffee');
+    await press(r, 'Back');
+    await press(r, 'Done');
+    await emit(route[0][0], route[0][1], 13, 10_000);
+    await press(r, 'Report an incident');
+    const t = allText(r);
+    expect(t).toContain('Crash');
+    expect(t).toContain('Road closed');
+    expect(t).not.toContain('Audio'); // just the report buttons
+    await press(r, 'Report Hazard');
+    expect(mockRpc.mock.calls.some((c) => c[0] === 'report_road_incident' && c[1].p_kind === 'hazard')).toBe(true);
+  });
+
+  it('walking shows a walker arrow instead of the vehicle', async () => {
+    const r = await mountAndPlan();
+    await press(r, 'Walk');
+    await search(r, 'walmart');
+    await press(r, 'Walmart Supercenter');
+    await press(r, 'Start');
+    await act(async () => {
+      await Promise.resolve();
+    });
+    await emit(footFixture.routes[0].geometry.coordinates[0][0], footFixture.routes[0].geometry.coordinates[0][1], 1.4, 10_000);
+    const icon = vehicleMarker(r).findAll((n) => typeof n.type === 'function' && (n.type as { name?: string }).name === 'VehicleIcon')[0];
+    expect(icon.props.walking).toBe(true);
   });
 });

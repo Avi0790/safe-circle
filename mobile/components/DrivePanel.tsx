@@ -4,12 +4,17 @@ import { ROAD_REPORT_KINDS, type RoadReportKind } from '@/lib/roadReports';
 import { STOP_CATEGORIES, type StopCategory, type StopResult } from '@/lib/stops';
 import { colors, radius, spacing, typography } from '@/lib/theme';
 import { VOICE_MODES, type VoiceMode } from '@/lib/voicePreference';
+import { VEHICLE_COLORS, VEHICLE_STYLES, type VehiclePreference } from '@/lib/vehiclePreference';
+import { VehicleIcon } from '@/components/VehicleIcon';
 
 // The card that slides up over navigation, like Apple Maps': audio, Share
 // ETA, report an incident, add a stop, end the route. Everything is one or two
 // big taps: nothing here asks for typing while driving.
 export interface DrivePanelProps {
-  view: 'main' | 'stops';
+  // 'report' is the Report pill's shortcut straight to the incident buttons
+  view: 'main' | 'stops' | 'report';
+  vehicle?: VehiclePreference;
+  onVehicle?: (v: VehiclePreference) => void;
   bottomInset: number;
   voiceMode: VoiceMode;
   onVoiceMode: (mode: VoiceMode) => void;
@@ -41,14 +46,16 @@ export function DrivePanel(p: DrivePanelProps) {
   return (
     <View style={[styles.sheet, { paddingBottom: p.bottomInset + spacing.md }]}>
       <View style={styles.header}>
-        <Text style={typography.heading}>{p.view === 'stops' ? 'Add a stop' : 'Options'}</Text>
+        <Text style={typography.heading}>{p.view === 'stops' ? 'Add a stop' : p.view === 'report' ? 'Report' : 'Options'}</Text>
         <Pressable onPress={p.view === 'stops' ? p.onBack : p.onClose} hitSlop={10} accessibilityRole="button">
           <Text style={styles.close}>{p.view === 'stops' ? 'Back' : 'Done'}</Text>
         </Pressable>
       </View>
 
       <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
-        {p.view === 'stops' ? (
+        {p.view === 'report' ? (
+          <ReportGrid {...p} />
+        ) : p.view === 'stops' ? (
           <>
             <View style={styles.grid}>
               {STOP_CATEGORIES.map((c) => (
@@ -124,23 +131,40 @@ export function DrivePanel(p: DrivePanelProps) {
             )}
 
             <Text style={styles.label}>Report an incident</Text>
-            <View style={styles.grid}>
-              {ROAD_REPORT_KINDS.map((k) => (
-                <Pressable
-                  key={k.kind}
-                  style={styles.tile}
-                  disabled={p.reporting}
-                  onPress={() => p.onReport(k.kind)}
-                  accessibilityLabel={`Report ${k.label}`}
-                >
-                  <Text style={styles.tileEmoji}>{k.emoji}</Text>
-                  <Text style={styles.tileText}>{k.label}</Text>
-                </Pressable>
-              ))}
-            </View>
-            <Text style={typography.caption}>
-              Reported where you are now. Your circle sees it for an hour (3 for a closed road).
-            </Text>
+            <ReportGrid {...p} />
+
+            {p.vehicle && p.onVehicle && (
+              <>
+                <Text style={styles.label}>Your vehicle</Text>
+                <View style={styles.vehicleRow}>
+                  {VEHICLE_STYLES.map(({ style, label }) => (
+                    <Pressable
+                      key={style}
+                      style={[styles.vehicleTile, p.vehicle!.style === style && styles.vehicleTileOn]}
+                      onPress={() => p.onVehicle!({ ...p.vehicle!, style })}
+                      accessibilityLabel={`Vehicle: ${label}`}
+                      accessibilityState={{ selected: p.vehicle!.style === style }}
+                    >
+                      <View style={styles.vehiclePreview}>
+                        <VehicleIcon style={style} color={p.vehicle!.color} />
+                      </View>
+                      <Text style={styles.vehicleLabel}>{label}</Text>
+                    </Pressable>
+                  ))}
+                </View>
+                <View style={styles.swatchRow}>
+                  {VEHICLE_COLORS.map(({ color, hex, label }) => (
+                    <Pressable
+                      key={color}
+                      style={[styles.swatch, { backgroundColor: hex }, p.vehicle!.color === color && styles.swatchOn]}
+                      onPress={() => p.onVehicle!({ ...p.vehicle!, color })}
+                      accessibilityLabel={`Colour: ${label}`}
+                      accessibilityState={{ selected: p.vehicle!.color === color }}
+                    />
+                  ))}
+                </View>
+              </>
+            )}
 
             {p.stopTitle ? (
               <Pressable style={styles.action} onPress={p.onRemoveStop}>
@@ -159,6 +183,32 @@ export function DrivePanel(p: DrivePanelProps) {
         )}
       </ScrollView>
     </View>
+  );
+}
+
+// The four incident buttons and what reporting means; in the Options card and
+// on their own behind the Report pill.
+function ReportGrid(p: DrivePanelProps) {
+  return (
+    <>
+      <View style={styles.grid}>
+        {ROAD_REPORT_KINDS.map((k) => (
+          <Pressable
+            key={k.kind}
+            style={styles.tile}
+            disabled={p.reporting}
+            onPress={() => p.onReport(k.kind)}
+            accessibilityLabel={`Report ${k.label}`}
+          >
+            <Text style={styles.tileEmoji}>{k.emoji}</Text>
+            <Text style={styles.tileText}>{k.label}</Text>
+          </Pressable>
+        ))}
+      </View>
+      <Text style={typography.caption}>
+        Reported where you are now. Your circle sees it for an hour (3 for a closed road).
+      </Text>
+    </>
   );
 }
 
@@ -247,4 +297,21 @@ const styles = StyleSheet.create({
   inline: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   error: { color: colors.danger, fontSize: 14 },
   footnote: { ...typography.caption, marginTop: spacing.xs },
+  vehicleRow: { flexDirection: 'row', gap: spacing.sm },
+  vehicleTile: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: spacing.sm,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.bgElevated,
+    gap: 4,
+  },
+  vehicleTileOn: { borderColor: colors.accent, borderWidth: 2 },
+  vehiclePreview: { height: 58, justifyContent: 'center' },
+  vehicleLabel: { fontSize: 13, fontWeight: '600', color: colors.textHeading },
+  swatchRow: { flexDirection: 'row', gap: spacing.md, paddingVertical: spacing.xs },
+  swatch: { width: 32, height: 32, borderRadius: 16, borderWidth: 2, borderColor: colors.border },
+  swatchOn: { borderColor: colors.accent, borderWidth: 4 },
 });

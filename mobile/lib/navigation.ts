@@ -123,6 +123,32 @@ export function instructionText(step: {
   }
 }
 
+// The arrow drawn beside an instruction, Google-Maps style: ↱ for a right
+// turn, ↖ for a slight left, ↻ for a roundabout, 🏁 for the destination.
+export function maneuverGlyph(step: { type: string; modifier?: string }): string {
+  if (step.type === 'arrive') return '🏁';
+  if (step.type === 'waypoint') return '📍';
+  if (['roundabout', 'rotary', 'roundabout turn', 'exit roundabout', 'exit rotary'].includes(step.type)) return '↻';
+  switch (step.modifier) {
+    case 'uturn':
+      return '↶';
+    case 'sharp right':
+      return '↘';
+    case 'right':
+      return '↱';
+    case 'slight right':
+      return '↗';
+    case 'sharp left':
+      return '↙';
+    case 'left':
+      return '↰';
+    case 'slight left':
+      return '↖';
+    default:
+      return '↑';
+  }
+}
+
 // ---------------------------------------------------------------- geometry
 
 export function cumulativeDistances(coords: LatLng[]): number[] {

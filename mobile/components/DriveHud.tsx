@@ -1,12 +1,20 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import type { TravelMode } from '@/lib/navigation';
-import { colors, radius, spacing } from '@/lib/theme';
+import type { VoiceMode } from '@/lib/voicePreference';
 
-// The driving overlay. Deliberately sparse and large: it is glanced at, not
-// read, and the only things to tap are mute and end.
+// The navigation overlay, laid out like Google Maps: the next turn in a big
+// green card at the top (and the one after it), round buttons down the right
+// edge, your speed bottom-left, and a dark sheet with time, distance and
+// arrival at the bottom. Glanced at, not read: big type, few words, and every
+// button is one tap.
+export type CameraMode = 'heading' | 'north' | 'overview';
+
 export interface DriveHudProps {
   instruction: string;
   distanceToNext: string;
+  // the arrow for the next turn (navigation.maneuverGlyph) and the one after
+  glyph: string;
+  thenGlyph?: string | null;
   speedMph: number | null;
   mode?: TravelMode;
   remainingDistance: string;
@@ -14,6 +22,7 @@ export interface DriveHudProps {
   arrival: string;
   rerouting: boolean;
   muted: boolean;
+  voiceMode?: VoiceMode;
   // e.g. "Family" while this trip is being shared with that circle
   sharingWith?: string | null;
   // a live ETA link is out (Share ETA with anyone)
@@ -28,111 +37,268 @@ export interface DriveHudProps {
   stopTitle?: string | null;
   // e.g. "💥 Crash reported 0.3 mi ahead"
   alert?: string | null;
+  cameraMode?: CameraMode;
+  onCompass?: () => void;
+  onOverview?: () => void;
+  onSearch?: () => void;
+  onReport?: () => void;
   onEnd: () => void;
 }
 
+const SHEET_HEIGHT = 92;
+
 export function DriveHud(p: DriveHudProps) {
+  const overview = p.cameraMode === 'overview';
+  const bottomOfButtons = p.bottomInset + SHEET_HEIGHT + 16;
+
   return (
     <>
-      <View style={[styles.top, { paddingTop: p.topInset + spacing.sm }]}>
-        <Text style={styles.distance}>{p.rerouting ? '…' : p.distanceToNext}</Text>
-        <Text style={styles.instruction} numberOfLines={2}>
-          {p.rerouting ? 'Rerouting…' : p.instruction}
-        </Text>
-        {p.sharingWith ? <Text style={styles.sharing}>👪 Sharing this trip with {p.sharingWith}</Text> : null}
-        {p.linkShared ? <Text style={styles.sharing}>🔗 Live ETA link on, until you arrive</Text> : null}
-        {p.stopTitle ? <Text style={styles.sharing}>Via {p.stopTitle}</Text> : null}
-        {p.alert ? <Text style={styles.alert}>{p.alert}</Text> : null}
-        {p.notice ? <Text style={styles.notice}>{p.notice}</Text> : null}
+      {/* ---------------------------------------------------- next turn */}
+      <View style={[styles.topWrap, { top: p.topInset + 6 }]} pointerEvents="box-none">
+        <View style={styles.card}>
+          <Text style={styles.glyph} accessibilityElementsHidden>
+            {p.rerouting ? '↻' : p.glyph}
+          </Text>
+          <View style={styles.cardText}>
+            <Text style={styles.distance}>{p.rerouting ? '…' : p.distanceToNext}</Text>
+            <Text style={styles.instruction} numberOfLines={2}>
+              {p.rerouting ? 'Rerouting…' : p.instruction}
+            </Text>
+          </View>
+        </View>
+        {p.thenGlyph && !p.rerouting ? (
+          <View style={styles.then}>
+            <Text style={styles.thenText}>Then</Text>
+            <Text style={styles.thenGlyph}>{p.thenGlyph}</Text>
+          </View>
+        ) : null}
+
+        <View style={styles.pills} pointerEvents="none">
+          {p.alert ? <Text style={[styles.pill, styles.pillAlert]}>{p.alert}</Text> : null}
+          {p.sharingWith ? <Text style={styles.pill}>👪 Sharing this trip with {p.sharingWith}</Text> : null}
+          {p.linkShared ? <Text style={styles.pill}>🔗 Live ETA link on, until you arrive</Text> : null}
+          {p.stopTitle ? <Text style={styles.pill}>Via {p.stopTitle}</Text> : null}
+          {p.notice ? <Text style={[styles.pill, styles.pillNotice]}>{p.notice}</Text> : null}
+        </View>
       </View>
 
-      <View style={[styles.bottom, { paddingBottom: p.bottomInset + spacing.sm }]}>
-        <View
-          style={styles.speedBox}
-          accessibilityLabel={`${p.mode === 'walk' ? 'Walking speed' : 'Speed'} ${p.speedMph ?? 0} miles per hour`}
+      {/* ------------------------------------------------- right edge */}
+      <View style={[styles.side, { bottom: bottomOfButtons }]} pointerEvents="box-none">
+        {p.onCompass && (
+          <Pressable
+            style={styles.round}
+            onPress={p.onCompass}
+            accessibilityRole="button"
+            accessibilityLabel={p.cameraMode === 'north' ? 'North up' : 'Heading up'}
+          >
+            <View style={[styles.needle, p.cameraMode === 'north' && styles.needleNorth]}>
+              <View style={styles.needleRed} />
+              <View style={styles.needleWhite} />
+            </View>
+          </Pressable>
+        )}
+        {p.onSearch && (
+          <Pressable style={styles.round} onPress={p.onSearch} accessibilityRole="button" accessibilityLabel="Add a stop">
+            <Text style={styles.roundIcon}>🔍</Text>
+          </Pressable>
+        )}
+        <Pressable
+          style={styles.round}
+          onPress={p.onToggleMute}
+          accessibilityRole="button"
+          accessibilityLabel={p.muted ? 'Unmute voice' : 'Mute voice'}
         >
-          <Text style={styles.speed}>{p.speedMph == null ? '—' : p.mode === 'walk' ? p.speedMph.toFixed(1) : p.speedMph}</Text>
-          <Text style={styles.speedUnit}>mph</Text>
-        </View>
-        <Pressable style={styles.trip} onPress={p.onMore} disabled={!p.onMore} accessibilityLabel="More options" accessibilityRole="button">
-          <Text style={styles.tripMain}>{p.remainingTime}</Text>
-          <Text style={styles.tripSub}>
+          <Text style={styles.roundIcon}>{p.muted ? '🔇' : p.voiceMode === 'alerts' ? '🔉' : '🔊'}</Text>
+        </Pressable>
+        {p.onOverview && (
+          <Pressable
+            style={[styles.round, overview && styles.roundOn]}
+            onPress={p.onOverview}
+            accessibilityRole="button"
+            accessibilityLabel={overview ? 'Re-center' : 'Route overview'}
+          >
+            <Text style={styles.roundIcon}>{overview ? '◎' : '🗺️'}</Text>
+          </Pressable>
+        )}
+        {p.onReport && (
+          <Pressable style={styles.report} onPress={p.onReport} accessibilityRole="button" accessibilityLabel="Report an incident">
+            <Text style={styles.reportIcon}>⚠️</Text>
+            <Text style={styles.reportText}>Report</Text>
+          </Pressable>
+        )}
+      </View>
+
+      {/* ------------------------------------------------------ speed */}
+      <View
+        style={[styles.speed, { bottom: bottomOfButtons }]}
+        accessibilityLabel={`${p.mode === 'walk' ? 'Walking speed' : 'Speed'} ${p.speedMph ?? 0} miles per hour`}
+      >
+        <Text style={styles.speedValue}>{p.speedMph == null ? '—' : p.mode === 'walk' ? p.speedMph.toFixed(1) : p.speedMph}</Text>
+        <Text style={styles.speedUnit}>mph</Text>
+      </View>
+
+      {/* ------------------------------------------------------ sheet */}
+      <View style={[styles.sheet, { paddingBottom: p.bottomInset + 12 }]}>
+        <Pressable
+          style={styles.sheetMain}
+          onPress={p.onMore}
+          disabled={!p.onMore}
+          accessibilityLabel="More options"
+          accessibilityRole="button"
+        >
+          <View style={styles.handle} />
+          <Text style={styles.eta}>{p.remainingTime}</Text>
+          <Text style={styles.etaSub}>
             {p.remainingDistance} · arrive {p.arrival}
           </Text>
-          {p.onMore ? <Text style={styles.more}>⌃ Options</Text> : null}
         </Pressable>
-        <Pressable style={styles.iconButton} onPress={p.onToggleMute} accessibilityLabel={p.muted ? 'Unmute voice' : 'Mute voice'}>
-          <Text style={styles.icon}>{p.muted ? '🔇' : '🔊'}</Text>
-        </Pressable>
-        <Pressable style={[styles.iconButton, styles.endButton]} onPress={p.onEnd} accessibilityLabel="End navigation">
-          <Text style={styles.endText}>End</Text>
+        <Pressable style={styles.exit} onPress={p.onEnd} accessibilityRole="button" accessibilityLabel="End navigation">
+          <Text style={styles.exitText}>Exit</Text>
         </Pressable>
       </View>
     </>
   );
 }
 
+const GREEN = '#0b6e4f';
+const DARK = '#111827';
+
 const styles = StyleSheet.create({
-  top: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: '#0f172a',
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.md,
-    gap: 2,
-  },
-  distance: { color: '#ffffff', fontSize: 34, fontWeight: '800' },
-  instruction: { color: '#e2e8f0', fontSize: 20, fontWeight: '600' },
-  sharing: { color: '#a7f3d0', fontSize: 13, fontWeight: '600' },
-  notice: { color: '#fde68a', fontSize: 13 },
-  alert: { color: '#fca5a5', fontSize: 15, fontWeight: '700' },
-  more: { fontSize: 12, fontWeight: '700', color: colors.accent },
-  bottom: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
+  topWrap: { position: 'absolute', left: 10, right: 10 },
+  card: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.md,
-    backgroundColor: '#ffffff',
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
-    borderTopLeftRadius: radius.md,
-    borderTopRightRadius: radius.md,
+    gap: 14,
+    backgroundColor: GREEN,
+    borderRadius: 20,
+    paddingVertical: 16,
+    paddingHorizontal: 18,
     shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
     elevation: 8,
   },
-  speedBox: {
-    minWidth: 84,
+  glyph: { color: '#ffffff', fontSize: 44, fontWeight: '800', width: 52, textAlign: 'center' },
+  cardText: { flex: 1 },
+  distance: { color: '#ffffff', fontSize: 30, fontWeight: '800' },
+  instruction: { color: '#e6f4ee', fontSize: 21, fontWeight: '600' },
+  then: {
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: -6,
+    paddingTop: 12,
+    paddingBottom: 8,
+    paddingHorizontal: 16,
+    backgroundColor: '#07563d',
+    borderBottomLeftRadius: 16,
+    borderBottomRightRadius: 16,
+    zIndex: -1,
+  },
+  thenText: { color: '#ffffff', fontSize: 17, fontWeight: '600' },
+  thenGlyph: { color: '#ffffff', fontSize: 22, fontWeight: '800' },
+  pills: { marginTop: 8, gap: 6, alignItems: 'flex-start' },
+  pill: {
+    overflow: 'hidden',
+    color: '#ffffff',
+    fontSize: 13,
+    fontWeight: '600',
+    backgroundColor: 'rgba(17,24,39,0.88)',
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  pillAlert: { backgroundColor: 'rgba(185,28,28,0.95)', fontSize: 15 },
+  pillNotice: { backgroundColor: 'rgba(146,64,14,0.95)' },
+  side: { position: 'absolute', right: 14, alignItems: 'flex-end', gap: 12 },
+  round: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: DARK,
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 6,
+  },
+  roundOn: { backgroundColor: '#1d4ed8' },
+  roundIcon: { fontSize: 24, color: '#ffffff' },
+  needle: { alignItems: 'center', transform: [{ rotate: '25deg' }] },
+  needleNorth: { transform: [{ rotate: '0deg' }] },
+  needleRed: {
+    width: 0,
+    height: 0,
+    borderLeftWidth: 7,
+    borderRightWidth: 7,
+    borderBottomWidth: 14,
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+    borderBottomColor: '#ef4444',
+  },
+  needleWhite: {
+    width: 0,
+    height: 0,
+    borderLeftWidth: 7,
+    borderRightWidth: 7,
+    borderTopWidth: 14,
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+    borderTopColor: '#e5e7eb',
+  },
+  report: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    height: 56,
+    paddingHorizontal: 18,
+    borderRadius: 28,
+    backgroundColor: DARK,
+    shadowColor: '#000',
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 6,
+  },
+  reportIcon: { fontSize: 22 },
+  reportText: { color: '#ffffff', fontSize: 17, fontWeight: '600' },
+  speed: {
+    position: 'absolute',
+    left: 14,
+    width: 66,
+    height: 66,
+    borderRadius: 33,
+    backgroundColor: '#ffffff',
     borderWidth: 3,
-    borderColor: colors.accent,
-    borderRadius: radius.full,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-  },
-  speed: { fontSize: 34, fontWeight: '800', color: colors.textHeading },
-  speedUnit: { fontSize: 12, fontWeight: '600', color: colors.text, marginTop: -4 },
-  trip: { flex: 1, gap: 2 },
-  tripMain: { fontSize: 22, fontWeight: '700', color: colors.textHeading },
-  tripSub: { fontSize: 13, color: colors.text },
-  iconButton: {
-    minWidth: 48,
-    height: 48,
-    borderRadius: radius.full,
+    borderColor: '#d1d5db',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.bgElevated,
-    borderWidth: 1,
-    borderColor: colors.border,
+    shadowColor: '#000',
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 6,
   },
-  icon: { fontSize: 22 },
-  endButton: { backgroundColor: colors.danger, borderColor: colors.danger, paddingHorizontal: spacing.md },
-  endText: { color: '#ffffff', fontWeight: '700', fontSize: 16 },
+  speedValue: { fontSize: 24, fontWeight: '800', color: DARK },
+  speedUnit: { fontSize: 11, fontWeight: '700', color: '#4b5563', marginTop: -3 },
+  sheet: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: DARK,
+    paddingTop: 8,
+    paddingHorizontal: 20,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+  },
+  sheetMain: { flex: 1 },
+  handle: { alignSelf: 'center', width: 40, height: 5, borderRadius: 3, backgroundColor: '#4b5563', marginBottom: 8, marginLeft: 60 },
+  eta: { color: '#4ade80', fontSize: 32, fontWeight: '700' },
+  etaSub: { color: '#d1d5db', fontSize: 17 },
+  exit: { backgroundColor: '#dc2626', borderRadius: 28, paddingHorizontal: 26, height: 56, justifyContent: 'center' },
+  exitText: { color: '#ffffff', fontSize: 19, fontWeight: '700' },
 });
