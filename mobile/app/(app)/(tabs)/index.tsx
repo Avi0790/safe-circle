@@ -186,18 +186,6 @@ export default function MapTab() {
 
   const located = members.filter((m) => m.location);
 
-  useEffect(() => {
-    if (located.length === 0 || !mapRef.current) return;
-    mapRef.current.fitToCoordinates(
-      located.map((m) => ({
-        latitude: m.location!.latitude,
-        longitude: m.location!.longitude,
-      })),
-      { edgePadding: { top: 80, right: 80, bottom: 80, left: 80 }, animated: true },
-    );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [located.length]);
-
   // 'denied' vs 'unavailable' so the banner below can say something useful
   // instead of the map just silently staying wherever it was — which is
   // exactly what a previously-denied permission looks like: iOS/Android
@@ -264,6 +252,21 @@ export default function MapTab() {
       clearTimeout(fallbackTimer);
     };
   }, []);
+
+  useEffect(() => {
+    if (located.length === 0 || !mapRef.current) return;
+    mapRef.current.fitToCoordinates(
+      located.map((m) => ({
+        latitude: m.location!.latitude,
+        longitude: m.location!.longitude,
+      })),
+      { edgePadding: { top: 80, right: 80, bottom: 80, left: 80 }, animated: true },
+    );
+    // Also when the map first mounts: members often arrive before the GPS fix
+    // (they're cached on the phone), while the map isn't there yet to fit, and
+    // the count alone wouldn't change again to retry.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [located.length, initialRegion != null]);
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>

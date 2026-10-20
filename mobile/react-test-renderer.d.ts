@@ -1,5 +1,5 @@
 // react-test-renderer ships no types and we only use a sliver of it (mounting
-// a component in a test and finding things in the result); this covers
+// a component in a test, re-rendering it and finding things in the result); this covers
 // exactly that.
 declare module 'react-test-renderer' {
   import type { ReactElement } from 'react';
@@ -13,6 +13,7 @@ declare module 'react-test-renderer' {
   export interface ReactTestRenderer {
     root: ReactTestInstance;
     toJSON(): unknown;
+    update(element: ReactElement): void;
     unmount(): void;
   }
   export function create(element: ReactElement): ReactTestRenderer;
