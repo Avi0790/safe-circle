@@ -20,6 +20,12 @@ export interface DriveHudProps {
   topInset: number;
   bottomInset: number;
   onToggleMute: () => void;
+  // Opens the card with audio, Share ETA, report an incident and add a stop.
+  onMore?: () => void;
+  // e.g. "⛽ Maverik" while the route goes via a stop
+  stopTitle?: string | null;
+  // e.g. "💥 Crash reported 0.3 mi ahead"
+  alert?: string | null;
   onEnd: () => void;
 }
 
@@ -32,6 +38,8 @@ export function DriveHud(p: DriveHudProps) {
           {p.rerouting ? 'Rerouting…' : p.instruction}
         </Text>
         {p.sharingWith ? <Text style={styles.sharing}>👪 Sharing this trip with {p.sharingWith}</Text> : null}
+        {p.stopTitle ? <Text style={styles.sharing}>Via {p.stopTitle}</Text> : null}
+        {p.alert ? <Text style={styles.alert}>{p.alert}</Text> : null}
         {p.notice ? <Text style={styles.notice}>{p.notice}</Text> : null}
       </View>
 
@@ -43,12 +51,13 @@ export function DriveHud(p: DriveHudProps) {
           <Text style={styles.speed}>{p.speedMph == null ? '—' : p.mode === 'walk' ? p.speedMph.toFixed(1) : p.speedMph}</Text>
           <Text style={styles.speedUnit}>mph</Text>
         </View>
-        <View style={styles.trip}>
+        <Pressable style={styles.trip} onPress={p.onMore} disabled={!p.onMore} accessibilityLabel="More options" accessibilityRole="button">
           <Text style={styles.tripMain}>{p.remainingTime}</Text>
           <Text style={styles.tripSub}>
             {p.remainingDistance} · arrive {p.arrival}
           </Text>
-        </View>
+          {p.onMore ? <Text style={styles.more}>⌃ Options</Text> : null}
+        </Pressable>
         <Pressable style={styles.iconButton} onPress={p.onToggleMute} accessibilityLabel={p.muted ? 'Unmute voice' : 'Mute voice'}>
           <Text style={styles.icon}>{p.muted ? '🔇' : '🔊'}</Text>
         </Pressable>
@@ -75,6 +84,8 @@ const styles = StyleSheet.create({
   instruction: { color: '#e2e8f0', fontSize: 20, fontWeight: '600' },
   sharing: { color: '#a7f3d0', fontSize: 13, fontWeight: '600' },
   notice: { color: '#fde68a', fontSize: 13 },
+  alert: { color: '#fca5a5', fontSize: 15, fontWeight: '700' },
+  more: { fontSize: 12, fontWeight: '700', color: colors.accent },
   bottom: {
     position: 'absolute',
     bottom: 0,

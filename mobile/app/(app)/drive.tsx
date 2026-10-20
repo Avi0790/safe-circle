@@ -8,6 +8,8 @@ import MapView, { Marker, Polyline, PROVIDER_DEFAULT } from 'react-native-maps';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button } from '@/components/Button';
 import { DriveHud } from '@/components/DriveHud';
+import { DrivePanel } from '@/components/DrivePanel';
+import { useRoadReports } from '@/hooks/useRoadReports';
 import { TextField } from '@/components/TextField';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCircles } from '@/contexts/CircleContext';
@@ -43,6 +45,9 @@ import {
 import { endSharedTrip, shouldSendEtaUpdate, startSharedTrip, updateSharedTrip } from '@/lib/sharedTrips';
 import { supabase } from '@/lib/supabase';
 import { getTravelMode, setTravelMode, type PlanMode } from '@/lib/travelMode';
+import { reportIncident, reportInfo, upcomingReport, type RoadReport, type RoadReportKind } from '@/lib/roadReports';
+import { searchStops, STOP_CATEGORIES, type StopCategory, type StopResult } from '@/lib/stops';
+import { getVoiceMode, setVoiceMode, shouldSpeak, type SpeechKind, type VoiceMode } from '@/lib/voicePreference';
 import { colors, radius, spacing, typography } from '@/lib/theme';
 
 type Phase = 'plan' | 'preview' | 'driving' | 'arrived';
@@ -67,6 +72,9 @@ const MOVING_MPS = 2.2;
 const REROUTE_AFTER_FIXES = 3;
 const REROUTE_COOLDOWN_MS = 10_000;
 const KEEP_AWAKE_TAG = 'safecircle-drive';
+// Within this of a stop counts as having got there (a fuel pump can be well
+// off the road's centre line).
+const STOP_REACHED_M = 60;
 
 // In-app driving directions: pick a destination, see the route, then follow it
 // with turn-by-turn text and voice and a live speedometer. Routes and search
@@ -101,7 +109,14 @@ export default function DriveScreen() {
   const [rerouting, setRerouting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [nav, setNav] = useState<NavState | null>(null);
-  const [muted, setMuted] = useState(false);
+  const [voiceMode, setVoiceModeState] = useState<VoiceMode>('all');
+  const [panel, setPanel] = useState<null | 'main' | 'stops'>(null);
+  const [reporting, setReporting] = useState(false);
+  const [stop, setStop] = useState<(StopResult & { emoji: string }) | null>(null);
+  const [stopCategory, setStopCategory] = useState<StopCategory | null>(null);
+  const [stopResults, setStopResults] = useState<StopResult[]>([]);
+  const [stopSearching, setStopSearching] = useState(false);
+  const [stopError, setStopError] = useState<string | null>(null);
   const [mapReady, setMapReady] = useState(false);
   const [shareTrip, setShareTrip] = useState(false);
   const [sharingWith, setSharingWith] = useState<string | null>(null);
@@ -112,7 +127,14 @@ export default function DriveScreen() {
   const phaseRef = useRef<Phase>('plan');
   const preparedRef = useRef<PreparedRoute | null>(null);
   const destRef = useRef<Destination | null>(null);
-  const mutedRef = useRef(false);
+  const voiceRef = useRef<VoiceMode>('all');
+  // What the speaker button goes back to after a quick mute.
+  const lastVoiced = useRef<VoiceMode>('all');
+  const stopRef = useRef<StopResult | null>(null);
+  const reportsRef = useRef<RoadReport[]>([]);
+  const alertedReports = useRef(new Set<string>());
+  const stopSearchId = useRef(0);
+  const sharePending = useRef(false);
   const modeRef = useRef<TravelMode>('drive');
   const fixRef = useRef<Fix | null>(null);
   const prevFix = useRef<Fix | null>(null);
@@ -128,11 +150,31 @@ export default function DriveScreen() {
   phaseRef.current = phase;
   preparedRef.current = prepared;
   destRef.current = dest;
-  mutedRef.current = muted;
+  voiceRef.current = voiceMode;
   modeRef.current = mode;
 
-  const speak = useCallback((text: string) => {
-    if (!mutedRef.current) Speech.speak(text, { language: 'en-US' });
+  // Turn-by-turn is 'guidance'; an incident ahead or arriving is an 'alert',
+  // still spoken in "Alerts only".
+  const speak = useCallback((text: string, kind: SpeechKind = 'guidance') => {
+    if (shouldSpeak(voiceRef.current, kind)) Speech.speak(text, { language: 'en-US' });
+  }, []);
+
+  // Road reports from circle-mates, for the map and for alerts on the way.
+  const { reports } = useRoadReports(phase !== 'plan');
+  const othersReports = useMemo(() => reports.filter((r) => r.reporter_id !== userId), [reports, userId]);
+  reportsRef.current = othersReports;
+
+  useEffect(() => {
+    let cancelled = false;
+    getVoiceMode().then((m) => {
+      if (cancelled) return;
+      setVoiceModeState(m);
+      voiceRef.current = m;
+      if (m !== 'off') lastVoiced.current = m;
+    });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // ---------------------------------------------------------- permission
@@ -182,8 +224,18 @@ export default function DriveScreen() {
     setPhase('arrived');
     phaseRef.current = 'arrived';
     closeTrip(true);
-    speak('You have arrived at your destination.');
+    speak('You have arrived at your destination.', 'alert');
   }, [speak, closeTrip]);
+
+  // Swap in a new route (reroute, stop added or removed) and start announcing
+  // it from scratch.
+  const applyRoute = useCallback((next: PreparedRoute) => {
+    said.current = new Set();
+    alongHint.current = undefined;
+    offCount.current = 0;
+    preparedRef.current = next;
+    setPrepared(next);
+  }, []);
 
   const reroute = useCallback(
     async (from: LatLng) => {
@@ -194,13 +246,10 @@ export default function DriveScreen() {
       setRerouting(true);
       speak('Rerouting.');
       try {
-        const route = await fetchRoute(from, target, undefined, modeRef.current);
-        const next = prepareRoute(route);
-        said.current = new Set();
-        alongHint.current = undefined;
-        offCount.current = 0;
-        preparedRef.current = next;
-        setPrepared(next);
+        // Still on the way to a stop: go via it.
+        const via = stopRef.current ? [stopRef.current] : [];
+        const route = await fetchRoute(from, target, undefined, modeRef.current, via);
+        applyRoute(prepareRoute(route));
       } catch {
         // Keep following the old line; try again after the cooldown.
       } finally {
@@ -208,7 +257,7 @@ export default function DriveScreen() {
         setRerouting(false);
       }
     },
-    [speak],
+    [speak, applyRoute],
   );
 
   const handleDrivingFix = useCallback(
@@ -231,6 +280,13 @@ export default function DriveScreen() {
         }
       }
 
+      const st = stopRef.current;
+      if (st && haversineMeters(f.latitude, f.longitude, st.latitude, st.longitude) < STOP_REACHED_M) {
+        stopRef.current = null;
+        setStop(null);
+        speak(`You've reached ${st.title}.`, 'alert');
+      }
+
       if (s.arrived) {
         finishArrival();
         return;
@@ -251,8 +307,14 @@ export default function DriveScreen() {
         said.current.add(say.key);
         speak(say.text);
       }
+
+      const ahead = upcomingReport(prep, s.alongM, reportsRef.current, alertedReports.current);
+      if (ahead) {
+        alertedReports.current.add(ahead.report.id);
+        speak(reportInfo(ahead.report.kind).spoken, 'alert');
+      }
     },
-    [finishArrival, reroute, speak],
+    [finishArrival, reroute, speak, applyRoute],
   );
 
   const onLocation = useCallback(
@@ -488,28 +550,123 @@ export default function DriveScreen() {
     phaseRef.current = 'driving';
     speak(`Starting route. ${prep.route.steps[0]?.instruction ?? ''}.`);
 
+    alertedReports.current = new Set();
+    if (shareTrip) beginSharing(Date.now() + prep.route.durationS * 1000);
+  }
+
+  function beginSharing(etaMs: number) {
     const target = destRef.current;
-    if (shareTrip && selectedCircle && target) {
-      const etaMs = Date.now() + prep.route.durationS * 1000;
-      const circleName = selectedCircle.name;
-      startSharedTrip(selectedCircle.id, target.title, etaMs, mode).then((res) => {
-        if (!res.ok) {
-          setTripNotice("Couldn't share this trip with your circle. Directions still work.");
-        } else if (phaseRef.current === 'driving') {
-          tripId.current = res.id;
-          lastEta.current = { at: Date.now(), eta: etaMs };
-          setSharingWith(circleName);
-        } else {
-          // The drive ended before the call came back.
-          endSharedTrip(res.id, false);
-        }
-      });
+    if (!selectedCircle || !target || sharePending.current || tripId.current) return;
+    const circleName = selectedCircle.name;
+    sharePending.current = true;
+    startSharedTrip(selectedCircle.id, target.title, etaMs, mode).then((res) => {
+      sharePending.current = false;
+      if (!res.ok) {
+        setTripNotice("Couldn't share this trip with your circle. Directions still work.");
+      } else if (phaseRef.current === 'driving') {
+        tripId.current = res.id;
+        lastEta.current = { at: Date.now(), eta: etaMs };
+        setSharingWith(circleName);
+      } else {
+        // The drive ended before the call came back.
+        endSharedTrip(res.id, false);
+      }
+    });
+  }
+
+  // Share ETA from the options card, mid-drive, like Apple Maps; or stop.
+  function toggleShareEta() {
+    if (tripId.current) {
+      closeTrip(false);
+      setTripNotice(null);
+      return;
     }
+    const remaining = nav?.remainingS ?? preparedRef.current?.route.durationS ?? 0;
+    beginSharing(Date.now() + remaining * 1000);
+  }
+
+  function chooseVoice(next: VoiceMode) {
+    setVoiceModeState(next);
+    voiceRef.current = next;
+    if (next === 'off') Speech.stop();
+    else lastVoiced.current = next;
+    setVoiceMode(next);
+  }
+
+  async function report(kind: RoadReportKind) {
+    const at = fixRef.current;
+    const info = reportInfo(kind);
+    if (!at) {
+      setTripNotice("Couldn't tell where you are yet, so nothing was reported.");
+      return;
+    }
+    setReporting(true);
+    const res = await reportIncident(kind, at);
+    setReporting(false);
+    setPanel(null);
+    setTripNotice(res.ok ? `${info.emoji} ${info.label} reported. Thanks.` : res.error);
+  }
+
+  async function pickStopCategory(category: StopCategory) {
+    const prep = preparedRef.current;
+    if (!prep) return;
+    const id = ++stopSearchId.current;
+    setStopCategory(category);
+    setStopResults([]);
+    setStopError(null);
+    setStopSearching(true);
+    const found = await searchStops(category, prep, alongHint.current ?? 0);
+    if (id !== stopSearchId.current) return; // a newer search replaced this one
+    setStopSearching(false);
+    setStopResults(found);
+  }
+
+  // Re-plan from here to the destination, optionally via a stop.
+  async function replan(via: StopResult | null): Promise<boolean> {
+    const origin = fixRef.current;
+    const target = destRef.current;
+    if (!origin || !target) return false;
+    try {
+      const route = await fetchRoute(origin, target, undefined, modeRef.current, via ? [via] : []);
+      applyRoute(prepareRoute(route));
+      return true;
+    } catch (err) {
+      setStopError(err instanceof RoutingError ? err.message : "Couldn't plan that route.");
+      return false;
+    }
+  }
+
+  async function pickStop(s: StopResult) {
+    setStopSearching(true);
+    const ok = await replan(s);
+    setStopSearching(false);
+    if (!ok) return;
+    const emoji = STOP_CATEGORIES.find((c) => c.key === stopCategory)?.emoji ?? '📍';
+    stopRef.current = s;
+    setStop({ ...s, emoji });
+    setPanel(null);
+    speak(`Adding ${s.title} as a stop.`);
+  }
+
+  async function removeStop() {
+    const ok = await replan(null);
+    if (!ok) {
+      setTripNotice("Couldn't remove the stop right now.");
+      return;
+    }
+    stopRef.current = null;
+    setStop(null);
+    setPanel(null);
   }
 
   function endDriving() {
     closeTrip(false);
     setTripNotice(null);
+    setPanel(null);
+    stopRef.current = null;
+    setStop(null);
+    setStopCategory(null);
+    setStopResults([]);
     Speech.stop();
     setPhase('plan');
     phaseRef.current = 'plan';
@@ -520,14 +677,17 @@ export default function DriveScreen() {
     setResults([]);
   }
 
+  // The speaker button: a quick mute, and back to whatever it was before.
   function toggleMute() {
-    setMuted((m) => {
-      if (!m) Speech.stop();
-      return !m;
-    });
+    chooseVoice(voiceMode === 'off' ? lastVoiced.current : 'off');
   }
 
   const region = useMemo(() => (prepared ? boundsRegion(prepared.route.coords) : null), [prepared]);
+  // The nearest incident on the road ahead, shown at the top while you approach it.
+  const nextReport = prepared && nav ? upcomingReport(prepared, nav.alongM, othersReports, new Set()) : null;
+  const alertAhead = nextReport
+    ? `${reportInfo(nextReport.report.kind).emoji} ${reportInfo(nextReport.report.kind).label} reported ${formatNavDistance(nextReport.aheadM)} ahead`
+    : null;
   const walking = mode === 'walk';
   // The "ask a passenger" lock is about someone typing while driving; it makes
   // no sense for a person on foot (a jogger would trip it).
@@ -710,6 +870,16 @@ export default function DriveScreen() {
         >
           <Polyline coordinates={prepared.route.coords} strokeColor={colors.accent} strokeWidth={6} />
           <Marker coordinate={dest} title={dest.title} />
+          {stop && (
+            <Marker coordinate={stop} title={`Stop: ${stop.title}`}>
+              <Text style={styles.mapEmoji}>{stop.emoji}</Text>
+            </Marker>
+          )}
+          {reports.map((r) => (
+            <Marker key={r.id} coordinate={r} title={`${reportInfo(r.kind).label} reported`}>
+              <Text style={styles.mapEmoji}>{reportInfo(r.kind).emoji}</Text>
+            </Marker>
+          ))}
         </MapView>
       )}
 
@@ -783,12 +953,41 @@ export default function DriveScreen() {
           remainingTime={formatNavDuration(remainingS)}
           arrival={formatArrivalClock(remainingS)}
           rerouting={rerouting}
-          muted={muted}
+          muted={voiceMode === 'off'}
           sharingWith={sharingWith}
           notice={tripNotice}
+          stopTitle={stop ? `${stop.emoji} ${stop.title}` : null}
+          alert={alertAhead}
           topInset={insets.top}
           bottomInset={insets.bottom}
           onToggleMute={toggleMute}
+          onMore={() => setPanel('main')}
+          onEnd={endDriving}
+        />
+      )}
+
+      {phase === 'driving' && panel && (
+        <DrivePanel
+          view={panel}
+          bottomInset={insets.bottom}
+          voiceMode={voiceMode}
+          onVoiceMode={chooseVoice}
+          circleName={selectedCircle?.name ?? null}
+          sharing={sharingWith != null}
+          onToggleShare={toggleShareEta}
+          onReport={report}
+          reporting={reporting}
+          stopTitle={stop?.title ?? null}
+          onAddStop={() => setPanel('stops')}
+          onRemoveStop={removeStop}
+          stopCategory={stopCategory}
+          stopResults={stopResults}
+          stopSearching={stopSearching}
+          stopError={stopError}
+          onPickCategory={pickStopCategory}
+          onPickStop={pickStop}
+          onBack={() => setPanel('main')}
+          onClose={() => setPanel(null)}
           onEnd={endDriving}
         />
       )}
@@ -861,6 +1060,7 @@ const styles = StyleSheet.create({
   modeBtnOn: { backgroundColor: colors.accent, borderColor: colors.accent },
   modeText: { fontSize: 15, fontWeight: '600', color: colors.textHeading },
   modeTextOn: { color: '#fff' },
+  mapEmoji: { fontSize: 26 },
   summary: { fontSize: 20, fontWeight: '700', color: colors.textHeading },
   shareRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.xs },
   shareText: { flex: 1, gap: 2 },

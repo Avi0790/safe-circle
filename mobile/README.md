@@ -550,6 +550,30 @@ development mode is also inherently slower than a real build, and running over
   directions (Apple Maps `dirflg=r`; on Android a Google Maps universal link,
   since `google.navigation:` has no transit option). The typing lock for a
   moving vehicle doesn't apply, since you're a passenger.
+- **Options while navigating** (tap the trip summary, "⌃ Options";
+  `components/DrivePanel.tsx`), modelled on Apple Maps:
+  - **Audio** (`lib/voicePreference.ts`): All voice / Alerts only / No voice,
+    remembered per device. Alerts only keeps just an incident ahead and
+    arriving; the speaker button is a quick mute that goes back to the level
+    you had.
+  - **Share ETA** mid-drive, or stop sharing (no arrival push when stopped).
+  - **Report an incident** (`lib/roadReports.ts`, backend `...000061`): crash,
+    hazard, speed check, road closed, one tap, at your current position.
+    Visible to whoever can see your location (Ghost mode and sharing windows
+    apply) for 1 hour (3 for a closed road), deleted a day later; a double tap
+    refreshes instead of stacking; 5 per 10 minutes. Circle-mates see reports
+    as map markers on their route, a banner "💥 Crash reported 0.3 mi ahead",
+    and hear "Crash reported ahead." once when it's within 800 m on their
+    route (never about their own reports).
+  - **Add a stop** (`lib/stops.ts`): ⛽ Gas, ☕ Coffee, 🍔 Food, 🅿️ Parking,
+    💊 Pharmacy along the next 15 km of road (within 1.5 km of it), least
+    detour first, never one you've passed, via Nominatim (OpenStreetMap's
+    geocoder; free, about one request a second at most; override with
+    `EXPO_PUBLIC_NOMINATIM_URL`). Photon was tried first and matches names
+    ("Gas" anywhere), and the public Overpass server was too slow to rely on.
+    The route goes via the stop (OSRM waypoint, announced as "Your stop is
+    just ahead" and "You've reached Harps"); reroutes keep it until you get
+    there; Remove stop replans straight to the destination.
 - **Share a bus, train or flight** (⋯ Quick actions, or the link on
   "Where to?"; `app/(app)/share-trip.tsx`): a manual shared trip. Pick the
   kind, type the destination, set the arrival time with presets or a stepper

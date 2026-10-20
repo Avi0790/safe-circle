@@ -96,6 +96,8 @@ export function instructionText(step: {
       return `Head ${step.modifier ? (HEADING_TEXT[step.modifier] ?? 'out') : 'out'}${on}`;
     case 'arrive':
       return 'You have arrived at your destination';
+    case 'waypoint':
+      return 'Arrive at your stop';
     case 'roundabout':
     case 'rotary':
     case 'roundabout turn':
@@ -282,7 +284,9 @@ export function nextAnnouncement(
   if (distanceM <= nearM && !said.has(nearKey)) {
     // The arrival itself is announced by the screen when you actually get
     // there; saying "you have arrived" 90 m short would be wrong and twice.
-    return { key: nearKey, text: step.type === 'arrive' ? 'Your destination is just ahead.' : `${step.instruction}.` };
+    if (step.type === 'arrive') return { key: nearKey, text: 'Your destination is just ahead.' };
+    if (step.type === 'waypoint') return { key: nearKey, text: 'Your stop is just ahead.' };
+    return { key: nearKey, text: `${step.instruction}.` };
   }
   if (distanceM <= farM && distanceM > nearM && !said.has(farKey) && step.type !== 'arrive') {
     const lower = step.instruction.charAt(0).toLowerCase() + step.instruction.slice(1);

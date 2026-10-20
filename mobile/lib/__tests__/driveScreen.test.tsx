@@ -5,6 +5,8 @@ import { act, create, type ReactTestRenderer } from 'react-test-renderer';
 import * as Speech from 'expo-speech';
 import osrmFixture from './fixtures/osrm-jonesboro.json';
 import footFixture from './fixtures/osrm-foot-jonesboro.json';
+import withStopFixture from './fixtures/osrm-with-stop.json';
+import nominatimGas from './fixtures/nominatim-gas.json';
 import photonFixture from './fixtures/photon-walmart.json';
 
 // The Drive screen end to end: real screen, real navigation and routing code,
@@ -16,6 +18,7 @@ const mockStart = { latitude: 35.8423, longitude: -90.7043 };
 const mockFetch = jest.fn();
 const mockRpc = jest.fn();
 const mockPush = jest.fn();
+const mockReports: { current: unknown[] } = { current: [] };
 const mockUser: { current: null | string } = { current: null };
 const mockCircle: { current: null | { id: string; name: string } } = { current: null };
 
@@ -32,10 +35,24 @@ jest.mock('@/contexts/AuthContext', () => ({
   useAuth: () => ({ session: mockUser.current ? { user: { id: mockUser.current } } : null }),
 }));
 jest.mock('@/lib/supabase', () => {
-  const places: Record<string, unknown> = {};
-  for (const m of ['select', 'eq', 'order']) places[m] = () => places;
-  places.then = (resolve: (v: unknown) => void) => resolve({ data: [], error: null });
-  return { supabase: { rpc: (...a: unknown[]) => mockRpc(...a), from: () => places } };
+  const query = (table: string) => {
+    const q: Record<string, unknown> = {};
+    for (const m of ['select', 'eq', 'order']) q[m] = () => q;
+    q.then = (resolve: (v: unknown) => void) =>
+      resolve({ data: table === 'road_reports' ? mockReports.current : [], error: null });
+    return q;
+  };
+  const channel: Record<string, unknown> = {};
+  channel.on = () => channel;
+  channel.subscribe = () => channel;
+  return {
+    supabase: {
+      rpc: (...a: unknown[]) => mockRpc(...a),
+      from: (table: string) => query(table),
+      channel: () => channel,
+      removeChannel: () => {},
+    },
+  };
 });
 jest.mock('expo-speech', () => ({ speak: jest.fn(), stop: jest.fn() }));
 jest.mock('expo-keep-awake', () => ({ activateKeepAwakeAsync: jest.fn(), deactivateKeepAwake: jest.fn() }));
@@ -95,7 +112,11 @@ async function emit(lon: number, lat: number, speed: number, t: number) {
 }
 
 function press(r: ReactTestRenderer, label: string) {
-  const hit = r.root.findAll((n) => typeof n.props.onPress === 'function' && text({ children: n.children }).includes(label));
+  const hit = r.root.findAll(
+    (n) =>
+      typeof n.props.onPress === 'function' &&
+      (text({ children: n.children }).includes(label) || n.props.accessibilityLabel === label),
+  );
   expect(hit.length).toBeGreaterThan(0);
   return act(async () => {
     hit[0].props.onPress();
@@ -109,15 +130,24 @@ beforeEach(async () => {
   mockFetch.mockReset();
   mockRpc.mockReset();
   mockPush.mockReset();
-  mockRpc.mockImplementation(async (name: string) => ({ data: name === 'start_shared_trip' ? 'trip-1' : null, error: null }));
+  mockReports.current = [];
+  mockRpc.mockImplementation(async (name: string) => ({
+    data: name === 'start_shared_trip' ? 'trip-1' : name === 'report_road_incident' ? 'rep-1' : null,
+    error: null,
+  }));
   mockCircle.current = null;
   mockUser.current = null;
   (Speech.speak as jest.Mock).mockClear();
   mockFetch.mockImplementation(async (url: string) => ({
     ok: true,
     json: async () =>
-      String(url).includes('/route/v1/driving')
-        ? osrmFixture
+      String(url).includes('nominatim')
+        ? nominatimGas
+        : String(url).includes('/route/v1/driving')
+        ? // three points (start;stop;destination) means a route via a stop
+          (String(url).split('?')[0].match(/;/g) ?? []).length === 2
+          ? withStopFixture
+          : osrmFixture
         : String(url).includes('/route/v1/foot')
           ? footFixture
           : photonFixture,
@@ -531,5 +561,252 @@ describe('Drive screen: transit', () => {
     const r = await mountAndPlan();
     await press(r, 'On a bus, train or flight?');
     expect(mockPush).toHaveBeenCalledWith('/share-trip');
+  });
+});
+
+describe('Drive screen: options while driving (audio, Share ETA, report, add a stop)', () => {
+  const calls = (name: string) => mockRpc.mock.calls.filter((c) => c[0] === name);
+  const stopRoute = densify(withStopFixture.routes[0].geometry.coordinates, 13);
+
+  async function startDrive(): Promise<ReactTestRenderer> {
+    const r = await mountAndPlan();
+    await search(r, 'walmart');
+    await press(r, 'Walmart Supercenter');
+    await press(r, 'Start');
+    await act(async () => {
+      await Promise.resolve();
+    });
+    await emit(route[0][0], route[0][1], 13, 9_000); // a first fix on the route
+    return r;
+  }
+
+  async function openOptions(r: ReactTestRenderer) {
+    await press(r, 'More options');
+  }
+
+  it('has audio, Share ETA, report an incident, add a stop and end route', async () => {
+    mockCircle.current = { id: 'c1', name: 'Family' };
+    const r = await startDrive();
+    expect(allText(r)).not.toContain('Report an incident');
+    await openOptions(r);
+    const t = allText(r);
+    for (const want of ['Audio', 'All voice', 'Alerts only', 'No voice', 'Share ETA with Family', 'Report an incident', 'Crash', 'Hazard', 'Speed check', 'Road closed', 'Add a stop', 'End route']) {
+      expect(t).toContain(want);
+    }
+    await press(r, 'Done');
+    expect(allText(r)).not.toContain('Report an incident');
+  });
+
+  it('offers no Share ETA without a circle', async () => {
+    const r = await startDrive();
+    await openOptions(r);
+    expect(allText(r)).not.toContain('Share ETA');
+  });
+
+  describe('audio', () => {
+    it('Alerts only drops turn-by-turn but still warns about a crash ahead, once', async () => {
+      const crashAt = route[300];
+      mockReports.current = [
+        { id: 'rep-x', reporter_id: 'someone', kind: 'crash', latitude: crashAt[1], longitude: crashAt[0],
+          created_at: new Date().toISOString(), expires_at: new Date(Date.now() + 3_600_000).toISOString() },
+      ];
+      const r = await startDrive();
+      await openOptions(r);
+      await press(r, 'Alerts only');
+      expect(await AsyncStorage.getItem('safecircle.voiceMode.v1')).toBe('alerts');
+      await press(r, 'Done');
+      (Speech.speak as jest.Mock).mockClear();
+
+      let sawBanner = false;
+      for (let i = 1; i < 330; i++) {
+        await emit(route[i][0], route[i][1], 13, 10_000 + i * 1_000);
+        if (/💥 Crash reported .* ahead/.test(allText(r))) sawBanner = true;
+      }
+      expect(spoken().filter((s) => s === 'Crash reported ahead.')).toHaveLength(1);
+      expect(spoken().filter((s) => s !== 'Crash reported ahead.')).toEqual([]); // no "In a quarter mile…"
+      expect(sawBanner).toBe(true);
+    });
+
+    it('All voice speaks turns and the alert', async () => {
+      const crashAt = route[300];
+      mockReports.current = [
+        { id: 'rep-x', reporter_id: 'someone', kind: 'hazard', latitude: crashAt[1], longitude: crashAt[0],
+          created_at: new Date().toISOString(), expires_at: new Date(Date.now() + 3_600_000).toISOString() },
+      ];
+      const r = await startDrive();
+      for (let i = 1; i < 330; i++) await emit(route[i][0], route[i][1], 13, 10_000 + i * 1_000);
+      expect(spoken()).toContain('Hazard reported ahead.');
+      expect(spoken().some((s) => s.startsWith('In a quarter mile'))).toBe(true);
+      void r;
+    });
+
+    it("never warns you about your own report", async () => {
+      mockUser.current = 'me';
+      const at = route[300];
+      mockReports.current = [
+        { id: 'mine', reporter_id: 'me', kind: 'crash', latitude: at[1], longitude: at[0],
+          created_at: new Date().toISOString(), expires_at: new Date(Date.now() + 3_600_000).toISOString() },
+      ];
+      await startDrive();
+      for (let i = 1; i < 330; i++) await emit(route[i][0], route[i][1], 13, 10_000 + i * 1_000);
+      expect(spoken()).not.toContain('Crash reported ahead.');
+    });
+
+    it('the speaker button mutes, and unmuting goes back to the level you had', async () => {
+      const r = await startDrive();
+      await openOptions(r);
+      await press(r, 'Alerts only');
+      await press(r, 'Done');
+      await press(r, 'Mute voice');
+      expect(await AsyncStorage.getItem('safecircle.voiceMode.v1')).toBe('off');
+      await press(r, 'Unmute voice');
+      expect(await AsyncStorage.getItem('safecircle.voiceMode.v1')).toBe('alerts');
+    });
+
+    it('No voice says nothing at all, not even arriving', async () => {
+      const r = await startDrive();
+      await openOptions(r);
+      await press(r, 'No voice');
+      await press(r, 'Done');
+      (Speech.speak as jest.Mock).mockClear();
+      for (let i = 1; i < route.length; i++) await emit(route[i][0], route[i][1], 13, 10_000 + i * 1_000);
+      expect(allText(r)).toContain("You've arrived");
+      expect(spoken()).toEqual([]);
+    });
+  });
+
+  describe('report an incident', () => {
+    it('reports where you are with one tap, thanks you, and closes the card', async () => {
+      const r = await startDrive();
+      await openOptions(r);
+      await press(r, 'Report Crash');
+      const call = calls('report_road_incident');
+      expect(call).toHaveLength(1);
+      expect(call[0][1]).toEqual({ p_kind: 'crash', p_latitude: route[0][1], p_longitude: route[0][0] });
+      expect(allText(r)).toContain('Crash reported. Thanks.');
+      expect(allText(r)).not.toContain('Report an incident');
+    });
+
+    it("shows the server's refusal", async () => {
+      const r = await startDrive();
+      mockRpc.mockImplementation(async () => ({ data: null, error: { message: "That's a lot of reports in a short time." } }));
+      await openOptions(r);
+      await press(r, 'Report Speed check');
+      expect(allText(r)).toContain("That's a lot of reports in a short time.");
+    });
+  });
+
+  describe('Share ETA mid-drive', () => {
+    it('starts sharing from the card, then stops without announcing an arrival', async () => {
+      mockCircle.current = { id: 'c1', name: 'Family' };
+      const r = await startDrive();
+      expect(calls('start_shared_trip')).toHaveLength(0);
+      await openOptions(r);
+      await press(r, 'Share ETA with Family');
+      await act(async () => {
+        await Promise.resolve();
+      });
+      const start = calls('start_shared_trip');
+      expect(start).toHaveLength(1);
+      expect(start[0][1]).toMatchObject({ p_circle_id: 'c1', p_destination: 'Walmart Supercenter', p_mode: 'drive' });
+      const etaMin = (new Date(start[0][1].p_eta).getTime() - Date.now()) / 60_000;
+      expect(etaMin).toBeGreaterThan(5);
+      expect(etaMin).toBeLessThan(15);
+      expect(allText(r)).toContain('Sharing this trip with Family');
+
+      await openOptions(r);
+      await press(r, 'Stop sharing ETA with Family');
+      expect(calls('end_shared_trip')[0][1]).toEqual({ p_trip: 'trip-1', p_arrived: false });
+      expect(allText(r)).not.toContain('Sharing this trip with Family');
+    });
+
+    it('a double tap starts only one shared trip', async () => {
+      mockCircle.current = { id: 'c1', name: 'Family' };
+      const r = await startDrive();
+      await openOptions(r);
+      const btn = r.root.findAll((n) => typeof n.props.onPress === 'function' && text({ children: n.children }).includes('Share ETA with Family'))[0];
+      await act(async () => {
+        btn.props.onPress();
+        btn.props.onPress();
+      });
+      expect(calls('start_shared_trip')).toHaveLength(1);
+    });
+  });
+
+  describe('add a stop', () => {
+    async function addHarps(r: ReactTestRenderer) {
+      await openOptions(r);
+      await press(r, 'Add a stop');
+      await press(r, 'Gas');
+      await act(async () => {
+        await Promise.resolve();
+      });
+      const url = mockFetch.mock.calls.map((c) => String(c[0])).find((u) => u.includes('nominatim'))!;
+      expect(url).toContain('q=gas+station');
+      expect(allText(r)).toContain('Harps');
+      expect(allText(r)).toMatch(/ahead/);
+      await press(r, 'Harps');
+      await act(async () => {
+        await Promise.resolve();
+      });
+    }
+
+    it('finds gas along the route, reroutes via the stop, announces and reaches it, then arrives', async () => {
+      const r = await startDrive();
+      (Speech.speak as jest.Mock).mockClear();
+      await addHarps(r);
+      const viaUrl = mockFetch.mock.calls.map((c) => String(c[0])).filter((u) => u.includes('/route/v1/driving')).pop()!;
+      expect(viaUrl).toMatch(/;-90\.7037953,35\.8210168;/);
+      expect(allText(r)).toContain('Via ⛽ Harps');
+      expect(spoken()).toContain('Adding Harps as a stop.');
+      expect(allText(r)).not.toContain('Add a stop'); // card closed
+
+      for (let i = 0; i < stopRoute.length; i++) await emit(stopRoute[i][0], stopRoute[i][1], 13, 20_000 + i * 1_000);
+      expect(spoken().filter((s) => s === 'Your stop is just ahead.')).toHaveLength(1);
+      expect(spoken().filter((s) => s === "You've reached Harps.")).toHaveLength(1);
+      expect(spoken().indexOf("You've reached Harps.")).toBeLessThan(spoken().indexOf('You have arrived at your destination.'));
+      expect(allText(r)).toContain("You've arrived");
+    });
+
+    it('removing the stop goes straight to the destination again', async () => {
+      const r = await startDrive();
+      await addHarps(r);
+      await openOptions(r);
+      await press(r, 'Remove stop: Harps');
+      await act(async () => {
+        await Promise.resolve();
+      });
+      const last = mockFetch.mock.calls.map((c) => String(c[0])).filter((u) => u.includes('/route/v1/driving')).pop()!;
+      expect((last.split('?')[0].match(/;/g) ?? []).length).toBe(1);
+      expect(allText(r)).not.toContain('Via ⛽');
+    });
+
+    it('a reroute on the way keeps the stop', async () => {
+      const r = await startDrive();
+      await addHarps(r);
+      for (let i = 0; i < 20; i++) await emit(stopRoute[i][0], stopRoute[i][1], 13, 20_000 + i * 1_000);
+      for (let k = 0; k < 4; k++) await emit(stopRoute[20][0], stopRoute[20][1] + 0.002, 13, 60_000 + k * 1_000);
+      await act(async () => {
+        await Promise.resolve();
+      });
+      const last = mockFetch.mock.calls.map((c) => String(c[0])).filter((u) => u.includes('/route/v1/driving')).pop()!;
+      expect(last).toMatch(/;-90\.7037953,35\.8210168;/);
+      expect(allText(r)).toContain('Via ⛽ Harps');
+    });
+
+    it('says so when nothing is found', async () => {
+      const r = await startDrive();
+      mockFetch.mockImplementation(async (url: string) => ({
+        ok: !String(url).includes('nominatim'),
+        json: async () => (String(url).includes('nominatim') ? {} : osrmFixture),
+      }));
+      await openOptions(r);
+      await press(r, 'Add a stop');
+      await press(r, 'Coffee');
+      await act(async () => {
+        await Promise.resolve();
+      });
+      expect(allText(r)).toContain('Nothing found near the road ahead.');
+    });
   });
 });

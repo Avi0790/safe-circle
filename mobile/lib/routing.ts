@@ -43,10 +43,14 @@ export function parseOsrmRoute(json: unknown, mode: TravelMode = 'drive'): Route
     throw new RoutingError('bad-response', 'The route service sent something unexpected.');
   }
   const coords: LatLng[] = raw.map(([lon, lat]: [number, number]) => ({ latitude: lat, longitude: lon }));
-  const steps: RouteStep[] = (r.legs ?? []).flatMap((leg: { steps?: OsrmStep[] }) =>
+  const legs: { steps?: OsrmStep[] }[] = r.legs ?? [];
+  const steps: RouteStep[] = legs.flatMap((leg, legIndex) =>
     (leg.steps ?? []).map((s) => {
+      // A route with a stop has one leg per stretch; every leg but the last
+      // ends at the stop, not the destination.
+      const isStop = s.maneuver.type === 'arrive' && legIndex < legs.length - 1;
       const base = {
-        type: s.maneuver.type,
+        type: isStop ? 'waypoint' : s.maneuver.type,
         modifier: s.maneuver.modifier,
         name: s.name ?? '',
         exit: s.maneuver.exit,
@@ -70,9 +74,11 @@ export async function fetchRoute(
   to: LatLng,
   signal?: AbortSignal,
   mode: TravelMode = 'drive',
+  via: LatLng[] = [],
 ): Promise<Route> {
+  const points = [from, ...via, to].map((p) => `${p.longitude},${p.latitude}`).join(';');
   const url =
-    `${mode === 'walk' ? FOOT_BASE_URL : BASE_URL}/route/v1/${mode === 'walk' ? 'foot' : 'driving'}/${from.longitude},${from.latitude};${to.longitude},${to.latitude}` +
+    `${mode === 'walk' ? FOOT_BASE_URL : BASE_URL}/route/v1/${mode === 'walk' ? 'foot' : 'driving'}/${points}` +
     '?overview=full&geometries=geojson&steps=true&alternatives=false';
 
   const timeout = new AbortController();
