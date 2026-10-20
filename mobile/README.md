@@ -713,6 +713,21 @@ dashboard) via `dotenv`, so there's one file to keep in sync — copy
 Restart `expo start` after changing it (env vars are read at config-eval
 time, not hot-reloaded).
 
+### Tests
+
+```bash
+npx tsc --noEmit && npx jest
+```
+
+Besides unit tests, every tab has a screen test (`lib/__tests__/mapTab`,
+`membersTab`, `chatTab`, `settingsTab`, `workTab`, plus `driveScreen` and
+`shareTripScreen`). Each renders the real screen with its real hooks and
+logic; only the edges are faked: the server (`test-support/fakeSupabase.ts`,
+which records every query and rpc and can deliver realtime events), the
+signed-in user and circle, and phone features such as GPS, background
+tracking, notifications and the photo picker. `test-support/render.tsx` has
+the helpers for reading the screen and pressing things by what they say.
+
 ## Verification notes
 
 This machine has Xcode Command Line Tools but not full Xcode, so there's
