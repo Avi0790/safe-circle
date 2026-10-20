@@ -2,8 +2,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // What marks you on the map while navigating, instead of the blue dot, like
 // Google Maps' and Waze's vehicle icons. Per device.
-export type VehicleStyle = 'arrow' | 'sedan' | 'suv' | 'pickup';
-export type VehicleColor = 'blue' | 'red' | 'black' | 'white' | 'silver';
+export type VehicleStyle = 'arrow' | 'sedan' | 'sports' | 'suv' | 'pickup' | 'neon' | 'moto';
+export type VehicleColor = 'blue' | 'red' | 'black' | 'white' | 'silver' | 'yellow' | 'green' | 'purple';
 
 export interface VehiclePreference {
   style: VehicleStyle;
@@ -13,8 +13,11 @@ export interface VehiclePreference {
 export const VEHICLE_STYLES: { style: VehicleStyle; label: string }[] = [
   { style: 'arrow', label: 'Arrow' },
   { style: 'sedan', label: 'Car' },
+  { style: 'sports', label: 'Sports' },
   { style: 'suv', label: 'SUV' },
   { style: 'pickup', label: 'Pickup' },
+  { style: 'neon', label: 'Neon' },
+  { style: 'moto', label: 'Motorbike' },
 ];
 
 export const VEHICLE_COLORS: { color: VehicleColor; hex: string; label: string }[] = [
@@ -23,6 +26,9 @@ export const VEHICLE_COLORS: { color: VehicleColor; hex: string; label: string }
   { color: 'black', hex: '#111827', label: 'Black' },
   { color: 'white', hex: '#f8fafc', label: 'White' },
   { color: 'silver', hex: '#9ca3af', label: 'Silver' },
+  { color: 'yellow', hex: '#facc15', label: 'Yellow' },
+  { color: 'green', hex: '#22c55e', label: 'Green' },
+  { color: 'purple', hex: '#a855f7', label: 'Purple' },
 ];
 
 export const DEFAULT_VEHICLE: VehiclePreference = { style: 'arrow', color: 'blue' };

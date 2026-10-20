@@ -27,6 +27,8 @@ interface OsrmStep {
   distance: number;
   name?: string;
   maneuver: { type: string; modifier?: string; location: [number, number]; exit?: number };
+  // the first intersection is the manoeuvre itself; its lanes are the ones to pick from
+  intersections?: { lanes?: { indications?: string[]; valid?: boolean }[] }[];
 }
 
 // The shape of an OSRM /route response (verified against the live service):
@@ -55,8 +57,12 @@ export function parseOsrmRoute(json: unknown, mode: TravelMode = 'drive'): Route
         name: s.name ?? '',
         exit: s.maneuver.exit,
       };
+      const lanes = s.intersections?.[0]?.lanes
+        ?.filter((l) => Array.isArray(l.indications))
+        .map((l) => ({ indications: l.indications as string[], valid: l.valid === true }));
       return {
         ...base,
+        ...(lanes && lanes.length > 0 ? { lanes } : {}),
         distanceM: s.distance,
         location: { latitude: s.maneuver.location[1], longitude: s.maneuver.location[0] },
         instruction: instructionText(base),

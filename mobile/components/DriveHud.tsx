@@ -15,6 +15,11 @@ export interface DriveHudProps {
   // the arrow for the next turn (navigation.maneuverGlyph) and the one after
   glyph: string;
   thenGlyph?: string | null;
+  // lane arrows for the next turn, shown as you approach it (navigation.laneArrows)
+  lanes?: { glyph: string; valid: boolean }[] | null;
+  // the road's posted limit, when the map has one (lib/speedLimit.ts)
+  speedLimitMph?: number | null;
+  overLimit?: boolean;
   speedMph: number | null;
   mode?: TravelMode;
   remainingDistance: string;
@@ -66,6 +71,15 @@ export function DriveHud(p: DriveHudProps) {
             </Text>
           </View>
         </View>
+        {p.lanes && p.lanes.length > 1 && !p.rerouting ? (
+          <View style={styles.lanes} accessibilityLabel={`Lanes: ${p.lanes.map((l) => (l.valid ? 'use' : 'no')).join(', ')}`}>
+            {p.lanes.map((l, i) => (
+              <View key={i} style={[styles.lane, i > 0 && styles.laneDivider]}>
+                <Text style={[styles.laneGlyph, !l.valid && styles.laneOff]}>{l.glyph}</Text>
+              </View>
+            ))}
+          </View>
+        ) : null}
         {p.thenGlyph && !p.rerouting ? (
           <View style={styles.then}>
             <Text style={styles.thenText}>Then</Text>
@@ -128,13 +142,24 @@ export function DriveHud(p: DriveHudProps) {
         )}
       </View>
 
-      {/* ------------------------------------------------------ speed */}
-      <View
-        style={[styles.speed, { bottom: bottomOfButtons }]}
-        accessibilityLabel={`${p.mode === 'walk' ? 'Walking speed' : 'Speed'} ${p.speedMph ?? 0} miles per hour`}
-      >
-        <Text style={styles.speedValue}>{p.speedMph == null ? '—' : p.mode === 'walk' ? p.speedMph.toFixed(1) : p.speedMph}</Text>
-        <Text style={styles.speedUnit}>mph</Text>
+      {/* ------------------------------------------- limit and speed */}
+      <View style={[styles.speedColumn, { bottom: bottomOfButtons }]} pointerEvents="none">
+        {p.speedLimitMph != null && p.mode !== 'walk' ? (
+          <View style={styles.limitSign} accessibilityLabel={`Speed limit ${p.speedLimitMph} miles per hour`}>
+            <Text style={styles.limitWord}>SPEED</Text>
+            <Text style={styles.limitWord}>LIMIT</Text>
+            <Text style={styles.limitValue}>{p.speedLimitMph}</Text>
+          </View>
+        ) : null}
+        <View
+          style={[styles.speed, p.overLimit && styles.speedOver]}
+          accessibilityLabel={`${p.mode === 'walk' ? 'Walking speed' : 'Speed'} ${p.speedMph ?? 0} miles per hour${p.overLimit ? ', over the limit' : ''}`}
+        >
+          <Text style={[styles.speedValue, p.overLimit && styles.speedValueOver]}>
+            {p.speedMph == null ? '—' : p.mode === 'walk' ? p.speedMph.toFixed(1) : p.speedMph}
+          </Text>
+          <Text style={[styles.speedUnit, p.overLimit && styles.speedValueOver]}>mph</Text>
+        </View>
       </View>
 
       {/* ------------------------------------------------------ sheet */}
@@ -263,9 +288,42 @@ const styles = StyleSheet.create({
   },
   reportIcon: { fontSize: 22 },
   reportText: { color: '#ffffff', fontSize: 17, fontWeight: '600' },
+  lanes: {
+    flexDirection: 'row',
+    alignSelf: 'stretch',
+    marginTop: -10,
+    paddingTop: 14,
+    paddingBottom: 6,
+    paddingHorizontal: 18,
+    backgroundColor: '#0a5c43',
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+    justifyContent: 'center',
+    zIndex: -1,
+  },
+  lane: { width: 44, alignItems: 'center' },
+  laneDivider: { borderLeftWidth: 1, borderLeftColor: 'rgba(255,255,255,0.35)', borderStyle: 'dashed' },
+  laneGlyph: { color: '#ffffff', fontSize: 28, fontWeight: '800' },
+  laneOff: { color: 'rgba(255,255,255,0.3)' },
+  speedColumn: { position: 'absolute', left: 14, alignItems: 'center', gap: 8 },
+  limitSign: {
+    width: 54,
+    paddingVertical: 4,
+    backgroundColor: '#ffffff',
+    borderRadius: 7,
+    borderWidth: 2.5,
+    borderColor: '#111827',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 6,
+  },
+  limitWord: { fontSize: 9, fontWeight: '800', color: '#111827', lineHeight: 10 },
+  limitValue: { fontSize: 24, fontWeight: '800', color: '#111827', lineHeight: 26 },
+  speedOver: { borderColor: '#dc2626', backgroundColor: '#fef2f2' },
+  speedValueOver: { color: '#dc2626' },
   speed: {
-    position: 'absolute',
-    left: 14,
     width: 66,
     height: 66,
     borderRadius: 33,

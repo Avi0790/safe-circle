@@ -7,6 +7,7 @@ import osrmFixture from './fixtures/osrm-jonesboro.json';
 import footFixture from './fixtures/osrm-foot-jonesboro.json';
 import withStopFixture from './fixtures/osrm-with-stop.json';
 import nominatimGas from './fixtures/nominatim-gas.json';
+import lanesFixture from './fixtures/osrm-lanes-jonesboro.json';
 import photonFixture from './fixtures/photon-walmart.json';
 
 // The Drive screen end to end: real screen, real navigation and routing code,
@@ -21,6 +22,8 @@ const mockPush = jest.fn();
 const mockAnimate = jest.fn();
 const mockFit = jest.fn();
 const mockReports: { current: unknown[] } = { current: [] };
+// What Nominatim's reverse lookup says about the road you're on (speed limits).
+const mockRoad: { current: Record<string, unknown> } = { current: { category: 'highway', osm_type: 'way', osm_id: 1, extratags: {} } };
 const mockUser: { current: null | string } = { current: null };
 const mockCircle: { current: null | { id: string; name: string } } = { current: null };
 
@@ -155,6 +158,7 @@ beforeEach(async () => {
   mockAnimate.mockClear();
   mockFit.mockClear();
   mockReports.current = [];
+  mockRoad.current = { category: 'highway', osm_type: 'way', osm_id: 1, extratags: {} };
   mockTracking.active = true;
   mockTracking.start.mockClear();
   mockRpc.mockImplementation(async (name: string) => ({
@@ -174,7 +178,9 @@ beforeEach(async () => {
   mockFetch.mockImplementation(async (url: string) => ({
     ok: true,
     json: async () =>
-      String(url).includes('nominatim')
+      String(url).includes('/reverse?')
+        ? mockRoad.current
+        : String(url).includes('nominatim')
         ? nominatimGas
         : String(url).includes('/route/v1/driving')
         ? // three points (start;stop;destination) means a route via a stop
@@ -775,7 +781,7 @@ describe('Drive screen: options while driving (audio, Share ETA, report, add a s
       await act(async () => {
         await Promise.resolve();
       });
-      const url = mockFetch.mock.calls.map((c) => String(c[0])).find((u) => u.includes('nominatim'))!;
+      const url = mockFetch.mock.calls.map((c) => String(c[0])).find((u) => u.includes('nominatim') && u.includes('/search?'))!;
       expect(url).toContain('q=gas+station');
       expect(allText(r)).toContain('Harps');
       expect(allText(r)).toMatch(/ahead/);
@@ -1114,5 +1120,145 @@ describe('Drive screen: Google-style navigation view', () => {
     await emit(footFixture.routes[0].geometry.coordinates[0][0], footFixture.routes[0].geometry.coordinates[0][1], 1.4, 10_000);
     const icon = vehicleMarker(r).findAll((n) => typeof n.type === 'function' && (n.type as { name?: string }).name === 'VehicleIcon')[0];
     expect(icon.props.walking).toBe(true);
+  });
+});
+
+describe('Drive screen: lane guidance and speed limits', () => {
+  const lanesRoute = densify(lanesFixture.routes[0].geometry.coordinates, 13);
+  const reverseCalls = () => mockFetch.mock.calls.filter((c) => String(c[0]).includes('/reverse?'));
+
+  async function startDrive(): Promise<ReactTestRenderer> {
+    // the same trip, with the junction lane data the router sends
+    mockFetch.mockImplementation(async (url: string) => ({
+      ok: true,
+      json: async () =>
+        String(url).includes('/reverse?')
+          ? mockRoad.current
+          : String(url).includes('/route/v1/driving')
+            ? lanesFixture
+            : photonFixture,
+    }));
+    const r = await mountAndPlan();
+    await search(r, 'walmart');
+    await press(r, 'Walmart Supercenter');
+    await press(r, 'Start');
+    await act(async () => {
+      await Promise.resolve();
+    });
+    return r;
+  }
+
+  it('shows the lanes as you approach the turn that has them, and says which to use', async () => {
+    const r = await startDrive();
+    const laneLabel = () =>
+      r.root.findAll((n) => typeof n.props.accessibilityLabel === 'string' && n.props.accessibilityLabel.startsWith('Lanes:'))[0]?.props
+        .accessibilityLabel;
+    let sawLanes: string | undefined;
+    let shownFarAway = false;
+    for (let i = 0; i < lanesRoute.length; i++) {
+      await emit(lanesRoute[i][0], lanesRoute[i][1], 13, 10_000 + i * 1_000);
+      const label = laneLabel();
+      if (label) sawLanes = label;
+      if (label && i < 50) shownFarAway = true;
+    }
+    expect(sawLanes).toBe('Lanes: use, use, no, no, no');
+    expect(shownFarAway).toBe(false); // only near the turn, not from the start
+    expect(spoken().some((t) => t.endsWith('Use the left 2 lanes.'))).toBe(true);
+  });
+
+  it('keeps the lanes hidden until the last half mile before the turn', async () => {
+    // The same real route, with lanes put on the left turn onto East Highland
+    // Drive, which comes after 1.4 km of South Main Street.
+    const longApproach = JSON.parse(JSON.stringify(lanesFixture));
+    longApproach.routes[0].legs[0].steps[5].intersections[0].lanes = [
+      { indications: ['left'], valid: true },
+      { indications: ['straight'], valid: false },
+    ];
+    mockFetch.mockImplementation(async (url: string) => ({
+      ok: true,
+      json: async () =>
+        String(url).includes('/reverse?') ? mockRoad.current : String(url).includes('/route/v1/driving') ? longApproach : photonFixture,
+    }));
+    const r = await mountAndPlan();
+    await search(r, 'walmart');
+    await press(r, 'Walmart Supercenter');
+    await press(r, 'Start');
+    await act(async () => {
+      await Promise.resolve();
+    });
+    const lanesShown = () =>
+      r.root.findAll((n) => typeof n.props.accessibilityLabel === 'string' && n.props.accessibilityLabel.startsWith('Lanes:')).length > 0;
+    // the first distance on screen is the one to the next turn
+    const toNextM = () => {
+      const m = allText(r).match(/(\d+(?:\.\d+)?) (mi|ft)/)!;
+      return m[2] === 'mi' ? Number(m[1]) * 1609.344 : Number(m[1]) * 0.3048;
+    };
+    let hiddenWhileFar = false;
+    let shownWhenNear = false;
+    for (let i = 0; i < lanesRoute.length / 2; i++) {
+      await emit(lanesRoute[i][0], lanesRoute[i][1], 13, 10_000 + i * 1_000);
+      if (allText(r).includes('East Highland Drive')) {
+        if (toNextM() > 900 && !lanesShown()) hiddenWhileFar = true;
+        if (toNextM() > 900) expect(lanesShown()).toBe(false);
+        if (lanesShown()) shownWhenNear = true;
+      }
+    }
+    expect(hiddenWhileFar).toBe(true);
+    expect(shownWhenNear).toBe(true);
+  });
+
+  it('shows the posted limit where the map has one, and your speed in red when over', async () => {
+    mockRoad.current = { category: 'highway', osm_type: 'way', osm_id: 7, extratags: { maxspeed: '35 mph' } };
+    const r = await startDrive();
+    await emit(lanesRoute[0][0], lanesRoute[0][1], 13.4, 10_000); // 30 mph
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(allText(r)).toContain('SPEEDLIMIT35');
+    const speedLabel = () =>
+      r.root.findAll((n) => typeof n.props.accessibilityLabel === 'string' && n.props.accessibilityLabel.startsWith('Speed ') && !n.props.accessibilityLabel.startsWith('Speed limit'))[0].props
+        .accessibilityLabel as string;
+    expect(speedLabel()).not.toContain('over the limit');
+    for (let i = 1; i < 5; i++) await emit(lanesRoute[i][0], lanesRoute[i][1], 18, 11_000 + i * 1_000); // ~40 mph
+    expect(speedLabel()).toContain('over the limit');
+  });
+
+  it('shows no sign at all where the road has no limit mapped', async () => {
+    const r = await startDrive();
+    for (let i = 0; i < 5; i++) await emit(lanesRoute[i][0], lanesRoute[i][1], 18, 10_000 + i * 1_000);
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(reverseCalls().length).toBeGreaterThan(0);
+    expect(allText(r)).not.toContain('LIMIT');
+  });
+
+  it('looks the limit up rarely: on a new road or every 30 s, never per GPS fix', async () => {
+    await startDrive();
+    for (let i = 0; i < 60; i++) await emit(lanesRoute[i][0], lanesRoute[i][1], 13, 10_000 + i * 1_000);
+    // 60 GPS fixes over a minute: at most one lookup per new road plus one per 30 s
+    expect(reverseCalls().length).toBeLessThanOrEqual(8);
+    expect(reverseCalls().length).toBeGreaterThan(0);
+  });
+
+  it('a walk never looks up speed limits', async () => {
+    const r = await mountAndPlan();
+    await press(r, 'Walk');
+    await search(r, 'walmart');
+    await press(r, 'Walmart Supercenter');
+    await press(r, 'Start');
+    for (let i = 0; i < 10; i++) await emit(lanesRoute[i][0], lanesRoute[i][1], 1.4, 10_000 + i * 1_000);
+    expect(reverseCalls()).toHaveLength(0);
+  });
+
+  it('offers the new vehicle styles and colours', async () => {
+    const r = await startDrive();
+    await press(r, 'More options');
+    for (const label of ['Vehicle: Sports', 'Vehicle: Neon', 'Vehicle: Motorbike', 'Colour: Yellow', 'Colour: Purple']) {
+      expect(r.root.findAll((n) => n.props.accessibilityLabel === label).length).toBeGreaterThan(0);
+    }
+    await press(r, 'Vehicle: Neon');
+    await press(r, 'Colour: Purple');
+    expect(JSON.parse((await AsyncStorage.getItem('safecircle.vehicle.v1'))!)).toEqual({ style: 'neon', color: 'purple' });
   });
 });

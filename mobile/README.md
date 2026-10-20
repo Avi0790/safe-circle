@@ -564,7 +564,23 @@ development mode is also inherently slower than a real build, and running over
   dependency), lying flat on the map and turned to your heading. The heading
   comes from the GPS, or from your last two positions when it gives none,
   and is kept when you stop (`lib/vehiclePreference.ts`, per device).
-  Walking shows a green walker arrow.
+  Walking shows a green walker arrow. Vehicles have headlight cones, taillights,
+  mirrors and a coloured glow; styles: arrow, car, sports (stripes, spoiler),
+  SUV, pickup, neon (glowing outline) and motorbike, in eight colours.
+- **Lane guidance**: OSRM sends turn lanes for junctions mapped with
+  OpenStreetMap `turn:lanes` (the manoeuvre's first intersection). Within
+  half a mile of such a turn the green card shows one arrow per lane with the
+  ones to use lit, and the voice adds "Use the left 2 lanes."
+  (`navigation.laneArrows`, `laneHint`). Coverage follows the map: around
+  Jonesboro only a few junctions have lanes mapped.
+- **Speed limit** (`lib/speedLimit.ts`): the posted limit of the road you're
+  on, from OpenStreetMap's `maxspeed` via a Nominatim reverse lookup, at most
+  every 30 s or when the route moves to a new road, one request at a time.
+  Shown as a US-style sign above your speed, which turns red more than 2 mph
+  over. **Only real, mapped limits are shown**: no guessing from road type.
+  OSRM's public server doesn't provide limits, and around Jonesboro almost no
+  roads have `maxspeed` in OpenStreetMap yet, so the sign will often be
+  absent there; adding limits to OpenStreetMap makes them appear.
 - **Options while navigating** (tap the bottom sheet;
   `components/DrivePanel.tsx`), modelled on Apple Maps:
   - **Audio** (`lib/voicePreference.ts`): All voice / Alerts only / No voice,

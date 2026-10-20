@@ -24,6 +24,7 @@ import {
   formatArrivalClock,
   formatNavDistance,
   formatNavDuration,
+  laneArrows,
   maneuverGlyph,
   navState,
   nextAnnouncement,
@@ -55,6 +56,7 @@ import { reportIncident, reportInfo, upcomingReport, type RoadReport, type RoadR
 import { searchStops, STOP_CATEGORIES, type StopCategory, type StopResult } from '@/lib/stops';
 import { getVoiceMode, setVoiceMode, shouldSpeak, type SpeechKind, type VoiceMode } from '@/lib/voicePreference';
 import { DEFAULT_VEHICLE, getVehicle, nextHeading, setVehicle, type VehiclePreference } from '@/lib/vehiclePreference';
+import { isOverLimit, lookUpSpeedLimit, shouldLookUpLimit } from '@/lib/speedLimit';
 import { colors, radius, spacing, typography } from '@/lib/theme';
 
 type Phase = 'plan' | 'preview' | 'driving' | 'arrived';
@@ -124,6 +126,9 @@ export default function DriveScreen() {
   const [heading, setHeading] = useState(0);
   const [cameraMode, setCameraMode] = useState<CameraMode>('heading');
   const lastFollowMode = useRef<'heading' | 'north'>('heading');
+  // The posted limit of the road you're on, when the map has one.
+  const [speedLimit, setSpeedLimit] = useState<number | null>(null);
+  const limitLookup = useRef<{ at: number | null; step: number | null; inFlight: boolean }>({ at: null, step: null, inFlight: false });
   const [reporting, setReporting] = useState(false);
   const [linkShared, setLinkShared] = useState(false);
   const [stop, setStop] = useState<(StopResult & { emoji: string }) | null>(null);
@@ -345,6 +350,18 @@ export default function DriveScreen() {
       if (say) {
         said.current.add(say.key);
         speak(say.text);
+      }
+
+      // The speed limit, looked up now and then (not on every fix) while driving.
+      const lim = limitLookup.current;
+      if (modeRef.current === 'drive' && shouldLookUpLimit(lim.at, lim.step, s.nextStepIndex, Date.now(), lim.inFlight)) {
+        lim.at = Date.now();
+        lim.step = s.nextStepIndex;
+        lim.inFlight = true;
+        lookUpSpeedLimit(f).then((res) => {
+          lim.inFlight = false;
+          if (phaseRef.current === 'driving') setSpeedLimit(res.mph);
+        });
       }
 
       const ahead = upcomingReport(prep, s.alongM, reportsRef.current, alertedReports.current);
@@ -810,6 +827,8 @@ export default function DriveScreen() {
   function endDriving() {
     closeTrip(false);
     closeLink(false);
+    setSpeedLimit(null);
+    limitLookup.current = { at: null, step: null, inFlight: false };
     setTripNotice(null);
     setPanel(null);
     stopRef.current = null;
@@ -1126,6 +1145,13 @@ export default function DriveScreen() {
           onMore={() => setPanel('main')}
           glyph={maneuverGlyph(nextStep ?? { type: 'continue' })}
           thenGlyph={thenStep ? maneuverGlyph(thenStep) : null}
+          lanes={
+            mode === 'drive' && nextStep?.lanes && nav && nav.distanceToNextM <= 800
+              ? laneArrows(nextStep.lanes, nextStep.modifier)
+              : null
+          }
+          speedLimitMph={mode === 'drive' ? speedLimit : null}
+          overLimit={mode === 'drive' && isOverLimit(mph, speedLimit)}
           voiceMode={voiceMode}
           cameraMode={cameraMode}
           onCompass={toggleCompass}

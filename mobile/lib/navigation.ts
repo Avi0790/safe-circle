@@ -19,6 +19,15 @@ export interface RouteStep {
   distanceM: number;
   location: LatLng;
   instruction: string;
+  // Turn lanes at the manoeuvre, left to right, where the map has them
+  // (OpenStreetMap turn:lanes): what each lane allows and whether it's one
+  // to be in for this route.
+  lanes?: Lane[];
+}
+
+export interface Lane {
+  indications: string[];
+  valid: boolean;
 }
 
 export interface Route {
@@ -147,6 +156,43 @@ export function maneuverGlyph(step: { type: string; modifier?: string }): string
     default:
       return '↑';
   }
+}
+
+// ------------------------------------------------------------------ lanes
+
+const LANE_GLYPH: Record<string, string> = {
+  uturn: '↶',
+  'sharp left': '↙',
+  left: '↰',
+  'slight left': '↖',
+  straight: '↑',
+  'slight right': '↗',
+  right: '↱',
+  'sharp right': '↘',
+  none: '↑',
+};
+
+// One arrow per lane, as Google Maps draws them: the lane's arrow for this
+// turn if it allows it, otherwise its first arrow; lanes to use are lit.
+export function laneArrows(lanes: Lane[], modifier?: string): { glyph: string; valid: boolean }[] {
+  return lanes.map((l) => {
+    const pick = l.valid && modifier && l.indications.includes(modifier) ? modifier : l.indications[0] ?? 'straight';
+    return { glyph: LANE_GLYPH[pick] ?? '↑', valid: l.valid };
+  });
+}
+
+// "Use the left 2 lanes." / "Use the right lane." / "Use the middle lane."
+// Nothing when every lane works (no advice needed) or none is marked.
+export function laneHint(lanes: Lane[] | undefined): string | null {
+  if (!lanes || lanes.length < 2) return null;
+  const valid = lanes.map((l) => l.valid);
+  const count = valid.filter(Boolean).length;
+  if (count === 0 || count === lanes.length) return null;
+  const first = valid.indexOf(true);
+  const last = valid.lastIndexOf(true);
+  if (last - first + 1 !== count) return null; // not one block of lanes: too fiddly to say
+  const which = first === 0 ? 'left' : last === lanes.length - 1 ? 'right' : 'middle';
+  return count === 1 ? `Use the ${which} lane.` : `Use the ${which} ${count} lanes.`;
 }
 
 // ---------------------------------------------------------------- geometry
@@ -312,14 +358,16 @@ export function nextAnnouncement(
     // there; saying "you have arrived" 90 m short would be wrong and twice.
     if (step.type === 'arrive') return { key: nearKey, text: 'Your destination is just ahead.' };
     if (step.type === 'waypoint') return { key: nearKey, text: 'Your stop is just ahead.' };
-    return { key: nearKey, text: `${step.instruction}.` };
+    const lanes = walking ? null : laneHint(step.lanes);
+    return { key: nearKey, text: lanes ? `${step.instruction}. ${lanes}` : `${step.instruction}.` };
   }
   if (distanceM <= farM && distanceM > nearM && !said.has(farKey) && step.type !== 'arrive') {
     const lower = step.instruction.charAt(0).toLowerCase() + step.instruction.slice(1);
     // Driving says a round "quarter mile"; a walker's next turn can be much
     // closer than any fixed phrase, so say the real distance.
     const lead = walking ? `In ${formatNavDistance(distanceM)}` : 'In a quarter mile';
-    return { key: farKey, text: `${lead}, ${lower}.` };
+    const lanes = walking ? null : laneHint(step.lanes);
+    return { key: farKey, text: lanes ? `${lead}, ${lower}. ${lanes}` : `${lead}, ${lower}.` };
   }
   return null;
 }
