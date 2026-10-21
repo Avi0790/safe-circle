@@ -3,9 +3,10 @@ import type { CrewShift } from '@/lib/crew';
 // Weekly timesheets for the people who run an organization, built from the
 // shifts org_shifts() already returns. That function decides who's in it:
 // owners and admins get every worker, managers only the teams they lead, and
-// it only covers current workers. Times only, never locations. Each shift is
-// already capped at the 14-hour automatic end (ended_at), and an open one
-// counts up to now.
+// for owners and admins it includes people who have since left (migration
+// ...000065), so their hours still get paid. Times only, never locations.
+// Each shift is already capped at the 14-hour automatic end (ended_at), and
+// an open one counts up to now.
 //
 // Weeks run Monday to Sunday in the phone's time zone. A shift is split at
 // midnight, so overnight work lands on the days (and weeks) it happened.
@@ -30,6 +31,8 @@ export interface TimesheetRow {
   totalMinutes: number;
   shifts: TimesheetShift[];
   onShift: boolean;
+  // has since left the organization
+  former: boolean;
 }
 
 export interface Timesheet {
@@ -73,7 +76,7 @@ export function buildTimesheet(shifts: CrewShift[], start: Date): Timesheet {
 
     let row = byWorker.get(s.user_id);
     if (!row) {
-      row = { userId: s.user_id, name: s.full_name, days: [0, 0, 0, 0, 0, 0, 0], totalMinutes: 0, shifts: [], onShift: false };
+      row = { userId: s.user_id, name: s.full_name, days: [0, 0, 0, 0, 0, 0, 0], totalMinutes: 0, shifts: [], onShift: false, former: false };
       byWorker.set(s.user_id, row);
     }
     for (let i = 0; i < 7; i++) {
@@ -85,6 +88,7 @@ export function buildTimesheet(shifts: CrewShift[], start: Date): Timesheet {
     row.totalMinutes += minutes;
     row.shifts.push({ shiftId: s.shift_id, start: new Date(from), end: new Date(to), minutes, isOpen: s.is_open });
     if (s.is_open) row.onShift = true;
+    if (s.is_current === false) row.former = true;
   }
 
   const rows = [...byWorker.values()]

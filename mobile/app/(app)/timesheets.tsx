@@ -108,6 +108,7 @@ export default function TimesheetsScreen() {
                 <Text style={typography.caption}>
                   {r.shifts.length} {r.shifts.length === 1 ? 'shift' : 'shifts'}
                   {r.onShift ? ' · on shift now, counted up to now' : ''}
+                  {r.former ? ' · has left the organization' : ''}
                 </Text>
                 <View style={styles.days}>
                   {DAY_LABELS.map((d, i) => (
@@ -131,8 +132,8 @@ export default function TimesheetsScreen() {
 
         <Text style={typography.caption}>
           Shift times only, never locations. Managers see only the teams they lead. A shift counts up
-          to 14 hours, when it ends by itself, and overnight shifts are split at midnight. Workers who
-          have left the organization aren&apos;t listed.
+          to 14 hours, when it ends by itself, and overnight shifts are split at midnight. Owners and
+          admins also see people who have left, for the weeks they worked.
         </Text>
       </ScrollView>
     </SafeAreaView>

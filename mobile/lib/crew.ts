@@ -32,6 +32,9 @@ export interface CrewShift {
   clocked_in_at: string;
   ended_at: string;
   is_open: boolean;
+  // false once they've left the organization (migration ...000065); absent
+  // from older servers
+  is_current?: boolean;
 }
 
 export interface TrackPoint {

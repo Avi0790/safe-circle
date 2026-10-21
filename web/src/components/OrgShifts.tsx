@@ -83,7 +83,10 @@ export function OrgShifts({ org }: { org: OrgMembership }) {
               const minutes = durationMinutes(s.clocked_in_at, s.ended_at)
               return (
                 <tr key={s.shift_id}>
-                  <td>{s.full_name}</td>
+                  <td>
+                    {s.full_name}
+                    {s.is_current === false && <span className="org-note"> (has left)</span>}
+                  </td>
                   <td>{new Date(s.clocked_in_at).toLocaleDateString()}</td>
                   <td>{formatClockTime(s.clocked_in_at)}</td>
                   <td>{s.is_open ? 'on shift' : formatClockTime(s.ended_at)}</td>

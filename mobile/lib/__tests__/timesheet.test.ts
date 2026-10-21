@@ -62,6 +62,15 @@ describe('buildTimesheet', () => {
     expect(sheet.rows.map((r) => r.onShift)).toEqual([true, false]);
   });
 
+  it('keeps someone who has left, marked as such', () => {
+    const left = { ...shift(9, 'w9', 'Gone Worker', at(19, 8), at(19, 12)), is_current: false };
+    const row = buildTimesheet([left, shift(1, 'w1', 'Sam Field', at(19, 8), at(19, 9))], MON).rows;
+    expect(row.map((r) => [r.name, hours(r.totalMinutes), r.former])).toEqual([
+      ['Gone Worker', '4.00', true],
+      ['Sam Field', '1.00', false],
+    ]);
+  });
+
   it('is empty for a week with no shifts', () => {
     expect(buildTimesheet([], MON)).toMatchObject({ rows: [], totalMinutes: 0 });
   });

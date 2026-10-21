@@ -23,7 +23,7 @@ export interface OrgMembership {
 
 // What a worker is agreeing to before anyone can see them. Each line
 // describes something the backend actually enforces (migrations ...000048,
-// ...000051, ...000053, ...000056) — keep them in step. Changing what this promises
+// ...000051, ...000053, ...000056, ...000065) — keep them in step. Changing what this promises
 // means bumping org_disclosure_version() in the database (migration
 // ...000052) so workers who accepted the old text are asked again.
 export const ORG_DISCLOSURE: string[] = [
@@ -35,7 +35,7 @@ export const ORG_DISCLOSURE: string[] = [
   'If your phone stops sending your location for about 20 minutes while you are clocked in, your admins and the managers who oversee you are notified, so they can check that you are OK.',
   'Other workers cannot see you.',
   'Every time a manager or admin looks at your location, it is recorded.',
-  'You can leave the organization at any time.',
+  'You can leave the organization at any time. After you leave, its owners and admins can still see when you worked there (never where you were), for payroll, for up to 90 days.',
 ];
 
 export function activeOrgs(orgs: OrgMembership[]): OrgMembership[] {

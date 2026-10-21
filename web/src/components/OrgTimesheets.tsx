@@ -101,6 +101,7 @@ export function OrgTimesheets({ org }: { org: OrgMembership }) {
                   <div className="org-note">
                     {r.shifts.length} {r.shifts.length === 1 ? 'shift' : 'shifts'}
                     {r.onShift ? ' · on shift now' : ''}
+                    {r.former ? ' · has left' : ''}
                   </div>
                 </td>
                 {r.days.map((m, i) => (
@@ -129,7 +130,7 @@ export function OrgTimesheets({ org }: { org: OrgMembership }) {
       <p className="org-note">
         Hours, Monday to Sunday in your time zone. Shift times only, never locations; managers see only the teams
         they lead. A shift counts up to 14 hours, when it ends by itself, and overnight shifts are split at
-        midnight. Workers who have left the organization aren&apos;t listed.
+        midnight. Owners and admins also see people who have left, for the weeks they worked.
       </p>
     </div>
   )

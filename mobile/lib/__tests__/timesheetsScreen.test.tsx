@@ -25,7 +25,7 @@ beforeEach(() => {
   fake.rpcResults.org_shifts = {
     data: [
       { shift_id: 1, user_id: 'w1', full_name: 'Sam Field', clocked_in_at: hoursAfter(8), ended_at: hoursAfter(16), is_open: false },
-      { shift_id: 2, user_id: 'w2', full_name: 'Ana Crew', clocked_in_at: hoursAfter(9), ended_at: hoursAfter(12.5), is_open: false },
+      { shift_id: 2, user_id: 'w2', full_name: 'Ana Crew', clocked_in_at: hoursAfter(9), ended_at: hoursAfter(12.5), is_open: false, is_current: false },
     ],
   };
 });
@@ -40,6 +40,8 @@ describe('Timesheets screen', () => {
     expect(t).toContain('worked by 2 workers');
     expect(t).toContain('Sam Field8.00 h');
     expect(t).toContain('Ana Crew3.50 h');
+    expect(t).toContain('1 shift · has left the organization'); // still paid for the week
+    expect(t).not.toContain('2 shifts · has left');
     expect(t).toContain('never locations');
     expect(fake.rpcsOf('org_shifts')[0]).toMatchObject({ p_org: 'o1', p_limit: 500 });
   });
