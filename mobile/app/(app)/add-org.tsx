@@ -15,7 +15,7 @@ export default function AddOrgScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['bottom']}>
-      <Stack.Screen options={{ title: 'Work' }} />
+      <Stack.Screen options={{ title: 'Work', headerBackTitle: 'Settings' }} />
       <OrgOnboarding
         heading="Add work"
         intro="Join your workplace with the code your manager gave you, or create an organization for your crew. Your family circles stay exactly as they are, and your workplace can see you only while you're clocked in."

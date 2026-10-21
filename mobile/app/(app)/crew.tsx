@@ -73,7 +73,7 @@ export default function CrewScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['bottom']}>
-      <Stack.Screen options={{ title: orgName ? String(orgName) : 'Crew' }} />
+      <Stack.Screen options={{ title: orgName ? String(orgName) : 'Crew', headerBackTitle: 'Work' }} />
       <SosBanner events={sosEvents} onChanged={refreshSos} />
       <ScrollView>
         <CrewMap markers={markers} />

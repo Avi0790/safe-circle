@@ -227,6 +227,16 @@ describe('Work tab: managers and admins', () => {
     expect(allText(r)).toContain('K7Q2-PX9M');
   });
 
+  it('managers and admins open timesheets; workers have none', async () => {
+    orgsOverride = [org({ role: 'manager' })];
+    const r = await screen();
+    await press(r, 'Timesheets');
+    expect(mockPush).toHaveBeenCalledWith({ pathname: '/timesheets', params: { orgId: 'o1', orgName: 'Acme Roofing' } });
+    orgsOverride = null;
+    const w = await screen();
+    expect(pressables(w, 'Timesheets')).toHaveLength(0);
+  });
+
   it('an owner is described as an owner', async () => {
     orgsOverride = [org({ role: 'owner' })];
     const r = await screen();

@@ -128,7 +128,7 @@ export default function CrewManageScreen() {
   if (!canManage) {
     return (
       <SafeAreaView style={styles.safeArea}>
-        <Stack.Screen options={{ title: 'Manage crew' }} />
+        <Stack.Screen options={{ title: 'Manage crew', headerBackTitle: 'Work' }} />
         <View style={styles.body}>
           <Text style={typography.body}>Only owners and admins can manage people and teams.</Text>
         </View>
@@ -143,7 +143,7 @@ export default function CrewManageScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['bottom']}>
-      <Stack.Screen options={{ title: orgName ? `${orgName}: crew` : 'Manage crew' }} />
+      <Stack.Screen options={{ title: orgName ? `${orgName}: crew` : 'Manage crew', headerBackTitle: 'Work' }} />
       <ScrollView contentContainerStyle={styles.body}>
         <Text style={typography.body}>
           A manager sees the workers on teams they lead. Make someone a manager, add them to a team
