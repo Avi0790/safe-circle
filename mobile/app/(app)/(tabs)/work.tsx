@@ -11,6 +11,7 @@ import { useActiveSosEvents } from '@/hooks/useActiveSosEvents';
 import { checkInNow, clockInTo, clockOutOf } from '@/lib/clockIn';
 import { formatClockTime, timeAgo } from '@/lib/format';
 import { activeOrgs, ORG_DISCLOSURE, type OrgMembership } from '@/lib/orgInfo';
+import { DEMO_SEAT_OPTIONS, planSummary, seatsFull, workerPlanNotice } from '@/lib/orgPlan';
 import { describeOrgAudit, formatShiftElapsed, shiftAutoEndsAt } from '@/lib/shift';
 import { supabase } from '@/lib/supabase';
 import { colors, radius, spacing, typography } from '@/lib/theme';
@@ -148,6 +149,35 @@ export default function WorkScreen() {
     refreshSos();
   }
 
+  // Demo billing (migration ...000064): owner only, no money moves. A real
+  // payment provider would change the plan from its webhook instead.
+  async function doBilling(org: OrgMembership, action: string, seats?: number) {
+    setError(null);
+    setBusyOrg(org.org_id);
+    const { error: rpcError } = await supabase.rpc('org_demo_billing', {
+      p_org: org.org_id,
+      p_action: action,
+      p_seats: seats ?? null,
+    });
+    setBusyOrg(null);
+    if (rpcError) {
+      setError(rpcError.message);
+      return;
+    }
+    await refresh();
+  }
+
+  function confirmBilling(org: OrgMembership, action: 'cancel' | 'end_trial') {
+    Alert.alert(
+      action === 'cancel' ? `Cancel ${org.name}'s plan?` : 'End the trial now?',
+      "Workers won't be able to start new shifts and nobody new can join. Shifts already running, clocking out and SOS keep working.",
+      [
+        { text: 'Keep it', style: 'cancel' },
+        { text: action === 'cancel' ? 'Cancel plan' : 'End trial', style: 'destructive', onPress: () => doBilling(org, action) },
+      ],
+    );
+  }
+
   async function handleNewCode(org: OrgMembership) {
     setError(null);
     const { data, error: rpcError } = await supabase.rpc('regenerate_org_invite_code', {
@@ -261,6 +291,10 @@ export default function WorkScreen() {
                     </View>
                   )}
 
+                  {!org.on_shift && workerPlanNotice(org) && (
+                    <Text style={styles.planEnded}>{workerPlanNotice(org)}</Text>
+                  )}
+
                   {org.on_shift ? (
                     <Button
                       title="Clock out"
@@ -270,10 +304,16 @@ export default function WorkScreen() {
                     />
                   ) : (
                     <Button
-                      title={onShiftElsewhere(org.org_id) ? 'Clock out of your other job first' : 'Clock in'}
+                      title={
+                        workerPlanNotice(org)
+                          ? 'Plan ended — ask your owner'
+                          : onShiftElsewhere(org.org_id)
+                            ? 'Clock out of your other job first'
+                            : 'Clock in'
+                      }
                       onPress={() => handleClockIn(org)}
                       loading={busy}
-                      disabled={onShiftElsewhere(org.org_id)}
+                      disabled={onShiftElsewhere(org.org_id) || !!workerPlanNotice(org)}
                     />
                   )}
 
@@ -322,9 +362,63 @@ export default function WorkScreen() {
                 </>
               )}
 
+              {/* plan_state is missing from a server without migration ...000064 */}
+              {isAdmin && org.plan_state != null && (
+                <View style={styles.views}>
+                  <Text style={styles.sectionLabel}>Plan</Text>
+                  <View
+                    style={[
+                      styles.plan,
+                      planSummary(org, now).tone === 'warn' && styles.planWarn,
+                      planSummary(org, now).tone === 'ended' && styles.planEndedBox,
+                    ]}
+                  >
+                    <Text style={styles.statusTitle}>{planSummary(org, now).title}</Text>
+                    <Text style={typography.body}>{planSummary(org, now).detail}</Text>
+                  </View>
+                  {org.role === 'owner' ? (
+                    <>
+                      <Text style={typography.caption}>
+                        Demo billing: no real money moves. Family circles are always free; work
+                        organizations are paid per worker seat.
+                      </Text>
+                      <View style={styles.chips}>
+                        {DEMO_SEAT_OPTIONS.map((n) => (
+                          <Button
+                            key={n}
+                            title={`Pay for ${n} seats (demo)`}
+                            variant={org.plan_state === 'active' && org.seat_limit === n ? 'primary' : 'secondary'}
+                            onPress={() => doBilling(org, 'activate', n)}
+                            disabled={busy}
+                          />
+                        ))}
+                        {org.plan_state === 'trial' && (
+                          <Button title="End the trial now (demo)" variant="secondary" onPress={() => confirmBilling(org, 'end_trial')} disabled={busy} />
+                        )}
+                        {org.plan_state === 'active' && (
+                          <Button title="Simulate a failed payment (demo)" variant="secondary" onPress={() => doBilling(org, 'payment_failed')} disabled={busy} />
+                        )}
+                        {(org.plan_state === 'active' || org.plan_state === 'grace') && (
+                          <Button title="Cancel plan" variant="secondary" onPress={() => confirmBilling(org, 'cancel')} disabled={busy} />
+                        )}
+                      </View>
+                    </>
+                  ) : (
+                    <Text style={typography.caption}>Only the owner can change the plan.</Text>
+                  )}
+                </View>
+              )}
+
               {isAdmin && (
                 <View style={styles.views}>
                   <Text style={styles.sectionLabel}>Invite your crew</Text>
+                  {seatsFull(org) && (
+                    <Text style={styles.planEnded}>
+                      {org.plan_state === 'ended'
+                        ? 'The plan has ended, so nobody new can join.'
+                        : 'Every seat is taken. Add seats before inviting more workers, or they won’t be able to join.'}
+                    </Text>
+                  )}
                   {newCode[org.org_id] ? (
                     <Text selectable style={styles.code}>
                       {newCode[org.org_id]}
@@ -392,5 +486,9 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
   },
   notice: { ...typography.caption, color: colors.stale },
+  plan: { borderRadius: radius.md, padding: spacing.md, gap: 2, backgroundColor: colors.bg, borderWidth: 1, borderColor: colors.border },
+  planWarn: { backgroundColor: '#fef3c7', borderColor: '#f59e0b' },
+  planEndedBox: { backgroundColor: '#fee2e2', borderColor: colors.danger },
+  planEnded: { ...typography.caption, color: colors.danger, fontWeight: '600' },
   error: { color: colors.danger, fontSize: 14 },
 });

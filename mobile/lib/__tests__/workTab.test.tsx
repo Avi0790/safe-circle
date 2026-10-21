@@ -43,7 +43,8 @@ const iso = (min: number) => new Date(Date.now() + min * 60_000).toISOString();
 const org = (over: Record<string, unknown> = {}) => ({
   org_id: 'o1', name: 'Acme Roofing', type: 'construction', role: 'worker', status: 'active',
   consented_at: iso(-1000), on_shift: false, shift_started_at: null, needs_reconsent: false,
-  checkin_minutes: null, next_checkin_due: null, ...over,
+  checkin_minutes: null, next_checkin_due: null,
+  plan_state: 'trial', trial_ends_at: iso(14 * 24 * 60), grace_ends_at: null, seat_limit: null, seats_used: null, ...over,
 });
 
 // The server: my_orgs reflects whether you're clocked in.
@@ -230,5 +231,77 @@ describe('Work tab: managers and admins', () => {
     orgsOverride = [org({ role: 'owner' })];
     const r = await screen();
     expect(allText(r)).toContain('You are an owner');
+  });
+});
+
+describe('Work tab: the plan (demo billing)', () => {
+  it('a worker on an ended plan is told why, cannot clock in, and still has SOS', async () => {
+    orgsOverride = [org({ plan_state: 'ended' })];
+    const r = await screen();
+    const t = allText(r);
+    expect(t).toContain("Acme Roofing's plan has ended, so you can't start a new shift.");
+    expect(t).toContain('SOS still works');
+    expect(pressables(r, 'Clock in')).toHaveLength(0);
+    expect(pressables(r, 'SOS').length).toBeGreaterThan(0);
+  });
+
+  it('a worker on a running shift can still clock out after the plan ends', async () => {
+    orgsOverride = [org({ plan_state: 'ended', on_shift: true, shift_started_at: iso(-30) })];
+    const r = await screen();
+    expect(pressables(r, 'Clock out')).toHaveLength(1);
+  });
+
+  it('the owner sees the trial and pays for seats', async () => {
+    orgsOverride = [org({ role: 'owner', seat_limit: 10, seats_used: 3 })];
+    fake.rpcHandlers.org_demo_billing = () => {
+      orgsOverride = [org({ role: 'owner', plan_state: 'active', seat_limit: 25, seats_used: 3 })];
+      return {};
+    };
+    const r = await screen();
+    expect(allText(r)).toContain('Free trial · 14 days left');
+    expect(allText(r)).toContain('3 of 10 worker seats used');
+    expect(allText(r)).toContain('no real money moves');
+    await press(r, 'Pay for 25 seats (demo)');
+    expect(fake.rpcsOf('org_demo_billing')).toEqual([{ p_org: 'o1', p_action: 'activate', p_seats: 25 }]);
+    expect(allText(r)).toContain('Plan active');
+    expect(allText(r)).toContain('3 of 25 worker seats used');
+  });
+
+  it('the owner can simulate a failed payment, and canceling asks first', async () => {
+    orgsOverride = [org({ role: 'owner', plan_state: 'active', seat_limit: 5, seats_used: 1 })];
+    const alert = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+    const r = await screen();
+    await press(r, 'Simulate a failed payment (demo)');
+    expect(fake.rpcsOf('org_demo_billing')).toEqual([{ p_org: 'o1', p_action: 'payment_failed', p_seats: null }]);
+    await press(r, 'Cancel plan');
+    expect(fake.rpcsOf('org_demo_billing')).toHaveLength(1); // not until confirmed
+    await tapAlertButton(alert, 'Cancel plan');
+    expect(fake.rpcsOf('org_demo_billing')[1]).toEqual({ p_org: 'o1', p_action: 'cancel', p_seats: null });
+    alert.mockRestore();
+  });
+
+  it('says why the server refused a plan change', async () => {
+    orgsOverride = [org({ role: 'owner', seat_limit: 10, seats_used: 0 })];
+    fake.rpcResults.org_demo_billing = { error: { message: 'Only the owner can change the plan.' } };
+    const r = await screen();
+    await press(r, 'Pay for 5 seats (demo)');
+    expect(allText(r)).toContain('Only the owner can change the plan.');
+  });
+
+  it('before the server has plans, shows no plan card', async () => {
+    orgsOverride = [org({ role: 'owner', plan_state: undefined })];
+    const r = await screen();
+    expect(allText(r)).not.toContain('Plan ended');
+    expect(pressables(r, 'Pay for 5 seats (demo)')).toHaveLength(0);
+  });
+
+  it('an admin sees the plan but cannot change it, and is warned when seats are full', async () => {
+    orgsOverride = [org({ role: 'admin', plan_state: 'active', seat_limit: 5, seats_used: 5 })];
+    const r = await screen();
+    const t = allText(r);
+    expect(t).toContain('Plan active');
+    expect(t).toContain('Only the owner can change the plan.');
+    expect(t).toContain('Every seat is taken.');
+    expect(pressables(r, 'Pay for 5 seats (demo)')).toHaveLength(0);
   });
 });

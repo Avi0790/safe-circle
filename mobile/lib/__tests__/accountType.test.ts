@@ -61,6 +61,11 @@ describe('organization memberships', () => {
     needs_reconsent: false,
     checkin_minutes: null,
     next_checkin_due: null,
+    plan_state: 'trial',
+    trial_ends_at: null,
+    grace_ends_at: null,
+    seat_limit: null,
+    seats_used: null,
   });
 
   it('separates active memberships from a pending invitation', () => {

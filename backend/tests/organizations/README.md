@@ -31,6 +31,7 @@ select count(*) from public.organizations;
 | `07_adversarial_security` | forged audit rows, internal helpers, direct writes, cross-organization access, SOS tampering and rate-limit dodging, consent bypass, removed members (36 checks) |
 | `08_sos_names` | overseers get the sender's name without opening profiles |
 | `09_quiet_phone` | the "gone quiet" push: who is told, once per stretch, resets, exclusions |
+| `10_org_plans` | paid work organizations: trial, seats, demo billing, no self-upgrade, and that an ended plan stops new shifts and joins but never SOS, clock-out or a running shift (27 checks) |
 
 Scripts 04, 05, 07 and 09 insert "trusted" rows as the database owner; their
 helper clears the fake JWT claims first (`auth.uid()` must be null, as it is

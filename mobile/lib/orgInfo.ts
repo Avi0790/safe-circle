@@ -11,6 +11,14 @@ export interface OrgMembership {
   needs_reconsent: boolean;
   checkin_minutes: number | null;
   next_checkin_due: string | null;
+  // The organization's plan (migration ...000064, lib/orgPlan.ts). Everyone
+  // gets the state; the dates and seats are null unless you're an owner or
+  // admin.
+  plan_state: 'trial' | 'active' | 'grace' | 'ended';
+  trial_ends_at: string | null;
+  grace_ends_at: string | null;
+  seat_limit: number | null;
+  seats_used: number | null;
 }
 
 // What a worker is agreeing to before anyone can see them. Each line
