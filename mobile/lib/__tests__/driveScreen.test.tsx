@@ -14,6 +14,14 @@ import photonFixture from './fixtures/photon-walmart.json';
 // real captured route. Only the device edges are faked: GPS (driven by the
 // test), speech, the map view, and the network (serving the captured responses).
 
+// Several tests replay a whole drive or walk one GPS fix at a time (~640
+// screen updates for the 5-mile route). That's about a second on an idle Mac,
+// but 3–4 times longer while the full suite or a build runs alongside, which
+// crossed Jest's 5 s default. A test that times out also keeps feeding GPS
+// fixes into the next test's watchers, so a few quick tests failed behind it.
+// 30 s still catches a test that is genuinely stuck.
+jest.setTimeout(30_000);
+
 const mockWatchers: { cb: (loc: unknown) => void; removed: boolean }[] = [];
 const mockStart = { latitude: 35.8423, longitude: -90.7043 };
 const mockFetch = jest.fn();
