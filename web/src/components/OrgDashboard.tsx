@@ -3,24 +3,37 @@ import { supabase } from '../lib/supabase'
 import type { SosEvent } from '../lib/types'
 import { eventsMissingNames, fillSosNames, type SosDetailRow } from '../lib/sosNames'
 import { isAdminRole, type OrgMembership } from '../lib/org'
+import { planSummary } from '../lib/plan'
 import { OrgLive } from './OrgLive'
 import { OrgPeople } from './OrgPeople'
+import { OrgPlan } from './OrgPlan'
 import { OrgShifts } from './OrgShifts'
 import { OrgSosBanner } from './OrgSosBanner'
+import { OrgTimesheets } from './OrgTimesheets'
 
-type Tab = 'live' | 'people' | 'shifts'
+type Tab = 'live' | 'people' | 'shifts' | 'timesheets' | 'plan'
 
 // The work view for owners, admins and managers: a live crew map, people and
 // teams (owners/admins), and shift history. Unlike the circle dashboard this
 // one writes — roles, teams, resolving an SOS — but it still never tracks
-// anyone: location only ever comes from workers' phones.
-export function OrgDashboard({ orgs, myUserId }: { orgs: OrgMembership[]; myUserId: string }) {
+// anyone: location only ever comes from workers' phones. Owners and admins
+// also see the plan; timesheets are for anyone who oversees workers.
+export function OrgDashboard({
+  orgs,
+  myUserId,
+  onOrgsChanged,
+}: {
+  orgs: OrgMembership[]
+  myUserId: string
+  onOrgsChanged: () => Promise<void> | void
+}) {
   const [orgId, setOrgId] = useState(orgs[0].org_id)
   const [tab, setTab] = useState<Tab>('live')
   const [sosEvents, setSosEvents] = useState<SosEvent[]>([])
 
   const org = orgs.find((o) => o.org_id === orgId) ?? orgs[0]
   const admin = isAdminRole(org.role)
+  const plan = admin ? planSummary(org) : null
 
   const loadSos = useCallback(async () => {
     // sos_events has two FKs to profiles, so the embed needs the hint.
@@ -52,7 +65,12 @@ export function OrgDashboard({ orgs, myUserId }: { orgs: OrgMembership[]; myUser
     }
   }, [loadSos])
 
-  const activeTab: Tab = tab === 'people' && !admin ? 'live' : tab
+  const activeTab: Tab = (tab === 'people' && !admin) || (tab === 'plan' && !plan) ? 'live' : tab
+  const tabButton = (t: Tab, label: string) => (
+    <button className={activeTab === t ? 'org-tab org-tab-on' : 'org-tab'} onClick={() => setTab(t)}>
+      {label}
+    </button>
+  )
 
   return (
     <div className="org-dashboard">
@@ -69,18 +87,17 @@ export function OrgDashboard({ orgs, myUserId }: { orgs: OrgMembership[]; myUser
           <strong className="org-title">{org.name}</strong>
         )}
         <span className="org-note">you are {org.role === 'admin' ? 'an admin' : `a${org.role === 'owner' ? 'n' : ''} ${org.role}`}</span>
+        {plan && (
+          <button className={`plan-badge${plan.tone === 'ok' ? '' : ` plan-badge-${plan.tone}`}`} onClick={() => setTab('plan')}>
+            {plan.title}
+          </button>
+        )}
         <nav className="org-tabs">
-          <button className={activeTab === 'live' ? 'org-tab org-tab-on' : 'org-tab'} onClick={() => setTab('live')}>
-            Live crew
-          </button>
-          {admin && (
-            <button className={activeTab === 'people' ? 'org-tab org-tab-on' : 'org-tab'} onClick={() => setTab('people')}>
-              People &amp; teams
-            </button>
-          )}
-          <button className={activeTab === 'shifts' ? 'org-tab org-tab-on' : 'org-tab'} onClick={() => setTab('shifts')}>
-            Shifts
-          </button>
+          {tabButton('live', 'Live crew')}
+          {admin && tabButton('people', 'People & teams')}
+          {tabButton('shifts', 'Shifts')}
+          {tabButton('timesheets', 'Timesheets')}
+          {plan && tabButton('plan', 'Plan')}
         </nav>
       </header>
 
@@ -90,6 +107,8 @@ export function OrgDashboard({ orgs, myUserId }: { orgs: OrgMembership[]; myUser
         {activeTab === 'live' && <OrgLive key={org.org_id} org={org} />}
         {activeTab === 'people' && <OrgPeople key={org.org_id} org={org} myUserId={myUserId} />}
         {activeTab === 'shifts' && <OrgShifts key={org.org_id} org={org} />}
+        {activeTab === 'timesheets' && <OrgTimesheets key={org.org_id} org={org} />}
+        {activeTab === 'plan' && <OrgPlan key={org.org_id} org={org} onChanged={onOrgsChanged} />}
       </main>
     </div>
   )

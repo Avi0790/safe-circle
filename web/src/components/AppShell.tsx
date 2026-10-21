@@ -24,6 +24,12 @@ export function AppShell({ myUserId }: { myUserId: string }) {
     }
   }, [])
 
+  // after a plan change, so the badge and seat counts are current
+  async function reloadOrgs() {
+    const { data } = await supabase.rpc('my_orgs')
+    setOrgs((data as OrgMembership[] | null) ?? [])
+  }
+
   if (orgs === null) return <div className="centered">Loading…</div>
 
   const overseen = overseerOrgs(orgs)
@@ -44,7 +50,7 @@ export function AppShell({ myUserId }: { myUserId: string }) {
         </button>
       </nav>
       <div className="shell-body">
-        {view === 'work' ? <OrgDashboard orgs={overseen} myUserId={myUserId} /> : <Dashboard myUserId={myUserId} />}
+        {view === 'work' ? <OrgDashboard orgs={overseen} myUserId={myUserId} onOrgsChanged={reloadOrgs} /> : <Dashboard myUserId={myUserId} />}
       </div>
     </div>
   )

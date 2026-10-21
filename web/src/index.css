@@ -762,3 +762,63 @@ button:disabled {
 .org-card > button {
   align-self: flex-start;
 }
+
+/* Timesheets */
+.ts-week {
+  color: var(--text-h);
+}
+.ts-table .ts-num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.ts-table .ts-zero {
+  color: var(--offline);
+}
+.ts-table .ts-total,
+.ts-table tfoot td {
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+/* Plan */
+.plan-card {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  background: var(--bg-elevated);
+}
+.plan-card h3 {
+  margin: 0 0 4px;
+  color: var(--text-h);
+}
+.plan-card p {
+  margin: 0;
+}
+.plan-warn {
+  border-color: var(--stale);
+}
+.plan-ended {
+  border-color: var(--danger);
+}
+.plan-ended h3 {
+  color: var(--danger);
+}
+.plan-badge {
+  white-space: nowrap;
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+.plan-badge-warn {
+  border-color: var(--stale);
+  color: var(--stale);
+}
+.plan-badge-ended {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+.plan-current {
+  outline: 2px solid var(--accent);
+}
