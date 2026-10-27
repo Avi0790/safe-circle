@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useCircles } from '@/contexts/CircleContext';
 import { useCircleMembers } from '@/hooks/useCircleMembers';
 import { Avatar } from '@/components/Avatar';
+import { appColors, HeroCard, ui } from '@/components/ui/AppUI';
 import { supabase } from '@/lib/supabase';
 import {
   formatClockTime,
@@ -90,20 +91,39 @@ export default function MembersTab() {
     await refresh();
   }
 
+  const sharingNow = members.filter(
+    (m) => m.location && !isStale(m.location.recorded_at) && getShareStatus(m.share_until) !== 'ended',
+  ).length;
+  const drivingNow = members.filter((m) => m.location && isDriving(m.location.speed)).length;
+
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
-      <View style={styles.header}>
-        <Text style={typography.title}>{selectedCircle?.name ?? 'Circle'}</Text>
-        <Text style={typography.caption}>
-          {members.length} {members.length === 1 ? 'member' : 'members'}
-        </Text>
-      </View>
-
       <FlatList
         data={members}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
         refreshControl={<RefreshControl refreshing={isLoading} onRefresh={refresh} />}
+        ListHeaderComponent={
+          <View style={styles.headerWrap}>
+            <Text style={styles.kicker}>YOUR CIRCLE</Text>
+            <HeroCard colors={appColors.crew}>
+              <Text style={ui.heroOrg}>{selectedCircle?.name ?? 'Circle'}</Text>
+              <Text style={ui.heroRole}>
+                {members.length} {members.length === 1 ? 'member' : 'members'}
+              </Text>
+              <View style={styles.stats}>
+                <View style={ui.stat}>
+                  <Text style={ui.statValue}>{sharingNow}</Text>
+                  <Text style={ui.statLabel}>Sharing now</Text>
+                </View>
+                <View style={ui.stat}>
+                  <Text style={ui.statValue}>{drivingNow}</Text>
+                  <Text style={ui.statLabel}>Driving</Text>
+                </View>
+              </View>
+            </HeroCard>
+          </View>
+        }
         renderItem={({ item }) => (
           <MemberRow
             member={item}
@@ -116,7 +136,7 @@ export default function MembersTab() {
           />
         )}
         ListEmptyComponent={
-          !isLoading ? <Text style={typography.body}>No one in this circle yet.</Text> : null
+          !isLoading ? <Text style={[typography.body, styles.empty]}>No one in this circle yet.</Text> : null
         }
       />
     </SafeAreaView>
@@ -164,7 +184,7 @@ function MemberRow({
     <View style={styles.row}>
       <Pressable style={styles.rowMain} onPress={onPress}>
         <View style={styles.avatarWrap}>
-          <Avatar id={member.id} name={member.full_name} url={member.avatar_url} size={40} />
+          <Avatar id={member.id} name={member.full_name} url={member.avatar_url} size={48} />
           <View style={[styles.dot, { backgroundColor: dotColor }]} />
         </View>
         <View style={styles.rowText}>
@@ -206,68 +226,66 @@ function MemberRow({
         <Text style={styles.chevron}>›</Text>
       </Pressable>
       {canRemove && (
-        <Pressable onPress={onMakeOwner} disabled={removing} hitSlop={8} style={styles.removeLink}>
-          <Text style={styles.ownerLinkText}>Make owner</Text>
-        </Pressable>
-      )}
-      {canRemove && (
-        <Pressable onPress={onRemove} disabled={removing} hitSlop={8} style={styles.removeLink}>
-          <Text style={styles.removeLinkText}>{removing ? 'Removing…' : 'Remove'}</Text>
-        </Pressable>
+        <View style={styles.actions}>
+          <Pressable onPress={onMakeOwner} disabled={removing} hitSlop={8} style={styles.actionChip}>
+            <Text style={styles.ownerLinkText}>Make owner</Text>
+          </Pressable>
+          <Pressable onPress={onRemove} disabled={removing} hitSlop={8} style={[styles.actionChip, styles.actionChipDanger]}>
+            <Text style={styles.removeLinkText}>{removing ? 'Removing…' : 'Remove'}</Text>
+          </Pressable>
+        </View>
       )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: colors.bg },
-  header: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.sm,
-    gap: spacing.xs,
-  },
-  list: { paddingHorizontal: spacing.lg, gap: spacing.xs, paddingBottom: spacing.lg },
-  row: {
-    paddingVertical: spacing.sm + 2,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
+  safeArea: { flex: 1, backgroundColor: appColors.page },
+  headerWrap: { gap: spacing.sm, marginBottom: spacing.xs },
+  kicker: { fontSize: 13, fontWeight: '700', color: appColors.muted, letterSpacing: 0.6 },
+  stats: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.xs },
+  list: { padding: spacing.md, gap: spacing.sm + 4, paddingBottom: spacing.xl },
+  empty: { textAlign: 'center', marginTop: spacing.lg },
+  row: { ...ui.card, gap: spacing.sm },
   rowMain: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
+    gap: spacing.sm + 4,
   },
-  removeLink: {
-    alignSelf: 'flex-end',
-    paddingTop: spacing.xs,
-    paddingHorizontal: spacing.xs,
+  actions: { flexDirection: 'row', justifyContent: 'flex-end', gap: spacing.sm },
+  actionChip: {
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: '#f1ecff',
   },
-  ownerLinkText: { color: colors.accent, fontSize: 13, fontWeight: '600' },
-  removeLinkText: { color: colors.danger, fontSize: 13, fontWeight: '600' },
+  actionChipDanger: { backgroundColor: '#fef2f2' },
+  ownerLinkText: { color: colors.accent, fontSize: 13, fontWeight: '700' },
+  removeLinkText: { color: colors.danger, fontSize: 13, fontWeight: '700' },
   lowBattery: { color: colors.danger, fontWeight: '600' },
   avatarWrap: { position: 'relative' },
   dot: {
     position: 'absolute',
-    bottom: -1,
-    right: -1,
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    borderWidth: 2,
-    borderColor: colors.bg,
+    bottom: 0,
+    right: 0,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    borderWidth: 2.5,
+    borderColor: '#fff',
   },
   nameRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: spacing.xs },
   statusChip: {
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '700',
     color: colors.accent,
-    backgroundColor: colors.bgElevated,
+    backgroundColor: '#f1ecff',
     borderRadius: 999,
-    paddingHorizontal: spacing.xs + 2,
-    paddingVertical: 1,
+    overflow: 'hidden',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
   },
-  rowText: { flex: 1, gap: 2 },
-  chevron: { fontSize: 20, color: colors.offline },
-  name: { fontSize: 15, fontWeight: '500', color: colors.textHeading },
+  rowText: { flex: 1, gap: 3 },
+  chevron: { fontSize: 24, color: '#cbd5e1', fontWeight: '300' },
+  name: { fontSize: 16, fontWeight: '700', color: appColors.ink },
 });

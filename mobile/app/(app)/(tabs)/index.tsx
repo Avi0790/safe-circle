@@ -29,7 +29,7 @@ import { useRideRequests } from '@/hooks/useRideRequests';
 import { requestRide } from '@/lib/rides';
 import { supabase } from '@/lib/supabase';
 import { Avatar } from '@/components/Avatar';
-import { formatClockTime, formatTimeLeft, getShareStatus, isDriving, isStatusActive, speedToMph } from '@/lib/format';
+import { formatClockTime, formatTimeLeft, getShareStatus, isDriving, isStale, isStatusActive, speedToMph } from '@/lib/format';
 import type { LatestLocation, MapPin, MemberWithLocation } from '@/lib/types';
 import { colors, radius, spacing } from '@/lib/theme';
 
@@ -149,7 +149,7 @@ function PinMarker({ pin, isMine, onRemoved }: { pin: MapPin; isMine: boolean; o
 // layer). This screen only ever reads from the backend.
 export default function MapTab() {
   const { session } = useAuth();
-  const { selectedCircleId } = useCircles();
+  const { selectedCircleId, selectedCircle } = useCircles();
   const { members, isLoading } = useCircleMembers(selectedCircleId);
   const { events: sosEvents, refresh: refreshSos } = useActiveSosEvents();
   const { trips } = useActiveTrips();
@@ -182,6 +182,9 @@ export default function MapTab() {
   }
 
   const located = members.filter((m) => m.location);
+  const sharingNow = located.filter(
+    (m) => !isStale(m.location!.recorded_at) && getShareStatus(m.share_until) !== 'ended',
+  ).length;
 
   // 'denied' vs 'unavailable' so the banner below can say something useful
   // instead of the map just silently staying wherever it was — which is
@@ -270,6 +273,22 @@ export default function MapTab() {
       {/* Absolutely-positioned children ignore SafeAreaView's padding, so
           without this offset the banners were drawn under the clock/notch. */}
       <View style={[styles.sosBannerWrap, { top: insets.top }]}>
+        <View style={styles.circleCard}>
+          <View style={styles.circleText}>
+            <Text style={styles.circleKicker}>YOUR CIRCLE</Text>
+            <Text style={styles.circleName} numberOfLines={1}>
+              {selectedCircle?.name ?? 'Safe Circle'}
+            </Text>
+            <Text style={styles.circleSub}>
+              {sharingNow} of {members.length} sharing now
+            </Text>
+          </View>
+          <Pressable style={styles.mapTypeButton} onPress={() => setModesOpen(true)} accessibilityLabel="Map modes">
+            <Text style={styles.mapTypeButtonText}>
+              {mapMode.mode === 'satellite' || mapMode.mode === 'flyover' ? '🛰️' : '🗺️'}
+            </Text>
+          </Pressable>
+        </View>
         <SosBanner events={sosEvents} onChanged={refreshSos} />
         <WalkBanner walks={walks} onChanged={refreshWalks} />
         <SafetyTimerBanner timers={timers} onChanged={refreshTimers} />
@@ -325,14 +344,6 @@ export default function MapTab() {
         </View>
       )}
 
-      <Pressable
-        style={[styles.mapTypeButton, { top: insets.top + spacing.sm }]}
-        onPress={() => setModesOpen(true)}
-        accessibilityLabel="Map modes"
-      >
-        <Text style={styles.mapTypeButtonText}>{mapMode.mode === 'satellite' || mapMode.mode === 'flyover' ? '🛰️' : '🗺️'}</Text>
-      </Pressable>
-
       <QuickActions onRideRequested={refreshRides} />
       <SosButton onSent={refreshSos} />
       {modesOpen && (
@@ -346,8 +357,8 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1 },
   map: { flex: 1 },
   markerAvatar: {
-    padding: 2,
-    backgroundColor: colors.bg,
+    padding: 3,
+    backgroundColor: colors.accent,
     borderRadius: radius.full,
     shadowColor: '#000',
     shadowOpacity: 0.25,
@@ -371,23 +382,37 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   pinMarkerText: { fontSize: 16 },
+  circleCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginHorizontal: spacing.md,
+    marginTop: spacing.sm,
+    marginBottom: spacing.sm,
+    paddingVertical: spacing.sm + 2,
+    paddingLeft: spacing.md,
+    paddingRight: spacing.sm + 2,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255,255,255,0.96)',
+    shadowColor: '#1e1b4b',
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 6,
+  },
+  circleText: { flex: 1, gap: 1 },
+  circleKicker: { fontSize: 11, fontWeight: '800', color: colors.accent, letterSpacing: 0.8 },
+  circleName: { fontSize: 20, fontWeight: '800', color: '#0f172a' },
+  circleSub: { fontSize: 13, color: '#64748b' },
   mapTypeButton: {
-    position: 'absolute',
-    right: spacing.lg,
-    width: 44,
-    height: 44,
-    borderRadius: radius.full,
-    backgroundColor: colors.bg,
+    width: 46,
+    height: 46,
+    borderRadius: 16,
+    backgroundColor: '#f1ecff',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 4,
-    zIndex: 5,
   },
-  mapTypeButtonText: { fontSize: 20 },
+  mapTypeButtonText: { fontSize: 22 },
   sosBannerWrap: { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10 },
   locationBanner: {
     marginHorizontal: spacing.sm,

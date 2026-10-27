@@ -6,8 +6,9 @@ import { useCircles } from '@/contexts/CircleContext';
 import { ChatReadProvider, useChatRead } from '@/contexts/ChatReadContext';
 import { colors } from '@/lib/theme';
 
-function TabIcon({ symbol, color }: { symbol: string; color: ColorValue }) {
-  return <Text style={{ fontSize: 20, color }}>{symbol}</Text>;
+// Emoji ignore the tint colour, so the tab you're not on is faded instead.
+function TabIcon({ symbol, color, focused }: { symbol: string; color: ColorValue; focused: boolean }) {
+  return <Text style={{ fontSize: 21, color, opacity: focused ? 1 : 0.45 }}>{symbol}</Text>;
 }
 
 export default function TabsLayout() {
@@ -33,14 +34,16 @@ function TabsWithChatBadge() {
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: colors.accent,
-        tabBarInactiveTintColor: colors.offline,
+        tabBarInactiveTintColor: '#94a3b8',
+        tabBarLabelStyle: { fontSize: 11, fontWeight: '700' },
+        tabBarStyle: { backgroundColor: '#ffffff', borderTopColor: '#ece9f6' },
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
           title: 'Map',
-          tabBarIcon: ({ color }) => <TabIcon symbol="📍" color={color} />,
+          tabBarIcon: ({ color, focused }) => <TabIcon focused={focused} symbol="📍" color={color} />,
         }}
       />
       <Tabs.Screen
@@ -49,21 +52,21 @@ function TabsWithChatBadge() {
           title: 'Work',
           // Only for people who belong to an organization.
           href: hasActiveOrg ? undefined : null,
-          tabBarIcon: ({ color }) => <TabIcon symbol="🦺" color={color} />,
+          tabBarIcon: ({ color, focused }) => <TabIcon focused={focused} symbol="🦺" color={color} />,
         }}
       />
       <Tabs.Screen
         name="members"
         options={{
           title: 'Members',
-          tabBarIcon: ({ color }) => <TabIcon symbol="👥" color={color} />,
+          tabBarIcon: ({ color, focused }) => <TabIcon focused={focused} symbol="👥" color={color} />,
         }}
       />
       <Tabs.Screen
         name="chat"
         options={{
           title: 'Chat',
-          tabBarIcon: ({ color }) => <TabIcon symbol="💬" color={color} />,
+          tabBarIcon: ({ color, focused }) => <TabIcon focused={focused} symbol="💬" color={color} />,
           tabBarBadge: unreadCount > 0 ? unreadCount : undefined,
         }}
       />
@@ -71,7 +74,7 @@ function TabsWithChatBadge() {
         name="settings"
         options={{
           title: 'Settings',
-          tabBarIcon: ({ color }) => <TabIcon symbol="⚙️" color={color} />,
+          tabBarIcon: ({ color, focused }) => <TabIcon focused={focused} symbol="⚙️" color={color} />,
         }}
       />
     </Tabs>

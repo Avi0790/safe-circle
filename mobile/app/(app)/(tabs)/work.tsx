@@ -17,8 +17,8 @@ import {
   SeatMeter,
   SectionTitle,
   ui,
-  workColors,
-} from '@/components/work/WorkUI';
+  appColors,
+} from '@/components/ui/AppUI';
 import { useAccount } from '@/contexts/AccountContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useActiveSosEvents } from '@/hooks/useActiveSosEvents';
@@ -259,7 +259,7 @@ export default function WorkScreen() {
     const busy = busyOrg === org.org_id;
     const ended = !org.on_shift && !!workerPlanNotice(org);
     const elsewhere = onShiftElsewhere(org.org_id);
-    const heroColors = org.on_shift ? workColors.onShift : ended ? workColors.ended : workColors.offShift;
+    const heroColors = org.on_shift ? appColors.onShift : ended ? appColors.ended : appColors.offShift;
     const tint = heroColors[0];
     const overdue = !!org.next_checkin_due && new Date(org.next_checkin_due).getTime() < now;
     const looks = views[org.org_id] ?? [];
@@ -396,7 +396,7 @@ export default function WorkScreen() {
 
     return (
       <View key={org.org_id} style={styles.org}>
-        <HeroCard colors={workColors.crew}>
+        <HeroCard colors={appColors.crew}>
           <View style={ui.heroTop}>
             <Text style={ui.heroOrg} numberOfLines={1}>
               {org.name}
@@ -434,7 +434,7 @@ export default function WorkScreen() {
           <HeroButton
             title="Open crew view"
             icon="🗺"
-            tint={workColors.crew[1]}
+            tint={appColors.crew[1]}
             onPress={() => router.push({ pathname: '/crew', params: { orgId: org.org_id, orgName: org.name } })}
           />
         </HeroCard>
@@ -613,19 +613,19 @@ export default function WorkScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: workColors.page },
+  safeArea: { flex: 1, backgroundColor: appColors.page },
   content: { padding: 16, gap: 16 },
-  date: { fontSize: 13, fontWeight: '700', color: workColors.muted, letterSpacing: 0.6 },
-  title: { fontSize: 34, fontWeight: '800', color: workColors.ink, letterSpacing: -0.5 },
+  date: { fontSize: 13, fontWeight: '700', color: appColors.muted, letterSpacing: 0.6 },
+  title: { fontSize: 34, fontWeight: '800', color: appColors.ink, letterSpacing: -0.5 },
   org: { gap: 12 },
   heroWords: { fontSize: 38 },
   stats: { flexDirection: 'row', gap: 8, marginVertical: 4 },
   body: { fontSize: 15, color: '#334155', lineHeight: 21 },
-  caption: { fontSize: 13, color: workColors.muted, lineHeight: 18 },
-  subLabel: { fontSize: 13, fontWeight: '600', color: workColors.ink, marginTop: 4 },
+  caption: { fontSize: 13, color: appColors.muted, lineHeight: 18 },
+  subLabel: { fontSize: 13, fontWeight: '600', color: appColors.ink, marginTop: 4 },
   list: { gap: 6 },
   bigEmoji: { fontSize: 26 },
-  planTitle: { fontSize: 22, fontWeight: '800', color: workColors.ink },
+  planTitle: { fontSize: 22, fontWeight: '800', color: appColors.ink },
   warnText: { fontSize: 13, fontWeight: '600', color: colors.danger },
   noteText: { fontSize: 13, color: '#92400e' },
   codeBox: {

@@ -3,11 +3,11 @@ import { ActivityIndicator, Pressable, StyleSheet, Text, View, type ViewStyle } 
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { colors } from '@/lib/theme';
 
-// Building blocks for the Work tab's look: gradient hero cards, white grouped
+// Safe Circle's shared look (first made for the Work tab): gradient hero cards, white grouped
 // cards, icon tiles, pills and a seat meter. Drawn with react-native-svg and
 // plain views, so they need no extra native modules.
 
-export const workColors = {
+export const appColors = {
   page: '#f3f2f8',
   card: '#ffffff',
   ink: '#0f172a',
@@ -237,7 +237,7 @@ export const ui = StyleSheet.create({
   heroBody: { fontSize: 15, color: 'rgba(255,255,255,0.9)', lineHeight: 21 },
   heroSmall: { fontSize: 13, color: 'rgba(255,255,255,0.75)', lineHeight: 18 },
   card: {
-    backgroundColor: workColors.card,
+    backgroundColor: appColors.card,
     borderRadius: 20,
     padding: 16,
     gap: 10,
@@ -252,7 +252,7 @@ export const ui = StyleSheet.create({
   sectionTitle: {
     fontSize: 13,
     fontWeight: '700',
-    color: workColors.muted,
+    color: appColors.muted,
     textTransform: 'uppercase',
     letterSpacing: 0.8,
   },
@@ -274,7 +274,7 @@ export const ui = StyleSheet.create({
   tile: {
     flexBasis: '47%',
     flexGrow: 1,
-    backgroundColor: workColors.card,
+    backgroundColor: appColors.card,
     borderRadius: 20,
     padding: 14,
     gap: 4,
@@ -294,8 +294,8 @@ export const ui = StyleSheet.create({
     marginBottom: 6,
   },
   tileEmoji: { fontSize: 20 },
-  tileTitle: { fontSize: 16, fontWeight: '700', color: workColors.ink },
-  tileCaption: { fontSize: 12, color: workColors.muted },
+  tileTitle: { fontSize: 16, fontWeight: '700', color: appColors.ink },
+  tileCaption: { fontSize: 12, color: appColors.muted },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: {
     borderRadius: 999,
@@ -304,7 +304,7 @@ export const ui = StyleSheet.create({
     backgroundColor: '#f1f0f7',
   },
   chipOn: { backgroundColor: colors.accent },
-  chipText: { fontSize: 14, fontWeight: '600', color: workColors.ink },
+  chipText: { fontSize: 14, fontWeight: '600', color: appColors.ink },
   chipTextOn: { color: '#fff' },
   meterTrack: { height: 8, borderRadius: 4, backgroundColor: '#ece9f6', overflow: 'hidden' },
   meterFill: { height: 8, borderRadius: 4, backgroundColor: colors.accent },
@@ -318,9 +318,9 @@ export const ui = StyleSheet.create({
   },
   initialsText: { fontSize: 13, fontWeight: '700', color: colors.accent },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  rowTitle: { fontSize: 15, fontWeight: '600', color: workColors.ink },
-  rowSub: { fontSize: 13, color: workColors.muted },
-  divider: { height: StyleSheet.hairlineWidth, backgroundColor: workColors.line, marginLeft: 48 },
+  rowTitle: { fontSize: 15, fontWeight: '600', color: appColors.ink },
+  rowSub: { fontSize: 13, color: appColors.muted },
+  divider: { height: StyleSheet.hairlineWidth, backgroundColor: appColors.line, marginLeft: 48 },
   stat: { flex: 1, backgroundColor: 'rgba(255,255,255,0.14)', borderRadius: 14, paddingVertical: 10, paddingHorizontal: 12 },
   statValue: { fontSize: 20, fontWeight: '800', color: '#fff', fontVariant: ['tabular-nums'] },
   statLabel: { fontSize: 11, fontWeight: '600', color: 'rgba(255,255,255,0.75)', textTransform: 'uppercase', letterSpacing: 0.5 },

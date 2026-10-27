@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { requestRide } from '@/lib/rides';
-import { colors, radius, spacing } from '@/lib/theme';
+import { colors, spacing } from '@/lib/theme';
 
 // The Safe Circle actions that go beyond sharing a dot on a map — five of
 // them now, too many to stack as separate pills without covering half the
@@ -88,49 +88,71 @@ function MenuRow({
   right?: ReactNode;
   last?: boolean;
 }) {
+  // "🧭 Directions": the emoji goes in a tile, the words beside it
+  const [icon, ...words] = label.split(' ');
   return (
-    <Pressable style={[styles.menuRow, !last && styles.menuRowBorder]} onPress={onPress}>
-      <Text style={styles.menuRowText}>{label}</Text>
+    <Pressable
+      style={({ pressed }) => [styles.menuRow, !last && styles.menuRowBorder, pressed && { backgroundColor: '#f6f4fd' }]}
+      onPress={onPress}
+      accessibilityLabel={label}
+    >
+      <View style={styles.menuRowLeft}>
+        <View style={styles.menuIcon}>
+          <Text style={styles.menuIconText}>{icon}</Text>
+        </View>
+        <Text style={styles.menuRowText}>{words.join(' ')}</Text>
+      </View>
       {right}
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { position: 'absolute', bottom: spacing.lg, left: spacing.lg },
+  container: { position: 'absolute', bottom: spacing.lg, left: spacing.md },
   menu: {
-    backgroundColor: colors.bg,
-    borderRadius: radius.md,
+    backgroundColor: '#fff',
+    borderRadius: 22,
     marginBottom: spacing.sm,
-    minWidth: 200,
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 6,
+    minWidth: 250,
+    paddingVertical: 6,
+    shadowColor: '#1e1b4b',
+    shadowOpacity: 0.18,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 8,
     overflow: 'hidden',
   },
   menuRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm + 4,
+    paddingHorizontal: spacing.sm + 4,
+    paddingVertical: spacing.sm,
   },
-  menuRowBorder: { borderBottomWidth: 1, borderBottomColor: colors.border },
-  menuRowText: { color: colors.textHeading, fontWeight: '600', fontSize: 14 },
-  pill: {
-    backgroundColor: colors.bg,
-    borderRadius: radius.full,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm + 2,
-    minWidth: 140,
+  menuRowBorder: {},
+  menuRowLeft: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm + 4 },
+  menuIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 11,
+    backgroundColor: '#f1ecff',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 4,
+    justifyContent: 'center',
   },
-  pillText: { color: colors.textHeading, fontWeight: '600', fontSize: 14 },
+  menuIconText: { fontSize: 18 },
+  menuRowText: { color: '#0f172a', fontWeight: '700', fontSize: 15 },
+  pill: {
+    backgroundColor: '#fff',
+    borderRadius: 26,
+    paddingHorizontal: spacing.md + 2,
+    paddingVertical: spacing.sm + 6,
+    minWidth: 150,
+    alignItems: 'center',
+    shadowColor: '#1e1b4b',
+    shadowOpacity: 0.18,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 5,
+  },
+  pillText: { color: colors.accent, fontWeight: '800', fontSize: 15 },
 });

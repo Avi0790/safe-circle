@@ -1,5 +1,5 @@
 import { ActivityIndicator, Pressable, StyleSheet, Text } from 'react-native';
-import { colors, radius, spacing } from '@/lib/theme';
+import { colors, spacing } from '@/lib/theme';
 
 interface ButtonProps {
   title: string;
@@ -33,21 +33,26 @@ export function Button({ title, onPress, loading, disabled, variant = 'primary' 
 
 const styles = StyleSheet.create({
   base: {
-    borderRadius: radius.sm,
-    paddingVertical: spacing.md - 2,
+    borderRadius: 16,
+    paddingVertical: spacing.md - 1,
+    paddingHorizontal: spacing.md,
     alignItems: 'center',
     justifyContent: 'center',
   },
   primary: {
     backgroundColor: colors.accent,
+    shadowColor: colors.accent,
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 3,
   },
   secondary: {
-    backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: colors.border,
+    backgroundColor: '#f1f0f7',
   },
   pressed: {
-    opacity: 0.85,
+    opacity: 0.9,
+    transform: [{ scale: 0.98 }],
   },
   disabled: {
     opacity: 0.5,
@@ -55,11 +60,11 @@ const styles = StyleSheet.create({
   primaryText: {
     color: '#fff',
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   secondaryText: {
     color: colors.accent,
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '700',
   },
 });

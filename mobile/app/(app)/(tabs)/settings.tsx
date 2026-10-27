@@ -13,6 +13,7 @@ import {
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Avatar } from '@/components/Avatar';
+import { appColors, ui } from '@/components/ui/AppUI';
 import { Button } from '@/components/Button';
 import { InviteQr } from '@/components/InviteQr';
 import { TextField } from '@/components/TextField';
@@ -484,7 +485,7 @@ export default function SettingsTab() {
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       <ScrollView contentContainerStyle={styles.content}>
-        <Text style={typography.title}>Settings</Text>
+        <Text style={styles.title}>Settings</Text>
 
         <View style={styles.section}>
           <View style={styles.photoRow}>
@@ -518,7 +519,7 @@ export default function SettingsTab() {
           </View>
           {avatarError && <Text style={styles.error}>{avatarError}</Text>}
 
-          <View style={styles.section}>
+          <View style={styles.subsection}>
             <Text style={styles.sectionLabel}>Quick status</Text>
             <Text style={typography.caption}>
               Shown next to your name and pin for {STATUS_DURATION_MINUTES / 60} hours, or until
@@ -804,7 +805,7 @@ export default function SettingsTab() {
         </View>
 
         {circles.some((c) => c.created_by === session?.user.id) && (
-          <View style={styles.section}>
+          <View style={styles.subsection}>
             <Text style={styles.sectionLabel}>Join approvals</Text>
             <Text style={typography.caption}>
               Require your OK before anyone new joins a circle you created, and review who's
@@ -860,7 +861,7 @@ export default function SettingsTab() {
         </View>
 
         {circles.length > 0 && (
-          <View style={styles.section}>
+          <View style={styles.subsection}>
             <Text style={styles.sectionLabel}>Circles</Text>
             {circles.map((circle) =>
               renamingCircleId === circle.id ? (
@@ -986,26 +987,33 @@ export default function SettingsTab() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: colors.bg },
+  safeArea: { flex: 1, backgroundColor: appColors.page },
   aboutSection: { alignItems: 'center', gap: 2, paddingTop: spacing.md },
   aboutTitle: { ...typography.caption, color: colors.textHeading, fontWeight: '700' },
   content: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
+    padding: spacing.md,
     paddingBottom: spacing.xl,
-    gap: spacing.xl,
+    gap: spacing.md,
   },
-  section: { gap: spacing.sm },
+  title: { fontSize: 34, fontWeight: '800', color: appColors.ink, letterSpacing: -0.5, marginBottom: spacing.xs },
+  // each top-level group is a white card; a group inside one is set off by a hairline
+  section: { ...ui.card, gap: spacing.sm + 2 },
+  subsection: {
+    gap: spacing.sm,
+    marginTop: spacing.xs,
+    paddingTop: spacing.sm + 4,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: appColors.line,
+  },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   chip: {
-    borderWidth: 1,
-    borderColor: colors.border,
     borderRadius: radius.full,
-    paddingHorizontal: spacing.md - 2,
-    paddingVertical: spacing.xs + 2,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    backgroundColor: '#f1f0f7',
   },
-  chipSelected: { backgroundColor: colors.accent, borderColor: colors.accent },
-  chipText: { fontSize: 13, color: colors.text, fontWeight: '600' },
+  chipSelected: { backgroundColor: colors.accent },
+  chipText: { fontSize: 14, color: appColors.ink, fontWeight: '600' },
   chipTextSelected: { color: '#fff' },
   photoRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   photoBusy: { opacity: 0.4 },
@@ -1014,25 +1022,29 @@ const styles = StyleSheet.create({
   circleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   circleButton: { flex: 1 },
   leaveLink: { paddingHorizontal: spacing.xs },
-  leaveLinkText: { color: colors.danger, fontSize: 14, fontWeight: '600' },
-  renameLinkText: { color: colors.accent, fontSize: 14, fontWeight: '600' },
+  leaveLinkText: { color: colors.danger, fontSize: 14, fontWeight: '700' },
+  renameLinkText: { color: colors.accent, fontSize: 14, fontWeight: '700' },
   renameForm: { gap: spacing.sm },
   sectionLabel: {
-    ...typography.caption,
-    color: colors.textHeading,
-    fontWeight: '600',
+    fontSize: 13,
+    fontWeight: '700',
+    color: appColors.muted,
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: 0.8,
   },
   code: {
     fontSize: 32,
-    fontWeight: '700',
-    letterSpacing: 3,
+    fontWeight: '800',
+    letterSpacing: 4,
     color: colors.accent,
-    backgroundColor: colors.bgElevated,
-    borderRadius: radius.md,
+    backgroundColor: '#faf8ff',
+    borderWidth: 2,
+    borderStyle: 'dashed',
+    borderColor: '#d8ccfb',
+    borderRadius: 16,
     textAlign: 'center',
     paddingVertical: spacing.md,
+    overflow: 'hidden',
   },
   error: { color: colors.danger, fontSize: 14 },
 });

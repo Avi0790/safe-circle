@@ -19,9 +19,10 @@ import { useChatRead } from '@/contexts/ChatReadContext';
 import { useCircleMembers } from '@/hooks/useCircleMembers';
 import { useCircleMessages } from '@/hooks/useCircleMessages';
 import { Avatar } from '@/components/Avatar';
+import { appColors } from '@/components/ui/AppUI';
 import { timeAgo } from '@/lib/format';
 import type { Message } from '@/lib/types';
-import { colors, radius, spacing, typography } from '@/lib/theme';
+import { colors, spacing, typography } from '@/lib/theme';
 
 // In-circle chat — Life360's most-used feature, and one the proposal never
 // scoped in: circles could share location and alerts but had no way to
@@ -85,7 +86,11 @@ export default function ChatTab() {
         keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
       >
         <View style={styles.header}>
-          <Text style={typography.title}>{selectedCircle?.name ?? 'Chat'}</Text>
+          <Text style={styles.kicker}>CIRCLE CHAT</Text>
+          <Text style={styles.title}>{selectedCircle?.name ?? 'Chat'}</Text>
+          <Text style={styles.subtitle}>
+            {members.length} {members.length === 1 ? 'person' : 'people'} · only your circle can read this
+          </Text>
         </View>
 
         {error && <Text style={styles.error}>{error}</Text>}
@@ -150,11 +155,13 @@ export default function ChatTab() {
             style={[styles.sendButton, (!draft.trim() || sending) && styles.sendButtonDisabled]}
             onPress={handleSend}
             disabled={!draft.trim() || sending}
+            accessibilityRole="button"
+            accessibilityLabel="Send"
           >
             {sending ? (
               <ActivityIndicator size="small" color="#fff" />
             ) : (
-              <Text style={styles.sendButtonText}>Send</Text>
+              <Text style={styles.sendButtonText}>↑</Text>
             )}
           </Pressable>
         </View>
@@ -203,58 +210,76 @@ function MessageRow({
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: colors.bg },
+  safeArea: { flex: 1, backgroundColor: appColors.page },
   flex: { flex: 1 },
-  header: { paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: spacing.sm },
-  list: { paddingHorizontal: spacing.lg, paddingVertical: spacing.sm, gap: spacing.sm, flexGrow: 1 },
+  header: { paddingHorizontal: spacing.md, paddingTop: spacing.sm, paddingBottom: spacing.sm, gap: 2 },
+  kicker: { fontSize: 13, fontWeight: '700', color: appColors.muted, letterSpacing: 0.6 },
+  title: { fontSize: 32, fontWeight: '800', color: appColors.ink, letterSpacing: -0.5 },
+  subtitle: { fontSize: 13, color: appColors.muted },
+  list: { paddingHorizontal: spacing.md, paddingVertical: spacing.sm, gap: spacing.sm + 2, flexGrow: 1 },
   emptyText: { textAlign: 'center', marginTop: spacing.xl },
-  messageRow: { flexDirection: 'row', alignItems: 'flex-end', gap: spacing.xs, maxWidth: '85%' },
+  messageRow: { flexDirection: 'row', alignItems: 'flex-end', gap: spacing.sm, maxWidth: '85%' },
   messageRowMine: { alignSelf: 'flex-end', flexDirection: 'row-reverse' },
-  bubble: { borderRadius: radius.md, paddingHorizontal: spacing.sm + 4, paddingVertical: spacing.sm, gap: 2 },
-  bubbleTheirs: { backgroundColor: colors.bgElevated, borderBottomLeftRadius: 2 },
-  bubbleMine: { backgroundColor: colors.accent, borderBottomRightRadius: 2 },
-  senderName: { fontSize: 12, fontWeight: '600', color: colors.accent },
-  bubbleTextTheirs: { fontSize: 15, color: colors.textHeading },
-  bubbleTextMine: { fontSize: 15, color: '#fff' },
-  timeTheirs: { fontSize: 11, color: colors.text, opacity: 0.7, alignSelf: 'flex-end' },
+  bubble: { borderRadius: 20, paddingHorizontal: spacing.md - 2, paddingVertical: spacing.sm + 2, gap: 3 },
+  bubbleTheirs: {
+    backgroundColor: '#fff',
+    borderBottomLeftRadius: 6,
+    shadowColor: '#1e1b4b',
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 1,
+  },
+  bubbleMine: { backgroundColor: colors.accent, borderBottomRightRadius: 6 },
+  senderName: { fontSize: 12, fontWeight: '700', color: colors.accent },
+  bubbleTextTheirs: { fontSize: 16, color: colors.textHeading, lineHeight: 22 },
+  bubbleTextMine: { fontSize: 16, color: '#fff', lineHeight: 22 },
+  timeTheirs: { fontSize: 11, color: appColors.muted, alignSelf: 'flex-end' },
   timeMine: { fontSize: 11, color: '#fff', opacity: 0.8, alignSelf: 'flex-end' },
   composer: {
     flexDirection: 'row',
     alignItems: 'flex-end',
     gap: spacing.sm,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
+    marginHorizontal: spacing.md,
+    marginBottom: spacing.sm,
+    padding: 6,
+    borderRadius: 28,
+    backgroundColor: '#fff',
+    shadowColor: '#1e1b4b',
+    shadowOpacity: 0.1,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
   },
   input: {
     flex: 1,
     maxHeight: 100,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.md,
-    paddingHorizontal: spacing.sm + 4,
-    paddingVertical: spacing.sm,
-    fontSize: 15,
+    paddingHorizontal: spacing.sm,
+    paddingTop: 10,
+    paddingBottom: 10,
+    fontSize: 16,
     color: colors.textHeading,
   },
   sendButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: colors.accent,
-    borderRadius: radius.md,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm + 2,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  sendButtonDisabled: { opacity: 0.5 },
+  sendButtonDisabled: { opacity: 0.4 },
   checkInButton: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.md,
-    paddingHorizontal: spacing.sm + 2,
-    paddingVertical: spacing.sm + 2,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#f1ecff',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  checkInText: { fontSize: 16 },
-  mapLinkTheirs: { fontSize: 13, fontWeight: '600', color: colors.accent },
-  mapLinkMine: { fontSize: 13, fontWeight: '600', color: '#fff', textDecorationLine: 'underline' },
-  sendButtonText: { color: '#fff', fontWeight: '600', fontSize: 15 },
+  checkInText: { fontSize: 18 },
+  mapLinkTheirs: { fontSize: 13, fontWeight: '700', color: colors.accent },
+  mapLinkMine: { fontSize: 13, fontWeight: '700', color: '#fff', textDecorationLine: 'underline' },
+  sendButtonText: { color: '#fff', fontWeight: '800', fontSize: 20, marginTop: -2 },
   error: { color: colors.danger, fontSize: 13, paddingHorizontal: spacing.lg, paddingBottom: spacing.xs },
 });
