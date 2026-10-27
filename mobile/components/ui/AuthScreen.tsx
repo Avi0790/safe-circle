@@ -3,6 +3,7 @@ import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } fr
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Circle } from 'react-native-svg';
 import { GradientFill } from '@/components/ui/AppUI';
+import { colors } from '@/lib/theme';
 
 // The Safe Circle mark: you at the centre, your circle around you.
 export function LogoMark({ size = 72 }: { size?: number }) {
@@ -63,7 +64,7 @@ export function AuthScreen({
 export function CardScreen({ children }: { children: ReactNode }) {
   return (
     <ScrollView
-      style={{ backgroundColor: '#f3f2f8' }}
+      style={{ backgroundColor: colors.page }}
       contentContainerStyle={styles.cardScreen}
       keyboardShouldPersistTaps="handled"
     >
@@ -76,8 +77,8 @@ export function CardScreen({ children }: { children: ReactNode }) {
 export const authStyles = StyleSheet.create({
   footerText: { fontSize: 14, color: 'rgba(255,255,255,0.8)' },
   footerLink: { fontSize: 14, color: '#fff', fontWeight: '800' },
-  cardLink: { fontSize: 14, color: '#7c3aed', fontWeight: '700', textAlign: 'center' },
-  error: { color: '#dc2626', fontSize: 14 },
+  cardLink: { fontSize: 14, color: colors.accent, fontWeight: '700', textAlign: 'center' },
+  error: { color: colors.danger, fontSize: 14 },
   form: { gap: 14 },
 });
 
@@ -98,7 +99,7 @@ const styles = StyleSheet.create({
   appName: { fontSize: 32, fontWeight: '800', color: '#fff', letterSpacing: -0.5 },
   tagline: { fontSize: 15, color: 'rgba(255,255,255,0.8)', textAlign: 'center', lineHeight: 21, paddingHorizontal: 12 },
   card: {
-    backgroundColor: '#fff',
+    backgroundColor: colors.card,
     borderRadius: 28,
     padding: 22,
     gap: 14,
@@ -108,8 +109,8 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 12 },
     elevation: 10,
   },
-  title: { fontSize: 24, fontWeight: '800', color: '#0f172a' },
-  subtitle: { fontSize: 15, color: '#64748b', lineHeight: 21, marginTop: -6 },
+  title: { fontSize: 24, fontWeight: '800', color: colors.ink },
+  subtitle: { fontSize: 15, color: colors.muted, lineHeight: 21, marginTop: -6 },
   footer: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6 },
   cardScreen: { flexGrow: 1, justifyContent: 'center', padding: 16 },
 });

@@ -126,7 +126,7 @@ const styles = StyleSheet.create({
   starterText: { color: colors.accent, fontWeight: '600', fontSize: 14 },
   bubble: { borderRadius: radius.md, paddingHorizontal: spacing.sm + 4, paddingVertical: spacing.sm, marginBottom: spacing.xs, maxWidth: '85%' },
   bubbleTheirs: { backgroundColor: colors.bgElevated, alignSelf: 'flex-start', borderBottomLeftRadius: 2 },
-  bubbleMine: { backgroundColor: colors.accent, alignSelf: 'flex-end', borderBottomRightRadius: 2 },
+  bubbleMine: { backgroundColor: colors.accentFill, alignSelf: 'flex-end', borderBottomRightRadius: 2 },
   bubbleTextTheirs: { fontSize: 15, color: colors.textHeading },
   bubbleTextMine: { fontSize: 15, color: '#fff' },
   composer: {
@@ -150,7 +150,7 @@ const styles = StyleSheet.create({
     color: colors.textHeading,
   },
   sendButton: {
-    backgroundColor: colors.accent,
+    backgroundColor: colors.accentFill,
     borderRadius: radius.md,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm + 2,

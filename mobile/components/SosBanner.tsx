@@ -110,7 +110,7 @@ export function SosBanner({ events, onChanged }: { events: SosEvent[]; onChanged
 const styles = StyleSheet.create({
   container: { gap: spacing.xs, padding: spacing.sm },
   banner: {
-    backgroundColor: colors.danger,
+    backgroundColor: colors.dangerFill,
     borderRadius: radius.md,
     padding: spacing.md,
     gap: spacing.xs,

@@ -257,7 +257,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bgElevated,
     gap: 2,
   },
-  tileOn: { backgroundColor: colors.accent, borderColor: colors.accent },
+  tileOn: { backgroundColor: colors.accentFill, borderColor: colors.accent },
   tileEmoji: { fontSize: 26 },
   tileText: { fontSize: 14, fontWeight: '600', color: colors.textHeading },
   tileTextOn: { color: '#fff' },
@@ -272,7 +272,7 @@ const styles = StyleSheet.create({
   },
   actionOn: { borderColor: colors.accent },
   actionText: { fontSize: 16, fontWeight: '600', color: colors.textHeading },
-  endAction: { backgroundColor: colors.danger, borderColor: colors.danger, alignItems: 'center' },
+  endAction: { backgroundColor: colors.dangerFill, borderColor: colors.dangerFill, alignItems: 'center' },
   endText: { color: '#fff', fontSize: 16, fontWeight: '700' },
   row: {
     borderWidth: 1,

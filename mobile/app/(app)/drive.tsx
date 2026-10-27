@@ -1340,7 +1340,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     backgroundColor: colors.bgElevated,
   },
-  modeBtnOn: { backgroundColor: colors.accent, borderColor: colors.accent },
+  modeBtnOn: { backgroundColor: colors.accentFill, borderColor: colors.accent },
   modeText: { fontSize: 15, fontWeight: '600', color: colors.textHeading },
   modeTextOn: { color: '#fff' },
   mapEmoji: { fontSize: 26 },

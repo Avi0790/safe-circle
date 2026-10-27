@@ -8,11 +8,11 @@ import { colors } from '@/lib/theme';
 // plain views, so they need no extra native modules.
 
 export const appColors = {
-  page: '#f3f2f8',
-  card: '#ffffff',
-  ink: '#0f172a',
-  muted: '#64748b',
-  line: '#e9e7f2',
+  page: colors.page,
+  card: colors.card,
+  ink: colors.ink,
+  muted: colors.muted,
+  line: colors.line,
   // hero gradients: [from, to]
   offShift: ['#3b1f8f', '#7c3aed'] as const,
   onShift: ['#047857', '#10b981'] as const,
@@ -179,7 +179,7 @@ export function SeatMeter({ used, limit }: { used: number; limit: number }) {
   const full = used >= limit;
   return (
     <View style={ui.meterTrack} accessibilityLabel={`${used} of ${limit} seats used`}>
-      <View style={[ui.meterFill, { width: `${Math.max(share * 100, 4)}%` }, full && { backgroundColor: colors.danger }]} />
+      <View style={[ui.meterFill, { width: `${Math.max(share * 100, 4)}%` }, full && { backgroundColor: colors.dangerFill }]} />
     </View>
   );
 }
@@ -247,8 +247,8 @@ export const ui = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     elevation: 2,
   },
-  cardWarn: { backgroundColor: '#fffbeb', borderWidth: 1, borderColor: '#fcd34d' },
-  cardDanger: { backgroundColor: '#fef2f2', borderWidth: 1, borderColor: '#fca5a5' },
+  cardWarn: { backgroundColor: colors.warnBg, borderWidth: 1, borderColor: colors.warnBorder },
+  cardDanger: { backgroundColor: colors.dangerBg, borderWidth: 1, borderColor: colors.dangerBorder },
   sectionTitle: {
     fontSize: 13,
     fontWeight: '700',
@@ -263,7 +263,7 @@ export const ui = StyleSheet.create({
     paddingVertical: 4,
     backgroundColor: 'rgba(255,255,255,0.18)',
   },
-  pillLight: { backgroundColor: '#efeafe' },
+  pillLight: { backgroundColor: colors.tint },
   pillText: { fontSize: 12, fontWeight: '700', color: '#fff', letterSpacing: 0.3 },
   pillTextLight: { color: colors.accent },
   heroButton: { height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', marginTop: 6 },
@@ -288,7 +288,7 @@ export const ui = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 12,
-    backgroundColor: '#f1ecff',
+    backgroundColor: colors.tint,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 6,
@@ -301,18 +301,18 @@ export const ui = StyleSheet.create({
     borderRadius: 999,
     paddingHorizontal: 14,
     paddingVertical: 9,
-    backgroundColor: '#f1f0f7',
+    backgroundColor: colors.chip,
   },
-  chipOn: { backgroundColor: colors.accent },
+  chipOn: { backgroundColor: colors.accentFill },
   chipText: { fontSize: 14, fontWeight: '600', color: appColors.ink },
   chipTextOn: { color: '#fff' },
-  meterTrack: { height: 8, borderRadius: 4, backgroundColor: '#ece9f6', overflow: 'hidden' },
-  meterFill: { height: 8, borderRadius: 4, backgroundColor: colors.accent },
+  meterTrack: { height: 8, borderRadius: 4, backgroundColor: colors.line, overflow: 'hidden' },
+  meterFill: { height: 8, borderRadius: 4, backgroundColor: colors.accentFill },
   initials: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#efeafe',
+    backgroundColor: colors.tint,
     alignItems: 'center',
     justifyContent: 'center',
   },

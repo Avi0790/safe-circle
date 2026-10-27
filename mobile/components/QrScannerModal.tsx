@@ -85,6 +85,6 @@ const styles = StyleSheet.create({
   header: { padding: spacing.lg, gap: spacing.md },
   center: { padding: spacing.lg, gap: spacing.md },
   camera: { flex: 1, margin: spacing.lg, overflow: 'hidden', borderRadius: 12, backgroundColor: '#000' },
-  banner: { position: 'absolute', bottom: spacing.lg, left: spacing.lg, right: spacing.lg, backgroundColor: colors.danger, padding: spacing.md, borderRadius: 8 },
+  banner: { position: 'absolute', bottom: spacing.lg, left: spacing.lg, right: spacing.lg, backgroundColor: colors.dangerFill, padding: spacing.md, borderRadius: 8 },
   bannerText: { color: '#fff', textAlign: 'center', fontWeight: '600' },
 });

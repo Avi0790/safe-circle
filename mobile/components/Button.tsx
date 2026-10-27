@@ -40,7 +40,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   primary: {
-    backgroundColor: colors.accent,
+    backgroundColor: colors.accentFill,
     shadowColor: colors.accent,
     shadowOpacity: 0.3,
     shadowRadius: 10,
@@ -48,7 +48,7 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   secondary: {
-    backgroundColor: '#f1f0f7',
+    backgroundColor: colors.chip,
   },
   pressed: {
     opacity: 0.9,

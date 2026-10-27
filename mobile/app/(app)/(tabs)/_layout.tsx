@@ -34,9 +34,9 @@ function TabsWithChatBadge() {
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: colors.accent,
-        tabBarInactiveTintColor: '#94a3b8',
+        tabBarInactiveTintColor: colors.muted,
         tabBarLabelStyle: { fontSize: 11, fontWeight: '700' },
-        tabBarStyle: { backgroundColor: '#ffffff', borderTopColor: '#ece9f6' },
+        tabBarStyle: { backgroundColor: colors.card, borderTopColor: colors.line },
       }}
     >
       <Tabs.Screen

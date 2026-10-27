@@ -201,7 +201,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md - 2,
     paddingVertical: spacing.xs + 2,
   },
-  chipSelected: { backgroundColor: colors.accent, borderColor: colors.accent },
+  chipSelected: { backgroundColor: colors.accentFill, borderColor: colors.accent },
   chipText: { fontSize: 13, color: colors.text, fontWeight: '600' },
   chipTextSelected: { color: '#fff' },
   error: { color: colors.danger, fontSize: 14 },

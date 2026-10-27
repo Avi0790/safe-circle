@@ -98,7 +98,7 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.bg },
   content: { padding: spacing.lg, gap: spacing.md },
   button: {
-    backgroundColor: colors.danger,
+    backgroundColor: colors.dangerFill,
     borderRadius: radius.sm,
     paddingVertical: spacing.md - 2,
     alignItems: 'center',

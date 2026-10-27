@@ -25,7 +25,7 @@ import { pickAndUploadAvatar, removeAvatar } from '@/lib/avatarUpload';
 import { QUICK_STATUSES, STATUS_DURATION_MINUTES } from '@/lib/status';
 import { useShakeSettings } from '@/contexts/ShakeSettingsContext';
 import { useAppLock } from '@/contexts/AppLockContext';
-import { colors, radius, spacing, typography } from '@/lib/theme';
+import { colors, isDark, radius, spacing, typography } from '@/lib/theme';
 import {
   getShareUntil,
   isBackgroundTaskActive,
@@ -1010,9 +1010,9 @@ const styles = StyleSheet.create({
     borderRadius: radius.full,
     paddingHorizontal: 14,
     paddingVertical: 9,
-    backgroundColor: '#f1f0f7',
+    backgroundColor: colors.chip,
   },
-  chipSelected: { backgroundColor: colors.accent },
+  chipSelected: { backgroundColor: colors.accentFill },
   chipText: { fontSize: 14, color: appColors.ink, fontWeight: '600' },
   chipTextSelected: { color: '#fff' },
   photoRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
@@ -1037,10 +1037,10 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: 4,
     color: colors.accent,
-    backgroundColor: '#faf8ff',
+    backgroundColor: colors.tint,
     borderWidth: 2,
     borderStyle: 'dashed',
-    borderColor: '#d8ccfb',
+    borderColor: isDark ? '#4c3a85' : '#d8ccfb',
     borderRadius: 16,
     textAlign: 'center',
     paddingVertical: spacing.md,

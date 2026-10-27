@@ -92,7 +92,7 @@ function MenuRow({
   const [icon, ...words] = label.split(' ');
   return (
     <Pressable
-      style={({ pressed }) => [styles.menuRow, !last && styles.menuRowBorder, pressed && { backgroundColor: '#f6f4fd' }]}
+      style={({ pressed }) => [styles.menuRow, !last && styles.menuRowBorder, pressed && { backgroundColor: colors.chip }]}
       onPress={onPress}
       accessibilityLabel={label}
     >
@@ -110,7 +110,7 @@ function MenuRow({
 const styles = StyleSheet.create({
   container: { position: 'absolute', bottom: spacing.lg, left: spacing.md },
   menu: {
-    backgroundColor: '#fff',
+    backgroundColor: colors.card,
     borderRadius: 22,
     marginBottom: spacing.sm,
     minWidth: 250,
@@ -135,14 +135,14 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 11,
-    backgroundColor: '#f1ecff',
+    backgroundColor: colors.tint,
     alignItems: 'center',
     justifyContent: 'center',
   },
   menuIconText: { fontSize: 18 },
-  menuRowText: { color: '#0f172a', fontWeight: '700', fontSize: 15 },
+  menuRowText: { color: colors.ink, fontWeight: '700', fontSize: 15 },
   pill: {
-    backgroundColor: '#fff',
+    backgroundColor: colors.card,
     borderRadius: 26,
     paddingHorizontal: spacing.md + 2,
     paddingVertical: spacing.sm + 6,

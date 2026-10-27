@@ -31,9 +31,9 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   input: {
-    backgroundColor: '#f6f5fb',
+    backgroundColor: colors.input,
     borderWidth: 1,
-    borderColor: '#ebe8f5',
+    borderColor: colors.inputBorder,
     borderRadius: 14,
     paddingHorizontal: spacing.md - 2,
     paddingVertical: spacing.sm + 4,

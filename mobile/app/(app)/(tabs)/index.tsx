@@ -31,7 +31,7 @@ import { supabase } from '@/lib/supabase';
 import { Avatar } from '@/components/Avatar';
 import { formatClockTime, formatTimeLeft, getShareStatus, isDriving, isStale, isStatusActive, speedToMph } from '@/lib/format';
 import type { LatestLocation, MapPin, MemberWithLocation } from '@/lib/types';
-import { colors, radius, spacing } from '@/lib/theme';
+import { colors, isDark, radius, spacing } from '@/lib/theme';
 
 const DEFAULT_REGION = {
   latitude: 37.7749,
@@ -358,7 +358,7 @@ const styles = StyleSheet.create({
   map: { flex: 1 },
   markerAvatar: {
     padding: 3,
-    backgroundColor: colors.accent,
+    backgroundColor: colors.accentFill,
     borderRadius: radius.full,
     shadowColor: '#000',
     shadowOpacity: 0.25,
@@ -393,7 +393,7 @@ const styles = StyleSheet.create({
     paddingLeft: spacing.md,
     paddingRight: spacing.sm + 2,
     borderRadius: 22,
-    backgroundColor: 'rgba(255,255,255,0.96)',
+    backgroundColor: isDark ? 'rgba(23,26,33,0.96)' : 'rgba(255,255,255,0.96)',
     shadowColor: '#1e1b4b',
     shadowOpacity: 0.15,
     shadowRadius: 16,
@@ -402,13 +402,13 @@ const styles = StyleSheet.create({
   },
   circleText: { flex: 1, gap: 1 },
   circleKicker: { fontSize: 11, fontWeight: '800', color: colors.accent, letterSpacing: 0.8 },
-  circleName: { fontSize: 20, fontWeight: '800', color: '#0f172a' },
-  circleSub: { fontSize: 13, color: '#64748b' },
+  circleName: { fontSize: 20, fontWeight: '800', color: colors.ink },
+  circleSub: { fontSize: 13, color: colors.muted },
   mapTypeButton: {
     width: 46,
     height: 46,
     borderRadius: 16,
-    backgroundColor: '#f1ecff',
+    backgroundColor: colors.tint,
     alignItems: 'center',
     justifyContent: 'center',
   },

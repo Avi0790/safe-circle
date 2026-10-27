@@ -29,7 +29,7 @@ import { activeOrgs, ORG_DISCLOSURE, type OrgMembership } from '@/lib/orgInfo';
 import { DEMO_SEAT_OPTIONS, planSummary, seatsFull, workerPlanNotice } from '@/lib/orgPlan';
 import { describeOrgAudit, shiftAutoEndsAt } from '@/lib/shift';
 import { supabase } from '@/lib/supabase';
-import { colors } from '@/lib/theme';
+import { colors, isDark } from '@/lib/theme';
 
 // How often a lone worker wants to be asked "are you OK?" — and the people
 // who oversee them alerted if they don't answer (migration ...000053).
@@ -581,7 +581,7 @@ export default function WorkScreen() {
                 value={siteReminders}
                 onValueChange={toggleSiteReminders}
                 accessibilityLabel="Job site reminders"
-                trackColor={{ true: colors.accent, false: '#e5e7eb' }}
+                trackColor={{ true: colors.accentFill, false: colors.chip }}
               />
             </View>
             <Text style={styles.caption}>
@@ -620,33 +620,33 @@ const styles = StyleSheet.create({
   org: { gap: 12 },
   heroWords: { fontSize: 38 },
   stats: { flexDirection: 'row', gap: 8, marginVertical: 4 },
-  body: { fontSize: 15, color: '#334155', lineHeight: 21 },
+  body: { fontSize: 15, color: colors.text, lineHeight: 21 },
   caption: { fontSize: 13, color: appColors.muted, lineHeight: 18 },
   subLabel: { fontSize: 13, fontWeight: '600', color: appColors.ink, marginTop: 4 },
   list: { gap: 6 },
   bigEmoji: { fontSize: 26 },
   planTitle: { fontSize: 22, fontWeight: '800', color: appColors.ink },
   warnText: { fontSize: 13, fontWeight: '600', color: colors.danger },
-  noteText: { fontSize: 13, color: '#92400e' },
+  noteText: { fontSize: 13, color: isDark ? colors.stale : '#92400e' },
   codeBox: {
     alignItems: 'center',
     borderWidth: 2,
     borderStyle: 'dashed',
-    borderColor: '#d8ccfb',
+    borderColor: isDark ? '#4c3a85' : '#d8ccfb',
     borderRadius: 16,
     paddingVertical: 14,
-    backgroundColor: '#faf8ff',
+    backgroundColor: colors.tint,
   },
   code: { fontSize: 32, fontWeight: '800', letterSpacing: 4, color: colors.accent },
   rowIcon: {
     width: 36,
     height: 36,
     borderRadius: 10,
-    backgroundColor: '#f1ecff',
+    backgroundColor: colors.tint,
     alignItems: 'center',
     justifyContent: 'center',
   },
   rowEmoji: { fontSize: 18 },
-  chevron: { fontSize: 24, color: '#cbd5e1', fontWeight: '300' },
+  chevron: { fontSize: 24, color: colors.chevron, fontWeight: '300' },
   error: { color: colors.danger, fontSize: 14 },
 });
