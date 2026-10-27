@@ -8,10 +8,11 @@ import { OrgLive } from './OrgLive'
 import { OrgPeople } from './OrgPeople'
 import { OrgPlan } from './OrgPlan'
 import { OrgShifts } from './OrgShifts'
+import { OrgSettings } from './OrgSettings'
 import { OrgSosBanner } from './OrgSosBanner'
 import { OrgTimesheets } from './OrgTimesheets'
 
-type Tab = 'live' | 'people' | 'shifts' | 'timesheets' | 'plan'
+type Tab = 'live' | 'people' | 'shifts' | 'timesheets' | 'plan' | 'settings'
 
 // The work view for owners, admins and managers: a live crew map, people and
 // teams (owners/admins), and shift history. Unlike the circle dashboard this
@@ -65,7 +66,8 @@ export function OrgDashboard({
     }
   }, [loadSos])
 
-  const activeTab: Tab = (tab === 'people' && !admin) || (tab === 'plan' && !plan) ? 'live' : tab
+  const activeTab: Tab =
+    ((tab === 'people' || tab === 'settings') && !admin) || (tab === 'plan' && !plan) ? 'live' : tab
   const tabButton = (t: Tab, label: string) => (
     <button className={activeTab === t ? 'org-tab org-tab-on' : 'org-tab'} onClick={() => setTab(t)}>
       {label}
@@ -98,6 +100,7 @@ export function OrgDashboard({
           {tabButton('shifts', 'Shifts')}
           {tabButton('timesheets', 'Timesheets')}
           {plan && tabButton('plan', 'Plan')}
+          {admin && tabButton('settings', 'Settings')}
         </nav>
       </header>
 
@@ -109,6 +112,9 @@ export function OrgDashboard({
         {activeTab === 'shifts' && <OrgShifts key={org.org_id} org={org} />}
         {activeTab === 'timesheets' && <OrgTimesheets key={org.org_id} org={org} />}
         {activeTab === 'plan' && <OrgPlan key={org.org_id} org={org} onChanged={onOrgsChanged} />}
+        {activeTab === 'settings' && (
+          <OrgSettings key={org.org_id} org={org} onChanged={onOrgsChanged} onOpenTimesheets={() => setTab('timesheets')} />
+        )}
       </main>
     </div>
   )

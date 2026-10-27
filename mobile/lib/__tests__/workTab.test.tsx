@@ -237,6 +237,16 @@ describe('Work tab: managers and admins', () => {
     expect(pressables(w, 'Timesheets')).toHaveLength(0);
   });
 
+  it('owners and admins reach organization settings; managers do not', async () => {
+    orgsOverride = [org({ role: 'admin' })];
+    const r = await screen();
+    await press(r, 'Organization settings');
+    expect(mockPush).toHaveBeenCalledWith({ pathname: '/org-settings', params: { orgId: 'o1' } });
+    orgsOverride = [org({ role: 'manager' })];
+    const m = await screen();
+    expect(pressables(m, 'Organization settings')).toHaveLength(0);
+  });
+
   it('an owner is described as an owner', async () => {
     orgsOverride = [org({ role: 'owner' })];
     const r = await screen();

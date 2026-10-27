@@ -366,6 +366,13 @@ export default function WorkScreen() {
                       }
                     />
                   )}
+                  {isAdmin && (
+                    <Button
+                      title="Organization settings"
+                      variant="secondary"
+                      onPress={() => router.push({ pathname: '/org-settings', params: { orgId: org.org_id } })}
+                    />
+                  )}
                 </>
               )}
 

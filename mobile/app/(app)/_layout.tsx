@@ -73,6 +73,7 @@ function AppNavigator() {
             <Stack.Screen name="crew-worker" options={{ headerShown: true }} />
             <Stack.Screen name="crew-manage" options={{ headerShown: true }} />
             <Stack.Screen name="timesheets" options={{ headerShown: true }} />
+            <Stack.Screen name="org-settings" options={{ headerShown: true }} />
             <Stack.Screen name="ghost-mode" options={{ headerShown: true }} />
             <Stack.Screen name="drop-pin" options={{ headerShown: true, presentation: 'modal' }} />
             <Stack.Screen name="curfew" options={{ headerShown: true }} />

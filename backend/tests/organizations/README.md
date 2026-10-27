@@ -34,6 +34,7 @@ select count(*) from public.organizations;
 | `10_org_plans` | paid work organizations: trial, seats, demo billing, no self-upgrade, and that an ended plan stops new shifts and joins but never SOS, clock-out or a running shift (27 checks) |
 | `11_former_worker_shifts` | people who left stay on timesheets for owners and admins (times only); managers, other organizations and the leaver don't see them; nobody sees where a former worker was; the disclosure bump to version 4 (18 checks) |
 | `12_platform_stats` | the platform owner's dashboard: only a platform admin reads it, nobody can make themselves one, the numbers move with the data, and no names, emails, coordinates or ids come back (23 checks) |
+| `13_rename_delete` | renaming (owners, admins) and deleting (owners, typed name) an organization: everything it held goes, nobody's locations do, everyone else is told (16 checks) |
 
 Scripts 04, 05, 07 and 09 insert "trusted" rows as the database owner; their
 helper clears the fake JWT claims first (`auth.uid()` must be null, as it is

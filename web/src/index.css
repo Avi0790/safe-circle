@@ -915,3 +915,22 @@ button:disabled {
   font-size: 12px;
   color: var(--text);
 }
+
+/* Organization settings */
+.danger-zone {
+  border: 1px solid var(--danger);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+.danger-zone h3 {
+  color: var(--danger);
+}
+.danger-zone ul {
+  margin: 0;
+  padding-left: 18px;
+}
+.danger-button:not(:disabled) {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: #fff;
+}
