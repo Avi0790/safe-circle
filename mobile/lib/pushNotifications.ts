@@ -69,13 +69,19 @@ export async function registerForPushNotifications(): Promise<PushRegistrationRe
 
     return { ok: true, token };
   } catch (err) {
-    return {
-      ok: false,
-      reason: 'error',
-      message: err instanceof Error ? err.message : 'Could not get a push token.',
-    };
+    const message = err instanceof Error ? err.message : '';
+    // iOS refuses a push token to an app built without the push entitlement,
+    // which is how local builds signed with a free Apple developer account
+    // are made (app.config.js drops it unless SAFECIRCLE_PUSH=1).
+    if (message.includes('aps-environment')) {
+      return { ok: false, reason: 'not-configured', message: PUSH_UNAVAILABLE_IN_BUILD };
+    }
+    return { ok: false, reason: 'error', message: message || 'Could not get a push token.' };
   }
 }
+
+export const PUSH_UNAVAILABLE_IN_BUILD =
+  "This test build can't get push notifications: apps built with a free Apple developer account can't use Apple's push service. They work in the App Store build. SOS alerts still appear in the app while it's open.";
 
 // Called on sign out. push_tokens has no device identifier, only
 // (user_id, token) — and on a shared device (a family tablet, or two
