@@ -215,12 +215,8 @@ export function CircleOnboarding({
 }
 
 const styles = StyleSheet.create({
-  content: {
-    flex: 1,
-    justifyContent: 'center',
-    paddingHorizontal: spacing.lg,
-    gap: spacing.lg,
-  },
+  // the screen around it (a card) does the centering and padding
+  content: { gap: spacing.md + 2 },
   form: { gap: spacing.md },
   error: { color: colors.danger, fontSize: 14 },
   code: {

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { Button } from '@/components/Button';
 import { TextField } from '@/components/TextField';
 import { useAccount } from '@/contexts/AccountContext';
@@ -117,7 +117,7 @@ export function OrgOnboarding({
 
   if (pendingInvite) {
     return (
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <View style={styles.content}>
         <Text style={typography.title}>Join {pendingInvite.name}</Text>
         <Text style={typography.body}>
           Before you join, here is exactly what the people who run this organization can see:
@@ -134,7 +134,7 @@ export function OrgOnboarding({
           <Button title="I understand — join" onPress={handleAccept} loading={loading} />
           <Button title="Decline" variant="secondary" onPress={handleDecline} disabled={loading} />
         </View>
-      </ScrollView>
+      </View>
     );
   }
 
@@ -208,8 +208,8 @@ export function OrgOnboarding({
 }
 
 const styles = StyleSheet.create({
-  content: { flex: 1, justifyContent: 'center', paddingHorizontal: spacing.lg, gap: spacing.lg },
-  scroll: { padding: spacing.lg, gap: spacing.lg, flexGrow: 1, justifyContent: 'center' },
+  // the screen around it (a card) does the centering, padding and scrolling
+  content: { gap: spacing.md + 2 },
   list: { gap: spacing.sm },
   form: { gap: spacing.md },
   error: { color: colors.danger, fontSize: 14 },

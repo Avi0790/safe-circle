@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { ACCOUNT_TYPES, type AccountType } from '@/lib/accountType';
-import { colors, radius, spacing, typography } from '@/lib/theme';
+import { colors, spacing, typography } from '@/lib/theme';
 
 export function AccountTypePicker({
   value,
@@ -36,19 +36,19 @@ export function AccountTypePicker({
 
 const styles = StyleSheet.create({
   container: { gap: spacing.sm },
-  label: { ...typography.caption, color: colors.textHeading, fontWeight: '600' },
+  label: { ...typography.caption, color: colors.textHeading, fontWeight: '700' },
   card: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.md,
-    padding: spacing.md,
-    backgroundColor: colors.bg,
+    borderWidth: 2,
+    borderColor: 'transparent',
+    borderRadius: 18,
+    padding: spacing.md - 2,
+    backgroundColor: '#f6f5fb',
   },
-  cardSelected: { borderColor: colors.accent, backgroundColor: colors.bgElevated, borderWidth: 2 },
+  cardSelected: { borderColor: colors.accent, backgroundColor: '#f3eeff' },
   emoji: { fontSize: 26 },
   text: { flex: 1, gap: 2 },
-  title: { fontSize: 16, fontWeight: '600', color: colors.textHeading },
+  title: { fontSize: 16, fontWeight: '700', color: colors.textHeading },
 });

@@ -1,8 +1,6 @@
-import { StyleSheet } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { OrgOnboarding } from '@/components/OrgOnboarding';
-import { colors } from '@/lib/theme';
+import { CardScreen } from '@/components/ui/AuthScreen';
 
 // Join or create a work organization from Settings → Work, whatever account
 // type you signed up with — the signup choice only picks the first screen
@@ -14,17 +12,13 @@ export default function AddOrgScreen() {
   const router = useRouter();
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['bottom']}>
+    <CardScreen>
       <Stack.Screen options={{ title: 'Work', headerBackTitle: 'Settings' }} />
       <OrgOnboarding
         heading="Add work"
         intro="Join your workplace with the code your manager gave you, or create an organization for your crew. Your family circles stay exactly as they are, and your workplace can see you only while you're clocked in."
         onDone={() => router.back()}
       />
-    </SafeAreaView>
+    </CardScreen>
   );
 }
-
-const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: colors.bg },
-});

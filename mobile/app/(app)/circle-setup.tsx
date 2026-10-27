@@ -1,9 +1,7 @@
-import { StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { CircleOnboarding } from '@/components/CircleOnboarding';
 import { OrgOnboarding } from '@/components/OrgOnboarding';
 import { useAccount } from '@/contexts/AccountContext';
-import { colors } from '@/lib/theme';
+import { AuthScreen } from '@/components/ui/AuthScreen';
 
 // First-run only — reachable while the app's entry rule isn't met yet (see
 // the guard in app/(app)/_layout.tsx): family accounts with no circle, or
@@ -14,12 +12,8 @@ import { colors } from '@/lib/theme';
 export default function CircleSetupScreen() {
   const { accountType } = useAccount();
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <AuthScreen tagline={accountType === 'industry' ? "Let's set up your crew." : "Let's set up your circle."}>
       {accountType === 'industry' ? <OrgOnboarding /> : <CircleOnboarding />}
-    </SafeAreaView>
+    </AuthScreen>
   );
 }
-
-const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: colors.bg },
-});

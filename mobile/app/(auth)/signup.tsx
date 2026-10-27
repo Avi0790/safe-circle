@@ -1,13 +1,12 @@
 import { useState } from 'react';
 import { Link } from 'expo-router';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Text, View } from 'react-native';
 import { AccountTypePicker } from '@/components/AccountTypePicker';
 import { Button } from '@/components/Button';
 import { TextField } from '@/components/TextField';
+import { AuthScreen, authStyles } from '@/components/ui/AuthScreen';
 import { DEFAULT_ACCOUNT_TYPE, type AccountType } from '@/lib/accountType';
 import { supabase } from '@/lib/supabase';
-import { colors, spacing, typography } from '@/lib/theme';
 
 export default function SignupScreen() {
   const [accountType, setAccountType] = useState<AccountType>(DEFAULT_ACCOUNT_TYPE);
@@ -46,82 +45,54 @@ export default function SignupScreen() {
 
   if (checkEmail) {
     return (
-      <SafeAreaView style={styles.safeArea}>
-        <View style={styles.content}>
-          <Text style={typography.title}>Check your email</Text>
-          <Text style={typography.body}>
-            We sent a confirmation link to {email}. Open it, then come back and sign in.
-          </Text>
-          <Link href="/(auth)/login" style={styles.link}>
-            Back to sign in
-          </Link>
-        </View>
-      </SafeAreaView>
+      <AuthScreen
+        title="Check your email"
+        subtitle={`We sent a confirmation link to ${email}. Open it, then come back and sign in.`}
+      >
+        <Link href="/(auth)/login" style={authStyles.cardLink}>
+          Back to sign in
+        </Link>
+      </AuthScreen>
     );
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={styles.flex}
-      >
-        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-          <Text style={typography.title}>Create account</Text>
+    <AuthScreen
+      title="Create your account"
+      footer={
+        <>
+          <Text style={authStyles.footerText}>Already have an account?</Text>
+          <Link href="/(auth)/login" style={authStyles.footerLink}>
+            Sign in
+          </Link>
+        </>
+      }
+    >
+      <AccountTypePicker value={accountType} onChange={setAccountType} />
 
-          <AccountTypePicker value={accountType} onChange={setAccountType} />
+      <View style={authStyles.form}>
+        <TextField label="Name" value={fullName} onChangeText={setFullName} autoCapitalize="words" />
+        <TextField
+          label="Email"
+          value={email}
+          onChangeText={setEmail}
+          keyboardType="email-address"
+          autoComplete="email"
+          textContentType="emailAddress"
+        />
+        <TextField
+          label="Password"
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry
+          autoComplete="password-new"
+          textContentType="newPassword"
+        />
 
-          <View style={styles.form}>
-            <TextField label="Name" value={fullName} onChangeText={setFullName} autoCapitalize="words" />
-            <TextField
-              label="Email"
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoComplete="email"
-              textContentType="emailAddress"
-            />
-            <TextField
-              label="Password"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-              autoComplete="password-new"
-              textContentType="newPassword"
-            />
+        {error && <Text style={authStyles.error}>{error}</Text>}
 
-            {error && <Text style={styles.error}>{error}</Text>}
-
-            <Button title="Sign up" onPress={handleSignUp} loading={loading} />
-          </View>
-
-          <View style={styles.footer}>
-            <Text style={typography.caption}>Already have an account?</Text>
-            <Link href="/(auth)/login" style={styles.link}>
-              Sign in
-            </Link>
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+        <Button title="Sign up" onPress={handleSignUp} loading={loading} />
+      </View>
+    </AuthScreen>
   );
 }
-
-const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: colors.bg },
-  flex: { flex: 1 },
-  content: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    paddingHorizontal: spacing.lg,
-    gap: spacing.lg,
-  },
-  form: { gap: spacing.md },
-  error: { color: colors.danger, fontSize: 14 },
-  footer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: spacing.xs,
-  },
-  link: { color: colors.accent, fontWeight: '600' },
-});

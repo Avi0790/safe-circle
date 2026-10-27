@@ -1,8 +1,6 @@
-import { StyleSheet } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { CircleOnboarding } from '@/components/CircleOnboarding';
-import { colors } from '@/lib/theme';
+import { CardScreen } from '@/components/ui/AuthScreen';
 
 // Create or join an additional circle — e.g. a family circle and a
 // separate friend group, or a study group for campus and a family one at
@@ -13,17 +11,13 @@ export default function AddCircleScreen() {
   const router = useRouter();
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['bottom']}>
+    <CardScreen>
       <Stack.Screen options={{ title: 'Add a circle' }} />
       <CircleOnboarding
         heading="Add a circle"
         intro="Create a new circle, or join one with an invite code. You'll stay in every circle you're already part of."
         onDone={() => router.back()}
       />
-    </SafeAreaView>
+    </CardScreen>
   );
 }
-
-const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: colors.bg },
-});
