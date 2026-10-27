@@ -2,9 +2,11 @@ import { useState } from 'react'
 import { supabase } from '../lib/supabase'
 import type { OrgMembership } from '../lib/org'
 import { confirmsName, DELETE_EFFECTS } from '../lib/orgSettings'
+import { OrgJobSites } from './OrgJobSites'
 
-// Rename the organization (owners and admins) or delete it (owners only,
-// typing its name). The database checks both (migration ...000067).
+// Rename the organization (owners and admins), manage its job sites, or
+// delete it (owners only, typing its name). The database checks each
+// (migrations ...000067, ...000068).
 export function OrgSettings({
   org,
   onChanged,
@@ -55,6 +57,8 @@ export function OrgSettings({
           {notice && <span className="org-note">{notice}</span>}
         </div>
       </div>
+
+      <OrgJobSites org={org} />
 
       {owner && (
         <div className="org-block danger-zone">

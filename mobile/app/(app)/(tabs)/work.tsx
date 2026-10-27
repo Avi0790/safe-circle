@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '@/components/Button';
@@ -10,6 +10,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useActiveSosEvents } from '@/hooks/useActiveSosEvents';
 import { checkInNow, clockInTo, clockOutOf } from '@/lib/clockIn';
 import { formatClockTime, timeAgo } from '@/lib/format';
+import { jobSiteRemindersOn, setJobSiteReminders } from '@/lib/jobSiteReminders';
 import { activeOrgs, ORG_DISCLOSURE, type OrgMembership } from '@/lib/orgInfo';
 import { DEMO_SEAT_OPTIONS, planSummary, seatsFull, workerPlanNotice } from '@/lib/orgPlan';
 import { describeOrgAudit, formatShiftElapsed, shiftAutoEndsAt } from '@/lib/shift';
@@ -49,6 +50,30 @@ export default function WorkScreen() {
   const [newCode, setNewCode] = useState<Record<string, string>>({});
   const [now, setNow] = useState(Date.now());
   const [checkinChoice, setCheckinChoice] = useState<number | null>(null);
+  const [siteReminders, setSiteReminders] = useState(false);
+  const [siteNote, setSiteNote] = useState<string | null>(null);
+
+  useEffect(() => {
+    jobSiteRemindersOn().then(setSiteReminders);
+  }, []);
+
+  async function toggleSiteReminders(on: boolean) {
+    setSiteNote(null);
+    const result = await setJobSiteReminders(on);
+    if (!result.ok) {
+      setSiteReminders(false);
+      setSiteNote(result.reason);
+      return;
+    }
+    setSiteReminders(on);
+    if (on) {
+      setSiteNote(
+        result.sites === 0
+          ? 'On. Your organizations have no job sites yet; reminders start when they add some.'
+          : `On. Watching ${result.sites} job ${result.sites === 1 ? 'site' : 'sites'}.`,
+      );
+    }
+  }
 
   const mine = activeOrgs(orgs);
   const onShiftElsewhere = (orgId: string) =>
@@ -357,6 +382,11 @@ export default function WorkScreen() {
                       router.push({ pathname: '/timesheets', params: { orgId: org.org_id, orgName: org.name } })
                     }
                   />
+                  <Button
+                    title="Job sites"
+                    variant="secondary"
+                    onPress={() => router.push({ pathname: '/job-sites', params: { orgId: org.org_id } })}
+                  />
                   {isAdmin && (
                     <Button
                       title="Manage people & teams"
@@ -450,6 +480,24 @@ export default function WorkScreen() {
           );
         })}
 
+        {mine.some((o) => o.role === 'worker') && (
+          <View style={styles.card}>
+            <View style={styles.switchRow}>
+              <Text style={[typography.heading, { flex: 1 }]}>Job site reminders</Text>
+              <Switch
+                value={siteReminders}
+                onValueChange={toggleSiteReminders}
+                accessibilityLabel="Job site reminders"
+              />
+            </View>
+            <Text style={typography.caption}>
+              When you arrive at one of your organization&apos;s job sites and aren&apos;t clocked in,
+              your phone reminds you. Only your phone knows: nobody at work is told you were there.
+            </Text>
+            {siteNote && <Text style={typography.caption}>{siteNote}</Text>}
+          </View>
+        )}
+
         {notice && <Text style={styles.notice}>{notice}</Text>}
         {error && <Text style={styles.error}>{error}</Text>}
 
@@ -500,6 +548,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
   },
   notice: { ...typography.caption, color: colors.stale },
+  switchRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   plan: { borderRadius: radius.md, padding: spacing.md, gap: 2, backgroundColor: colors.bg, borderWidth: 1, borderColor: colors.border },
   planWarn: { backgroundColor: '#fef3c7', borderColor: '#f59e0b' },
   planEndedBox: { backgroundColor: '#fee2e2', borderColor: colors.danger },

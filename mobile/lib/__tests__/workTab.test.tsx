@@ -1,6 +1,7 @@
 import React from 'react';
 import { Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { act } from 'react-test-renderer';
 import { fake } from '../../test-support/fakeSupabase';
 import { allText, pressables, press, render, tapAlertButton, unmountAll } from '../../test-support/render';
 
@@ -29,6 +30,13 @@ jest.mock('@/lib/locationTracking', () => ({
   stopBackgroundTracking: () => mockTracking.stop(),
   getShareUntil: async () => null,
   setShareUntil: async () => {},
+}));
+const mockSiteReminders = { on: false, set: jest.fn(async (on: boolean) => ({ ok: true as const, sites: on ? 3 : 0 })) };
+jest.mock('@/lib/jobSiteReminders', () => ({
+  jobSiteRemindersOn: async () => mockSiteReminders.on,
+  setJobSiteReminders: (on: boolean) => mockSiteReminders.set(on),
+  rememberOnShift: async () => {},
+  syncJobSiteReminders: async () => {},
 }));
 jest.mock('@/lib/checkinReminder', () => ({
   scheduleCheckinReminder: (d: Date) => (mockReminders.schedule as any)(d),
@@ -247,6 +255,13 @@ describe('Work tab: managers and admins', () => {
     expect(pressables(m, 'Organization settings')).toHaveLength(0);
   });
 
+  it('managers open job sites', async () => {
+    orgsOverride = [org({ role: 'manager' })];
+    const r = await screen();
+    await press(r, 'Job sites');
+    expect(mockPush).toHaveBeenCalledWith({ pathname: '/job-sites', params: { orgId: 'o1' } });
+  });
+
   it('an owner is described as an owner', async () => {
     orgsOverride = [org({ role: 'owner' })];
     const r = await screen();
@@ -323,5 +338,40 @@ describe('Work tab: the plan (demo billing)', () => {
     expect(t).toContain('Only the owner can change the plan.');
     expect(t).toContain('Every seat is taken.');
     expect(pressables(r, 'Pay for 5 seats (demo)')).toHaveLength(0);
+  });
+});
+
+describe('Work tab: job site reminders', () => {
+  beforeEach(() => {
+    mockSiteReminders.on = false;
+    mockSiteReminders.set.mockClear();
+  });
+
+  it('a worker can turn them on, and is told nobody at work learns where they were', async () => {
+    const r = await screen();
+    expect(allText(r)).toContain('Only your phone knows: nobody at work is told you were there.');
+    const sw = r.root.findAll((n) => n.props.accessibilityLabel === 'Job site reminders' && typeof n.props.onValueChange === 'function')[0];
+    expect(sw.props.value).toBe(false);
+    await act(async () => {
+      await sw.props.onValueChange(true);
+    });
+    expect(mockSiteReminders.set).toHaveBeenCalledWith(true);
+    expect(allText(r)).toContain('On. Watching 3 job sites.');
+  });
+
+  it('says why when they can\'t be turned on', async () => {
+    mockSiteReminders.set.mockResolvedValueOnce({ ok: false, reason: 'Reminders need location set to "Always" for Safe Circle in Settings.' } as never);
+    const r = await screen();
+    const sw = r.root.findAll((n) => n.props.accessibilityLabel === 'Job site reminders' && typeof n.props.onValueChange === 'function')[0];
+    await act(async () => {
+      await sw.props.onValueChange(true);
+    });
+    expect(allText(r)).toContain('location set to "Always"');
+  });
+
+  it('owners and managers who never clock in don\'t get the switch', async () => {
+    orgsOverride = [org({ role: 'owner' })];
+    const r = await screen();
+    expect(allText(r)).not.toContain('Job site reminders');
   });
 });

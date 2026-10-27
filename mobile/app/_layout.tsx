@@ -7,6 +7,8 @@ import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 // layer) at module scope. Must happen unconditionally on every app
 // launch, not inside a component — see lib/locationTracking.ts.
 import { resumeForegroundWatchIfActive, startQueueFlushOnReconnect } from '@/lib/locationTracking';
+// Side-effect import too: the job-site geofence task, for the same reason.
+import '@/lib/jobSiteReminders';
 
 export default function RootLayout() {
   useEffect(() => startQueueFlushOnReconnect(), []);

@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { DEFAULT_ACCOUNT_TYPE, parseAccountType, type AccountType } from '@/lib/accountType';
+import { rememberOnShift, syncJobSiteReminders } from '@/lib/jobSiteReminders';
 import { activeOrgs, pendingInvite, type OrgMembership } from '@/lib/orgInfo';
 
 interface AccountContextValue {
@@ -40,8 +41,12 @@ export function AccountProvider({ children }: { children: ReactNode }) {
       supabase.rpc('my_orgs'),
     ]);
     setAccountType(parseAccountType(profile?.account_type));
-    setOrgs((orgRows as OrgMembership[] | null) ?? []);
+    const memberships = (orgRows as OrgMembership[] | null) ?? [];
+    setOrgs(memberships);
     setIsLoading(false);
+    // job-site reminders: whether you're on shift, and the current sites
+    rememberOnShift(memberships.some((o) => o.on_shift));
+    syncJobSiteReminders();
   }, [userId]);
 
   useEffect(() => {
