@@ -68,6 +68,14 @@ jest.mock('@/lib/avatarUpload', () => ({
   removeAvatar: async () => ({ ok: true, url: null }),
 }));
 jest.mock('@/lib/dataExport', () => ({ exportDataToFile: (d: unknown) => mockExport(d) }));
+const mockAppearance = { saved: 'system', set: jest.fn((v: string) => void (mockAppearance.saved = v)) };
+jest.mock('@/lib/appearance', () => ({
+  ...jest.requireActual('@/lib/appearance'),
+  canChooseAppearance: true,
+  // also read by lib/theme.ts while modules load, before mockAppearance exists
+  getAppearancePref: () => mockAppearance?.saved ?? 'system',
+  setAppearancePref: (v: string) => mockAppearance.set(v),
+}));
 
 import SettingsTab from '../../app/(app)/(tabs)/settings';
 
@@ -318,6 +326,36 @@ describe('Settings tab: work', () => {
     expect(allText(r)).toContain('You started joining Pending Co.');
     await press(r, 'Finish joining Pending Co');
     expect(mockPush).toHaveBeenCalledWith('/add-org');
+  });
+});
+
+describe('Settings tab: appearance', () => {
+  beforeEach(() => {
+    mockAppearance.saved = 'system';
+    mockAppearance.set.mockClear();
+  });
+
+  it('matches the iPhone by default; choosing Dark saves it and asks to reopen the app', async () => {
+    const alert = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+    const r = await render(<SettingsTab />);
+    expect(allText(r)).toContain('Match your iPhone');
+    const option = (label: string) =>
+      r.root.findAll((n) => n.props.accessibilityRole === 'radio' && text({ children: n.children }) === label)[0];
+    expect(option('Match iPhone').props.accessibilityState).toEqual({ selected: true });
+
+    await press(r, 'Dark');
+    expect(mockAppearance.set).toHaveBeenCalledWith('dark');
+    expect(alert).toHaveBeenCalledWith('Reopen Safe Circle', expect.stringContaining('"Dark"'));
+    expect(option('Dark').props.accessibilityState).toEqual({ selected: true });
+    expect(allText(r)).toContain('Applies the next time you open Safe Circle.');
+
+    // going back to what it opened with needs no reopen
+    alert.mockClear();
+    await press(r, 'Match iPhone');
+    expect(mockAppearance.set).toHaveBeenLastCalledWith('system');
+    expect(alert).not.toHaveBeenCalled();
+    expect(allText(r)).not.toContain('Applies the next time');
+    alert.mockRestore();
   });
 });
 

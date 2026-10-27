@@ -37,6 +37,13 @@ import { formatClockTime } from '@/lib/format';
 import { deregisterPushNotifications, registerForPushNotifications } from '@/lib/pushNotifications';
 import { clearMembersCache } from '@/lib/membersCache';
 import { exportDataToFile } from '@/lib/dataExport';
+import {
+  APPEARANCE_OPTIONS,
+  canChooseAppearance,
+  getAppearancePref,
+  setAppearancePref,
+  type AppearancePref,
+} from '@/lib/appearance';
 import { activeOrgs } from '@/lib/orgInfo';
 
 export default function SettingsTab() {
@@ -46,6 +53,9 @@ export default function SettingsTab() {
   const { enabled: lockEnabled, setEnabled: setLockEnabled } = useAppLock();
   const [lockError, setLockError] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
+  // what's saved; the app shows it from the next launch (lib/theme.ts)
+  const [appearance, setAppearance] = useState<AppearancePref>(() => getAppearancePref());
+  const [appearanceAtLaunch] = useState<AppearancePref>(() => getAppearancePref());
 
   async function handleToggleLock(next: boolean) {
     setLockError(null);
@@ -747,6 +757,44 @@ export default function SettingsTab() {
             <Switch value={shakeEnabled} onValueChange={setShakeEnabled} trackColor={{ true: colors.accent }} />
           </View>
         </View>
+
+        {canChooseAppearance && (
+          <View style={styles.section}>
+            <Text style={styles.sectionLabel}>Appearance</Text>
+            <Text style={typography.caption}>
+              Match your iPhone&apos;s light or dark setting, or always use one.
+            </Text>
+            <View style={styles.chipRow}>
+              {APPEARANCE_OPTIONS.map((option) => {
+                const selected = appearance === option.value;
+                return (
+                  <Pressable
+                    key={option.value}
+                    style={[styles.chip, selected && styles.chipSelected]}
+                    onPress={() => {
+                      if (selected) return;
+                      setAppearancePref(option.value);
+                      setAppearance(option.value);
+                      if (option.value !== appearanceAtLaunch) {
+                        Alert.alert(
+                          'Reopen Safe Circle',
+                          `Close Safe Circle and open it again to switch to "${option.label}".`,
+                        );
+                      }
+                    }}
+                    accessibilityRole="radio"
+                    accessibilityState={{ selected }}
+                  >
+                    <Text style={[styles.chipText, selected && styles.chipTextSelected]}>{option.label}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+            {appearance !== appearanceAtLaunch && (
+              <Text style={typography.caption}>Applies the next time you open Safe Circle.</Text>
+            )}
+          </View>
+        )}
 
         <View style={styles.section}>
           <View style={styles.row}>

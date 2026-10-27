@@ -1,12 +1,24 @@
 import { Appearance } from 'react-native';
+import { getAppearancePref, resolveScheme } from './appearance';
 
 // Shared design tokens (Avi owns the design system, per the proposal).
 // Mirrors the web dashboard's palette so the two clients feel related.
 //
-// Light or dark follows the phone's appearance setting when the app starts
-// (styles are built once, at load). Changing the setting while the app is
-// open applies the next time it opens.
-export const isDark = Appearance.getColorScheme() === 'dark';
+// Light or dark: the choice in Settings → Appearance (lib/appearance.ts),
+// which by default matches the phone. Decided once, when the app starts
+// (styles are built at load), so a change applies the next time it opens.
+const appearancePref = getAppearancePref();
+export const isDark = resolveScheme(appearancePref, Appearance.getColorScheme()) === 'dark';
+
+// A forced choice also tells iOS, so the keyboard, alerts, the status bar
+// and the map match the app rather than the phone.
+if (appearancePref !== 'system') {
+  try {
+    Appearance.setColorScheme(appearancePref);
+  } catch {
+    // older platforms: only Safe Circle's own screens follow the choice
+  }
+}
 
 const light = {
   bg: '#ffffff',
