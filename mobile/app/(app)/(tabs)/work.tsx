@@ -1,10 +1,24 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '@/components/Button';
 import { SosBanner } from '@/components/SosBanner';
 import { SosButton } from '@/components/SosButton';
+import {
+  ActionTile,
+  Card,
+  Chip,
+  HeroButton,
+  HeroCard,
+  Initials,
+  LiveElapsed,
+  Pill,
+  SeatMeter,
+  SectionTitle,
+  ui,
+  workColors,
+} from '@/components/work/WorkUI';
 import { useAccount } from '@/contexts/AccountContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useActiveSosEvents } from '@/hooks/useActiveSosEvents';
@@ -13,9 +27,9 @@ import { formatClockTime, timeAgo } from '@/lib/format';
 import { jobSiteRemindersOn, setJobSiteReminders } from '@/lib/jobSiteReminders';
 import { activeOrgs, ORG_DISCLOSURE, type OrgMembership } from '@/lib/orgInfo';
 import { DEMO_SEAT_OPTIONS, planSummary, seatsFull, workerPlanNotice } from '@/lib/orgPlan';
-import { describeOrgAudit, formatShiftElapsed, shiftAutoEndsAt } from '@/lib/shift';
+import { describeOrgAudit, shiftAutoEndsAt } from '@/lib/shift';
 import { supabase } from '@/lib/supabase';
-import { colors, radius, spacing, typography } from '@/lib/theme';
+import { colors } from '@/lib/theme';
 
 // How often a lone worker wants to be asked "are you OK?" — and the people
 // who oversee them alerted if they don't answer (migration ...000053).
@@ -25,6 +39,32 @@ const CHECKIN_OPTIONS: { label: string; minutes: number | null }[] = [
   { label: 'Every hour', minutes: 60 },
   { label: 'Every 2 hours', minutes: 120 },
 ];
+
+const ROLE_LABEL: Record<string, string> = { owner: 'Owner', admin: 'Admin', manager: 'Manager', worker: 'Worker' };
+
+function youAre(role: string): string {
+  return `You are ${role === 'admin' || role === 'owner' ? 'an' : 'a'} ${role}`;
+}
+
+// The plan in a word or two, for the crew card's stat.
+function planWord(org: OrgMembership): string | null {
+  switch (org.plan_state) {
+    case 'trial':
+      return 'Trial';
+    case 'active':
+      return 'Active';
+    case 'grace':
+      return 'Payment due';
+    case 'ended':
+      return 'Ended';
+    default:
+      return null;
+  }
+}
+
+function todayLabel(now: number): string {
+  return new Date(now).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }).toUpperCase();
+}
 
 interface ViewRow {
   viewer_name: string;
@@ -215,343 +255,398 @@ export default function WorkScreen() {
     setNewCode((prev) => ({ ...prev, [org.org_id]: data as string }));
   }
 
-  return (
-    <SafeAreaView style={styles.safeArea} edges={['top']}>
-      <SosBanner events={sosEvents} onChanged={refreshSos} />
-      <ScrollView contentContainerStyle={styles.content}>
-        <Text style={typography.title}>Work</Text>
+  function renderWorker(org: OrgMembership) {
+    const busy = busyOrg === org.org_id;
+    const ended = !org.on_shift && !!workerPlanNotice(org);
+    const elsewhere = onShiftElsewhere(org.org_id);
+    const heroColors = org.on_shift ? workColors.onShift : ended ? workColors.ended : workColors.offShift;
+    const tint = heroColors[0];
+    const overdue = !!org.next_checkin_due && new Date(org.next_checkin_due).getTime() < now;
+    const looks = views[org.org_id] ?? [];
 
-        {mine.map((org) => {
-          const isWorker = org.role === 'worker';
-          const isAdmin = org.role === 'owner' || org.role === 'admin';
-          const busy = busyOrg === org.org_id;
+    if (org.needs_reconsent) {
+      return (
+        <View key={org.org_id} style={styles.org}>
+          <Card tone="warn">
+            <Text style={ui.rowTitle}>{org.name}</Text>
+            <Text style={styles.body}>
+              What {org.name} can see about you has changed. Until you review and accept it, you can't clock in and
+              nobody at work can see you.
+            </Text>
+            <View style={styles.list}>
+              {ORG_DISCLOSURE.map((line) => (
+                <Text key={line} style={styles.body}>
+                  •  {line}
+                </Text>
+              ))}
+            </View>
+            <Button title="I understand — keep working here" onPress={() => handleAcceptUpdate(org)} loading={busy} />
+          </Card>
+        </View>
+      );
+    }
 
-          return (
-            <View key={org.org_id} style={styles.card}>
-              <Text style={styles.orgName}>{org.name}</Text>
-              <Text style={typography.caption}>You are {org.role === 'admin' ? 'an admin' : `a${org.role === 'owner' ? 'n' : ''} ${org.role}`}</Text>
+    return (
+      <View key={org.org_id} style={styles.org}>
+        <HeroCard colors={heroColors}>
+          <View style={ui.heroTop}>
+            <Text style={ui.heroOrg} numberOfLines={1}>
+              {org.name}
+            </Text>
+            <Pill>{org.on_shift ? '🟢 On shift' : '⚪ Off shift'}</Pill>
+          </View>
+          <Text style={ui.heroRole}>{youAre(org.role)}</Text>
 
-              {isWorker && org.needs_reconsent && (
-                <>
-                  <Text style={typography.body}>
-                    What {org.name} can see about you has changed. Until you review and accept it,
-                    you can't clock in and nobody at work can see you.
-                  </Text>
-                  <View style={styles.views}>
-                    {ORG_DISCLOSURE.map((line) => (
-                      <Text key={line} style={typography.body}>
-                        • {line}
-                      </Text>
-                    ))}
-                  </View>
-                  <Button
-                    title="I understand — keep working here"
-                    onPress={() => handleAcceptUpdate(org)}
-                    loading={busy}
-                  />
-                </>
-              )}
+          {org.on_shift && org.shift_started_at ? (
+            <>
+              <LiveElapsed since={org.shift_started_at} style={ui.heroBig} />
+              <Text style={ui.heroBody}>
+                Since {formatClockTime(org.shift_started_at)} · this shift ends by itself at{' '}
+                {formatClockTime(shiftAutoEndsAt(org.shift_started_at))}
+              </Text>
+              <Text style={ui.heroSmall}>Your admins and managers can see your location until you clock out.</Text>
+            </>
+          ) : (
+            <>
+              <Text style={[ui.heroBig, styles.heroWords]}>{ended ? 'Plan ended' : 'Off the clock'}</Text>
+              <Text style={ui.heroBody}>Nobody at work can see your location.</Text>
+              {ended && <Text style={ui.heroSmall}>{workerPlanNotice(org)}</Text>}
+            </>
+          )}
 
-              {isWorker && !org.needs_reconsent && (
-                <>
-                  <View style={[styles.status, org.on_shift ? styles.statusOn : styles.statusOff]}>
-                    <Text style={styles.statusTitle}>
-                      {org.on_shift ? '🟢 On shift' : '⚪ Off shift'}
+          {org.on_shift ? (
+            <HeroButton title="Clock out" icon="⏹" outline tint={tint} onPress={() => handleClockOut(org)} loading={busy} />
+          ) : (
+            <HeroButton
+              title={ended ? 'Plan ended — ask your owner' : elsewhere ? 'Clock out of your other job first' : 'Clock in'}
+              icon={ended || elsewhere ? undefined : '⏱'}
+              tint={tint}
+              onPress={() => handleClockIn(org)}
+              loading={busy}
+              disabled={elsewhere || ended}
+            />
+          )}
+        </HeroCard>
+
+        {org.on_shift && org.checkin_minutes != null && org.next_checkin_due && (
+          <Card tone={overdue ? 'danger' : undefined}>
+            <View style={ui.row}>
+              <Text style={styles.bigEmoji}>{overdue ? '⏰' : '✅'}</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={[ui.rowTitle, overdue && { color: colors.danger }]}>
+                  {overdue ? "Check-in overdue — tap I'm OK now." : `Next check-in due at ${formatClockTime(org.next_checkin_due)}.`}
+                </Text>
+                <Text style={ui.rowSub}>Every {org.checkin_minutes} min while you're on shift</Text>
+              </View>
+            </View>
+            <Button title="I'm OK" onPress={() => handleCheckIn(org)} loading={busy} />
+          </Card>
+        )}
+
+        {!org.on_shift && !ended && (
+          <Card>
+            <SectionTitle>Check-in reminders</SectionTitle>
+            <Text style={styles.caption}>
+              Working alone? Choose how often to check in. Miss one and your admins and managers are alerted with your
+              last location.
+            </Text>
+            <View style={ui.chips}>
+              {CHECKIN_OPTIONS.map((o) => (
+                <Chip key={o.label} label={o.label} selected={checkinChoice === o.minutes} onPress={() => setCheckinChoice(o.minutes)} />
+              ))}
+            </View>
+          </Card>
+        )}
+
+        <Card>
+          <SectionTitle>Who's looked at you</SectionTitle>
+          {looks.length === 0 ? (
+            <Text style={styles.caption}>
+              No one yet. Every time a manager or admin looks at your location, it shows up here.
+            </Text>
+          ) : (
+            looks.map((v, i) => (
+              <View key={`${v.created_at}-${i}`}>
+                {i > 0 && <View style={ui.divider} />}
+                <View style={ui.row}>
+                  <Initials name={v.viewer_name} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={ui.rowTitle}>
+                      {v.viewer_name}
+                      {v.viewer_role ? ` (${v.viewer_role})` : ''}
                     </Text>
-                    {org.on_shift && org.shift_started_at ? (
-                      <Text style={typography.body}>
-                        Since {formatClockTime(org.shift_started_at)} ·{' '}
-                        {formatShiftElapsed(org.shift_started_at, now)}
-                      </Text>
-                    ) : (
-                      <Text style={typography.body}>Nobody at work can see your location.</Text>
-                    )}
-                  </View>
-
-                  {org.on_shift && (
-                    <Text style={typography.caption}>
-                      Your admins and managers can see your location until you clock out.
-                      {org.shift_started_at
-                        ? ` If you forget, this shift ends by itself at ${formatClockTime(shiftAutoEndsAt(org.shift_started_at))}.`
-                        : ''}
+                    <Text style={ui.rowSub}>
+                      {describeOrgAudit(v.action)} · {timeAgo(v.created_at)}
                     </Text>
-                  )}
-
-                  {org.on_shift && org.checkin_minutes != null && org.next_checkin_due && (
-                    <View style={styles.checkin}>
-                      <Text
-                        style={
-                          new Date(org.next_checkin_due).getTime() < now ? styles.checkinOverdue : typography.body
-                        }
-                      >
-                        {new Date(org.next_checkin_due).getTime() < now
-                          ? 'Check-in overdue — tap I\'m OK now.'
-                          : `Next check-in due at ${formatClockTime(org.next_checkin_due)}.`}
-                      </Text>
-                      <Button
-                        title="I'm OK"
-                        onPress={() => handleCheckIn(org)}
-                        loading={busy}
-                      />
-                    </View>
-                  )}
-
-                  {!org.on_shift && (
-                    <View style={styles.checkin}>
-                      <Text style={styles.sectionLabel}>Check-in reminders</Text>
-                      <Text style={typography.caption}>
-                        Working alone? Choose how often to check in. Miss one and your admins and
-                        managers are alerted with your last location.
-                      </Text>
-                      <View style={styles.chips}>
-                        {CHECKIN_OPTIONS.map((o) => (
-                          <Button
-                            key={o.label}
-                            title={o.label}
-                            variant={checkinChoice === o.minutes ? 'primary' : 'secondary'}
-                            onPress={() => setCheckinChoice(o.minutes)}
-                          />
-                        ))}
-                      </View>
-                    </View>
-                  )}
-
-                  {!org.on_shift && workerPlanNotice(org) && (
-                    <Text style={styles.planEnded}>{workerPlanNotice(org)}</Text>
-                  )}
-
-                  {org.on_shift ? (
-                    <Button
-                      title="Clock out"
-                      variant="secondary"
-                      onPress={() => handleClockOut(org)}
-                      loading={busy}
-                    />
-                  ) : (
-                    <Button
-                      title={
-                        workerPlanNotice(org)
-                          ? 'Plan ended — ask your owner'
-                          : onShiftElsewhere(org.org_id)
-                            ? 'Clock out of your other job first'
-                            : 'Clock in'
-                      }
-                      onPress={() => handleClockIn(org)}
-                      loading={busy}
-                      disabled={onShiftElsewhere(org.org_id) || !!workerPlanNotice(org)}
-                    />
-                  )}
-
-                  <View style={styles.views}>
-                    <Text style={styles.sectionLabel}>Who's looked at you</Text>
-                    {(views[org.org_id] ?? []).length === 0 ? (
-                      <Text style={typography.caption}>
-                        No one yet. Every time a manager or admin looks at your location, it
-                        shows up here.
-                      </Text>
-                    ) : (
-                      views[org.org_id].map((v, i) => (
-                        <Text key={`${v.created_at}-${i}`} style={typography.body}>
-                          {v.viewer_name}
-                          {v.viewer_role ? ` (${v.viewer_role})` : ''} {describeOrgAudit(v.action)} ·{' '}
-                          {timeAgo(v.created_at)}
-                        </Text>
-                      ))
-                    )}
                   </View>
-                </>
-              )}
-
-              {!isWorker && (
-                <>
-                  <Text style={typography.body}>
-                    {isAdmin
-                      ? 'See everyone on your crew who is clocked in.'
-                      : 'See the workers on the teams you lead who are clocked in.'}
-                  </Text>
-                  <Button
-                    title="Open crew view"
-                    onPress={() =>
-                      router.push({ pathname: '/crew', params: { orgId: org.org_id, orgName: org.name } })
-                    }
-                  />
-                  <Button
-                    title="Timesheets"
-                    variant="secondary"
-                    onPress={() =>
-                      router.push({ pathname: '/timesheets', params: { orgId: org.org_id, orgName: org.name } })
-                    }
-                  />
-                  <Button
-                    title="Job sites"
-                    variant="secondary"
-                    onPress={() => router.push({ pathname: '/job-sites', params: { orgId: org.org_id } })}
-                  />
-                  {isAdmin && (
-                    <Button
-                      title="Manage people & teams"
-                      variant="secondary"
-                      onPress={() =>
-                        router.push({ pathname: '/crew-manage', params: { orgId: org.org_id, orgName: org.name } })
-                      }
-                    />
-                  )}
-                  {isAdmin && (
-                    <Button
-                      title="Organization settings"
-                      variant="secondary"
-                      onPress={() => router.push({ pathname: '/org-settings', params: { orgId: org.org_id } })}
-                    />
-                  )}
-                </>
-              )}
-
-              {/* plan_state is missing from a server without migration ...000064 */}
-              {isAdmin && org.plan_state != null && (
-                <View style={styles.views}>
-                  <Text style={styles.sectionLabel}>Plan</Text>
-                  <View
-                    style={[
-                      styles.plan,
-                      planSummary(org, now).tone === 'warn' && styles.planWarn,
-                      planSummary(org, now).tone === 'ended' && styles.planEndedBox,
-                    ]}
-                  >
-                    <Text style={styles.statusTitle}>{planSummary(org, now).title}</Text>
-                    <Text style={typography.body}>{planSummary(org, now).detail}</Text>
-                  </View>
-                  {org.role === 'owner' ? (
-                    <>
-                      <Text style={typography.caption}>
-                        Demo billing: no real money moves. Family circles are always free; work
-                        organizations are paid per worker seat.
-                      </Text>
-                      <View style={styles.chips}>
-                        {DEMO_SEAT_OPTIONS.map((n) => (
-                          <Button
-                            key={n}
-                            title={`Pay for ${n} seats (demo)`}
-                            variant={org.plan_state === 'active' && org.seat_limit === n ? 'primary' : 'secondary'}
-                            onPress={() => doBilling(org, 'activate', n)}
-                            disabled={busy}
-                          />
-                        ))}
-                        {org.plan_state === 'trial' && (
-                          <Button title="End the trial now (demo)" variant="secondary" onPress={() => confirmBilling(org, 'end_trial')} disabled={busy} />
-                        )}
-                        {org.plan_state === 'active' && (
-                          <Button title="Simulate a failed payment (demo)" variant="secondary" onPress={() => doBilling(org, 'payment_failed')} disabled={busy} />
-                        )}
-                        {(org.plan_state === 'active' || org.plan_state === 'grace') && (
-                          <Button title="Cancel plan" variant="secondary" onPress={() => confirmBilling(org, 'cancel')} disabled={busy} />
-                        )}
-                      </View>
-                    </>
-                  ) : (
-                    <Text style={typography.caption}>Only the owner can change the plan.</Text>
-                  )}
                 </View>
-              )}
+              </View>
+            ))
+          )}
+        </Card>
+      </View>
+    );
+  }
 
-              {isAdmin && (
-                <View style={styles.views}>
-                  <Text style={styles.sectionLabel}>Invite your crew</Text>
-                  {seatsFull(org) && (
-                    <Text style={styles.planEnded}>
-                      {org.plan_state === 'ended'
-                        ? 'The plan has ended, so nobody new can join.'
-                        : 'Every seat is taken. Add seats before inviting more workers, or they won’t be able to join.'}
-                    </Text>
-                  )}
-                  {newCode[org.org_id] ? (
-                    <Text selectable style={styles.code}>
-                      {newCode[org.org_id]}
-                    </Text>
-                  ) : (
-                    <Text style={typography.caption}>
-                      Codes expire after 48 hours and are shown once. Making a new one
-                      replaces the old one.
-                    </Text>
-                  )}
-                  <Button title="Get a new invite code" variant="secondary" onPress={() => handleNewCode(org)} />
+  function renderOverseer(org: OrgMembership) {
+    const busy = busyOrg === org.org_id;
+    const isAdmin = org.role === 'owner' || org.role === 'admin';
+    const summary = org.plan_state != null ? planSummary(org, now) : null;
+    const word = planWord(org);
+
+    return (
+      <View key={org.org_id} style={styles.org}>
+        <HeroCard colors={workColors.crew}>
+          <View style={ui.heroTop}>
+            <Text style={ui.heroOrg} numberOfLines={1}>
+              {org.name}
+            </Text>
+            <Pill>{ROLE_LABEL[org.role] ?? org.role}</Pill>
+          </View>
+          <Text style={ui.heroRole}>{youAre(org.role)}</Text>
+          {isAdmin && (
+            <View style={styles.stats}>
+              <View style={ui.stat}>
+                <Text style={ui.statValue}>{org.seats_used ?? '–'}</Text>
+                <Text style={ui.statLabel}>{org.seats_used === 1 ? 'Worker' : 'Workers'}</Text>
+              </View>
+              <View style={ui.stat}>
+                <Text style={ui.statValue}>
+                  {org.seats_used != null && org.seat_limit != null ? `${org.seats_used}/${org.seat_limit}` : '–'}
+                </Text>
+                <Text style={ui.statLabel}>Seats</Text>
+              </View>
+              {word && (
+                <View style={ui.stat}>
+                  <Text style={ui.statValue} numberOfLines={1} adjustsFontSizeToFit>
+                    {word}
+                  </Text>
+                  <Text style={ui.statLabel}>Plan</Text>
                 </View>
               )}
             </View>
-          );
-        })}
+          )}
+          <Text style={ui.heroBody}>
+            {isAdmin
+              ? 'See everyone on your crew who is clocked in.'
+              : 'See the workers on the teams you lead who are clocked in.'}
+          </Text>
+          <HeroButton
+            title="Open crew view"
+            icon="🗺"
+            tint={workColors.crew[1]}
+            onPress={() => router.push({ pathname: '/crew', params: { orgId: org.org_id, orgName: org.name } })}
+          />
+        </HeroCard>
 
-        {mine.some((o) => o.role === 'worker') && (
-          <View style={styles.card}>
-            <View style={styles.switchRow}>
-              <Text style={[typography.heading, { flex: 1 }]}>Job site reminders</Text>
+        <View style={ui.tiles}>
+          <ActionTile
+            icon="🕒"
+            title="Timesheets"
+            caption="Hours and payroll CSV"
+            onPress={() => router.push({ pathname: '/timesheets', params: { orgId: org.org_id, orgName: org.name } })}
+          />
+          <ActionTile
+            icon="📍"
+            title="Job sites"
+            caption="Clock-in reminders"
+            onPress={() => router.push({ pathname: '/job-sites', params: { orgId: org.org_id } })}
+          />
+          {isAdmin && (
+            <ActionTile
+              icon="👥"
+              title="People & teams"
+              caption="Roles, teams and leads"
+              accessibilityLabel="Manage people & teams"
+              onPress={() => router.push({ pathname: '/crew-manage', params: { orgId: org.org_id, orgName: org.name } })}
+            />
+          )}
+          {isAdmin && (
+            <ActionTile
+              icon="⚙️"
+              title="Settings"
+              caption="Rename or delete"
+              accessibilityLabel="Organization settings"
+              onPress={() => router.push({ pathname: '/org-settings', params: { orgId: org.org_id } })}
+            />
+          )}
+        </View>
+
+        {/* plan_state is missing from a server without migration ...000064 */}
+        {isAdmin && summary && (
+          <Card tone={summary.tone === 'warn' ? 'warn' : summary.tone === 'ended' ? 'danger' : undefined}>
+            <SectionTitle>Plan</SectionTitle>
+            <Text style={[styles.planTitle, summary.tone === 'ended' && { color: colors.danger }]}>{summary.title}</Text>
+            {org.seats_used != null && org.seat_limit != null && org.seat_limit > 0 && (
+              <SeatMeter used={org.seats_used} limit={org.seat_limit} />
+            )}
+            <Text style={styles.body}>{summary.detail}</Text>
+            {org.role === 'owner' ? (
+              <>
+                <Text style={styles.caption}>
+                  Demo billing: no real money moves. Family circles are always free; work organizations are paid per
+                  worker seat.
+                </Text>
+                <Text style={styles.subLabel}>Pay for seats</Text>
+                <View style={ui.chips}>
+                  {DEMO_SEAT_OPTIONS.map((n) => (
+                    <Chip
+                      key={n}
+                      label={`${n} seats`}
+                      accessibilityLabel={`Pay for ${n} seats (demo)`}
+                      selected={org.plan_state === 'active' && org.seat_limit === n}
+                      onPress={() => doBilling(org, 'activate', n)}
+                      disabled={busy}
+                    />
+                  ))}
+                </View>
+                <View style={ui.chips}>
+                  {org.plan_state === 'trial' && (
+                    <Chip
+                      label="End trial"
+                      accessibilityLabel="End the trial now (demo)"
+                      onPress={() => confirmBilling(org, 'end_trial')}
+                      disabled={busy}
+                    />
+                  )}
+                  {org.plan_state === 'active' && (
+                    <Chip
+                      label="Fail a payment"
+                      accessibilityLabel="Simulate a failed payment (demo)"
+                      onPress={() => doBilling(org, 'payment_failed')}
+                      disabled={busy}
+                    />
+                  )}
+                  {(org.plan_state === 'active' || org.plan_state === 'grace') && (
+                    <Chip label="Cancel plan" onPress={() => confirmBilling(org, 'cancel')} disabled={busy} />
+                  )}
+                </View>
+              </>
+            ) : (
+              <Text style={styles.caption}>Only the owner can change the plan.</Text>
+            )}
+          </Card>
+        )}
+
+        {isAdmin && (
+          <Card>
+            <SectionTitle>Invite your crew</SectionTitle>
+            {seatsFull(org) && (
+              <Text style={styles.warnText}>
+                {org.plan_state === 'ended'
+                  ? 'The plan has ended, so nobody new can join.'
+                  : 'Every seat is taken. Add seats before inviting more workers, or they won’t be able to join.'}
+              </Text>
+            )}
+            {newCode[org.org_id] ? (
+              <View style={styles.codeBox}>
+                <Text selectable style={styles.code}>
+                  {newCode[org.org_id]}
+                </Text>
+                <Text style={styles.caption}>Shown once · expires in 48 hours</Text>
+              </View>
+            ) : (
+              <Text style={styles.caption}>
+                Codes expire after 48 hours and are shown once. Making a new one replaces the old one.
+              </Text>
+            )}
+            <Button title="Get a new invite code" variant="secondary" onPress={() => handleNewCode(org)} />
+          </Card>
+        )}
+      </View>
+    );
+  }
+
+  const hasWorker = mine.some((o) => o.role === 'worker');
+
+  return (
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
+      <SosBanner events={sosEvents} onChanged={refreshSos} />
+      <ScrollView contentContainerStyle={[styles.content, hasWorker && { paddingBottom: 120 }]}>
+        <View>
+          <Text style={styles.date}>{todayLabel(now)}</Text>
+          <Text style={styles.title}>Work</Text>
+        </View>
+
+        {mine.map((org) => (org.role === 'worker' ? renderWorker(org) : renderOverseer(org)))}
+
+        {hasWorker && (
+          <Card>
+            <View style={ui.row}>
+              <View style={styles.rowIcon}>
+                <Text style={styles.rowEmoji}>📍</Text>
+              </View>
+              <Text style={[ui.rowTitle, { flex: 1 }]}>Job site reminders</Text>
               <Switch
                 value={siteReminders}
                 onValueChange={toggleSiteReminders}
                 accessibilityLabel="Job site reminders"
+                trackColor={{ true: colors.accent, false: '#e5e7eb' }}
               />
             </View>
-            <Text style={typography.caption}>
-              When you arrive at one of your organization&apos;s job sites and aren&apos;t clocked in,
-              your phone reminds you. Only your phone knows: nobody at work is told you were there.
+            <Text style={styles.caption}>
+              When you arrive at one of your organization&apos;s job sites and aren&apos;t clocked in, your phone reminds
+              you. Only your phone knows: nobody at work is told you were there.
             </Text>
-            {siteNote && <Text style={typography.caption}>{siteNote}</Text>}
-          </View>
+            {siteNote && <Text style={styles.noteText}>{siteNote}</Text>}
+          </Card>
         )}
 
-        {notice && <Text style={styles.notice}>{notice}</Text>}
+        {notice && <Text style={styles.noteText}>{notice}</Text>}
         {error && <Text style={styles.error}>{error}</Text>}
 
-        <Button
-          title="How your privacy works"
-          variant="secondary"
+        <Pressable
+          accessibilityRole="button"
           onPress={() => router.push('/privacy')}
-        />
+          style={({ pressed }) => [ui.card, ui.row, pressed && { opacity: 0.8 }]}
+        >
+          <View style={styles.rowIcon}>
+            <Text style={styles.rowEmoji}>🔒</Text>
+          </View>
+          <Text style={[ui.rowTitle, { flex: 1 }]}>How your privacy works</Text>
+          <Text style={styles.chevron}>›</Text>
+        </Pressable>
       </ScrollView>
-      {mine.some((o) => o.role === 'worker') && <SosButton onSent={refreshSos} />}
+      {hasWorker && <SosButton onSent={refreshSos} />}
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: colors.bg },
-  content: { padding: spacing.lg, gap: spacing.md },
-  card: {
-    backgroundColor: colors.bgElevated,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: spacing.md,
-    gap: spacing.sm,
+  safeArea: { flex: 1, backgroundColor: workColors.page },
+  content: { padding: 16, gap: 16 },
+  date: { fontSize: 13, fontWeight: '700', color: workColors.muted, letterSpacing: 0.6 },
+  title: { fontSize: 34, fontWeight: '800', color: workColors.ink, letterSpacing: -0.5 },
+  org: { gap: 12 },
+  heroWords: { fontSize: 38 },
+  stats: { flexDirection: 'row', gap: 8, marginVertical: 4 },
+  body: { fontSize: 15, color: '#334155', lineHeight: 21 },
+  caption: { fontSize: 13, color: workColors.muted, lineHeight: 18 },
+  subLabel: { fontSize: 13, fontWeight: '600', color: workColors.ink, marginTop: 4 },
+  list: { gap: 6 },
+  bigEmoji: { fontSize: 26 },
+  planTitle: { fontSize: 22, fontWeight: '800', color: workColors.ink },
+  warnText: { fontSize: 13, fontWeight: '600', color: colors.danger },
+  noteText: { fontSize: 13, color: '#92400e' },
+  codeBox: {
+    alignItems: 'center',
+    borderWidth: 2,
+    borderStyle: 'dashed',
+    borderColor: '#d8ccfb',
+    borderRadius: 16,
+    paddingVertical: 14,
+    backgroundColor: '#faf8ff',
   },
-  orgName: typography.heading,
-  status: { borderRadius: radius.md, padding: spacing.md, gap: 2 },
-  statusOn: { backgroundColor: '#dcfce7' },
-  statusOff: { backgroundColor: colors.bg, borderWidth: 1, borderColor: colors.border },
-  statusTitle: { fontSize: 18, fontWeight: '700', color: colors.textHeading },
-  views: { gap: spacing.xs, marginTop: spacing.sm },
-  checkin: { gap: spacing.sm },
-  checkinOverdue: { fontSize: 15, fontWeight: '700', color: colors.danger },
-  chips: { gap: spacing.xs },
-  sectionLabel: {
-    ...typography.caption,
-    color: colors.textHeading,
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
+  code: { fontSize: 32, fontWeight: '800', letterSpacing: 4, color: colors.accent },
+  rowIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: '#f1ecff',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  code: {
-    fontSize: 32,
-    fontWeight: '700',
-    letterSpacing: 4,
-    textAlign: 'center',
-    color: colors.accent,
-    paddingVertical: spacing.sm,
-  },
-  notice: { ...typography.caption, color: colors.stale },
-  switchRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  plan: { borderRadius: radius.md, padding: spacing.md, gap: 2, backgroundColor: colors.bg, borderWidth: 1, borderColor: colors.border },
-  planWarn: { backgroundColor: '#fef3c7', borderColor: '#f59e0b' },
-  planEndedBox: { backgroundColor: '#fee2e2', borderColor: colors.danger },
-  planEnded: { ...typography.caption, color: colors.danger, fontWeight: '600' },
+  rowEmoji: { fontSize: 18 },
+  chevron: { fontSize: 24, color: '#cbd5e1', fontWeight: '300' },
   error: { color: colors.danger, fontSize: 14 },
 });

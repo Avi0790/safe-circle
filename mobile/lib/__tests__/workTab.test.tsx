@@ -102,7 +102,8 @@ describe('Work tab: a worker', () => {
     expect(t).toContain('You are a worker');
     expect(t).toContain('⚪ Off shift');
     expect(t).toContain('Nobody at work can see your location.');
-    expect(t).toContain('Max Lead (manager) looked at your live location · 5m ago');
+    expect(t).toContain('Max Lead (manager)');
+    expect(t).toContain('looked at your live location · 5m ago');
     expect(fake.rpcsOf('org_my_views')).toEqual([{ p_org: 'o1', p_limit: 10 }]);
   });
 
