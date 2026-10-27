@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import type { SosEvent } from '../lib/types'
 import { eventsMissingNames, fillSosNames, type SosDetailRow } from '../lib/sosNames'
 import { isAdminRole, type OrgMembership } from '../lib/org'
+import { billingReturnNotice } from '../lib/billing'
 import { planSummary } from '../lib/plan'
 import { OrgLive } from './OrgLive'
 import { OrgPeople } from './OrgPeople'
@@ -29,7 +30,9 @@ export function OrgDashboard({
   onOrgsChanged: () => Promise<void> | void
 }) {
   const [orgId, setOrgId] = useState(orgs[0].org_id)
-  const [tab, setTab] = useState<Tab>('live')
+  // back from Stripe (?billing=…): open the Plan tab and say what happened
+  const [billingNotice] = useState(() => billingReturnNotice(window.location.search))
+  const [tab, setTab] = useState<Tab>(billingNotice ? 'plan' : 'live')
   const [sosEvents, setSosEvents] = useState<SosEvent[]>([])
 
   const org = orgs.find((o) => o.org_id === orgId) ?? orgs[0]
@@ -53,6 +56,14 @@ export function OrgDashboard({
     }
     setSosEvents(loaded)
   }, [])
+
+  useEffect(() => {
+    if (!billingNotice) return
+    window.history.replaceState(null, '', window.location.pathname)
+    // Stripe's webhook usually lands within seconds of the redirect
+    const timers = [3_000, 10_000].map((ms) => setTimeout(() => onOrgsChanged(), ms))
+    return () => timers.forEach(clearTimeout)
+  }, [billingNotice, onOrgsChanged])
 
   useEffect(() => {
     loadSos()
@@ -111,7 +122,7 @@ export function OrgDashboard({
         {activeTab === 'people' && <OrgPeople key={org.org_id} org={org} myUserId={myUserId} />}
         {activeTab === 'shifts' && <OrgShifts key={org.org_id} org={org} />}
         {activeTab === 'timesheets' && <OrgTimesheets key={org.org_id} org={org} />}
-        {activeTab === 'plan' && <OrgPlan key={org.org_id} org={org} onChanged={onOrgsChanged} />}
+        {activeTab === 'plan' && <OrgPlan key={org.org_id} org={org} onChanged={onOrgsChanged} notice={billingNotice} />}
         {activeTab === 'settings' && (
           <OrgSettings key={org.org_id} org={org} onChanged={onOrgsChanged} onOpenTimesheets={() => setTab('timesheets')} />
         )}

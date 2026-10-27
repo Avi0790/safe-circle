@@ -36,6 +36,7 @@ select count(*) from public.organizations;
 | `12_platform_stats` | the platform owner's dashboard: only a platform admin reads it, nobody can make themselves one, the numbers move with the data, and no names, emails, coordinates or ids come back (23 checks) |
 | `13_rename_delete` | renaming (owners, admins) and deleting (owners, typed name) an organization: everything it held goes, nobody's locations do, everyone else is told (16 checks) |
 | `14_job_sites` | job sites: owners and admins add and remove, managers read, workers get their organizations' sites (not others', not after a plan ends), the 20-site limit, deleted with the organization (20 checks) |
+| `15_stripe_billing` | Stripe billing: only the service role (the signed webhook) changes a plan, each Stripe status maps to the right plan, demo billing stands down once on Stripe (18 checks) |
 
 Scripts 04, 05, 07 and 09 insert "trusted" rows as the database owner; their
 helper clears the fake JWT claims first (`auth.uid()` must be null, as it is

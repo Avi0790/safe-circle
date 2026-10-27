@@ -24,3 +24,8 @@ enable_signup = true
 
 [realtime]
 enabled = true
+
+# Stripe calls this without a Supabase login; it checks Stripe's signature
+# instead (functions/stripe-webhook).
+[functions.stripe-webhook]
+verify_jwt = false

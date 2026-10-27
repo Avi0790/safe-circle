@@ -620,6 +620,53 @@ Give the mobile app and web dashboard the project's `SUPABASE_URL` and
 `SUPABASE_ANON_KEY` (Project Settings → API) via the root `.env.example`.
 Never ship the `service_role` key to a client — it bypasses RLS entirely.
 
+## Stripe billing (test mode)
+
+Work organizations can pay for worker seats by card through Stripe
+(migration `...000069`, Edge Functions `billing` and `stripe-webhook`).
+Until this is set up, the web Plan tab shows only the demo billing
+buttons, and nothing else changes. Use Stripe's **test mode** throughout:
+no real money moves, and the test card is `4242 4242 4242 4242` with any
+future date and any CVC.
+
+1. Create a free account at stripe.com. Stay in **Test mode** (the toggle
+   in the dashboard).
+2. **Product catalog → Add product**: "Worker seat", **Recurring**, $4.00
+   per month, per unit. Copy its price id (`price_...`).
+3. **Developers → API keys**: copy the **secret key** (`sk_test_...`).
+   Never commit it.
+4. Set the server secrets and deploy the functions:
+
+   ```bash
+   supabase secrets set STRIPE_SECRET_KEY=sk_test_... STRIPE_PRICE_ID=price_... APP_URL=http://localhost:5173
+   supabase functions deploy billing
+   supabase functions deploy stripe-webhook --no-verify-jwt
+   ```
+
+5. **Developers → Webhooks → Add endpoint**:
+   `https://<project-ref>.supabase.co/functions/v1/stripe-webhook`, with
+   the events `checkout.session.completed`,
+   `customer.subscription.created`, `customer.subscription.updated`,
+   `customer.subscription.deleted`, `invoice.paid` and
+   `invoice.payment_failed`. Copy its **signing secret** (`whsec_...`) and
+   set it:
+
+   ```bash
+   supabase secrets set STRIPE_WEBHOOK_SECRET=whsec_...
+   ```
+
+6. **Settings → Billing → Customer portal**: turn it on (lets owners change
+   seats, update the card or cancel).
+7. In `web/.env.local` add `VITE_STRIPE_BILLING=on` and restart the web app.
+
+How it stays safe: the card is typed into Stripe's pages, never ours. The
+browser's redirect back proves nothing; only an event carrying Stripe's
+signature for `STRIPE_WEBHOOK_SECRET` can change a plan, through
+`stripe_sync_subscription()`, which only the service role may call
+(`tests/organizations/15_stripe_billing.sql`). A declined card starts the
+same 7-day grace as the demo, and SOS, clocking out and running shifts are
+never affected by billing.
+
 ## Example usage (client SDK)
 
 ```ts

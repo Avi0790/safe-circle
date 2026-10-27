@@ -934,3 +934,7 @@ button:disabled {
   border-color: var(--danger);
   color: #fff;
 }
+.plan-notice {
+  border-left: 3px solid var(--accent);
+  padding-left: 10px;
+}
