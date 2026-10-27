@@ -938,3 +938,213 @@ button:disabled {
   border-left: 3px solid var(--accent);
   padding-left: 10px;
 }
+
+/* ===================================================================
+   The 2026 look, matching the phone app: a soft grey page, white
+   rounded cards, a violet gradient header and pill tabs. A layer over
+   the rules above (later rules win); every colour has a dark value.
+   =================================================================== */
+:root {
+  --page: #f3f2f8;
+  --card: #ffffff;
+  --chip: #f1f0f7;
+  --chip-on: #efeafe;
+  --shadow: 0 4px 16px rgba(30, 27, 75, 0.07);
+  --grad: linear-gradient(135deg, #1e1b4b 0%, #4c1d95 55%, #7c3aed 100%);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --page: #0b0c10;
+    --card: #171a21;
+    --chip: #232733;
+    --chip-on: #2a2340;
+    --shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+    --grad: linear-gradient(135deg, #160f3a 0%, #3b1a78 55%, #5b21b6 100%);
+  }
+}
+
+body {
+  background: var(--page);
+}
+
+button {
+  border: none;
+  border-radius: 12px;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.25);
+  transition: transform 0.08s ease, background 0.15s ease;
+}
+button:active:not(:disabled) {
+  transform: scale(0.98);
+}
+.link-button {
+  box-shadow: none;
+  font-weight: 600;
+}
+
+/* sign in */
+.login-screen {
+  background: var(--grad);
+}
+.login-card {
+  border: none;
+  border-radius: 24px;
+  background: var(--card);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.3);
+  padding: 32px 28px;
+}
+.login-card::before {
+  content: '';
+  display: block;
+  width: 56px;
+  height: 56px;
+  border-radius: 18px;
+  margin-bottom: 4px;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='44' stroke='white' stroke-opacity='.35' stroke-width='6' fill='none'/%3E%3Ccircle cx='50' cy='50' r='29' stroke='white' stroke-opacity='.7' stroke-width='6' fill='none'/%3E%3Ccircle cx='50' cy='50' r='13' fill='white'/%3E%3C/svg%3E")
+      center / 36px no-repeat,
+    var(--grad);
+}
+.login-card h1 {
+  font-size: 26px;
+  font-weight: 800;
+}
+.login-card input,
+.org-inline input,
+.org-inline select,
+.org-header select,
+.circle-select,
+.circle-name {
+  border-radius: 12px;
+  background: var(--chip);
+  border-color: transparent;
+}
+
+/* top bar and pill tabs */
+.shell-bar {
+  background: var(--card);
+  border-bottom: none;
+  box-shadow: var(--shadow);
+  position: relative;
+  z-index: 2;
+}
+.org-tab {
+  border: none;
+  border-radius: 999px;
+  box-shadow: none;
+  font-weight: 600;
+}
+.org-tab:hover {
+  background: var(--chip);
+}
+.org-tab-on {
+  background: var(--chip-on);
+  color: var(--accent);
+  font-weight: 800;
+}
+
+/* the work dashboard's header: a violet gradient band */
+.org-dashboard {
+  background: var(--page);
+}
+.org-header {
+  background: var(--grad);
+  border-bottom: none;
+  padding: 14px 20px;
+  color: #fff;
+}
+.org-header .org-title {
+  color: #fff;
+  font-size: 20px;
+  font-weight: 800;
+}
+.org-header .org-note {
+  color: rgba(255, 255, 255, 0.78);
+}
+.org-header select {
+  background: rgba(255, 255, 255, 0.95);
+  color: #0f172a;
+  font-weight: 700;
+}
+.org-header .org-tab {
+  color: rgba(255, 255, 255, 0.85);
+}
+.org-header .org-tab:hover {
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+}
+.org-header .org-tab-on {
+  background: #fff;
+  color: #4c1d95;
+}
+.org-header .plan-badge {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.35);
+  color: #fff;
+  box-shadow: none;
+}
+
+/* cards */
+.org-card,
+.pf-tile,
+.plan-card,
+.danger-zone {
+  background: var(--card);
+  border: none;
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+}
+.danger-zone {
+  box-shadow: var(--shadow), inset 0 0 0 1.5px var(--danger);
+}
+.plan-warn {
+  box-shadow: var(--shadow), inset 0 0 0 1.5px var(--stale);
+}
+.plan-ended {
+  box-shadow: var(--shadow), inset 0 0 0 1.5px var(--danger);
+}
+.org-table {
+  background: var(--card);
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+.org-table th {
+  background: var(--chip);
+}
+.org-block h3,
+.sidebar-section-title {
+  letter-spacing: 0.06em;
+}
+.org-side {
+  background: var(--card);
+  border-right: none;
+  box-shadow: var(--shadow);
+}
+
+/* the circle dashboard */
+.sidebar {
+  background: var(--card);
+  border-right: none;
+  box-shadow: var(--shadow);
+  z-index: 1;
+}
+.member-row {
+  border-radius: 14px;
+}
+.member-row-selected {
+  background: var(--chip-on);
+}
+.status-chip {
+  background: var(--chip-on);
+  color: var(--accent);
+  border: none;
+}
+.login-screen {
+  flex-direction: column;
+  gap: 16px;
+}
+.login-screen .credit,
+.login-screen .credit a {
+  color: rgba(255, 255, 255, 0.75);
+}

@@ -91,7 +91,7 @@ export function LoginScreen({ initialError = null }: { initialError?: string | n
     <div className="login-screen">
       <form className="login-card" onSubmit={handleSignIn}>
         <h1>Safe Circle</h1>
-        <p className="subtitle">Web dashboard &mdash; view only</p>
+        <p className="subtitle">Web dashboard for your circle and crew</p>
 
         <label>
           Email
