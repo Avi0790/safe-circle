@@ -9,6 +9,7 @@ import { supabase } from '@/lib/supabase';
 import { formatTimeOfDay } from '@/lib/format';
 import { placeIcon } from '@/lib/places';
 import { colors, radius, spacing, themed, typography, useThemeVersion } from '@/lib/theme';
+import { phoneTimeZone } from '@/lib/timeZone';
 
 interface PlaceRow {
   id: string;
@@ -17,9 +18,8 @@ interface PlaceRow {
 
 // Curfew times as HH:MM chips rather than a native time picker — no extra
 // dependency, and it matches the chip pattern used for walk durations and
-// sharing windows elsewhere in the app. The server compares curfew_time
-// against UTC clock time (see backend/README.md's known-simplification
-// note), so this assumes the family's circle is in one timezone.
+// sharing windows elsewhere in the app. Saved with the phone's time zone,
+// and the server checks the curfew in that zone (migration ...000070).
 const TIME_OPTIONS = ['20:00', '21:00', '22:00', '23:00', '00:00'];
 
 // Alert your circle automatically if you're not home by a set time — set
@@ -72,6 +72,7 @@ export default function CurfewScreen() {
     const { error: rpcError } = await supabase.rpc('set_curfew', {
       p_place_id: placeId,
       p_curfew_time: time,
+      p_time_zone: phoneTimeZone(),
     });
     setSaving(false);
     if (rpcError) {
@@ -138,6 +139,7 @@ export default function CurfewScreen() {
 
                 <View style={styles.section}>
                   <Text style={styles.label}>By what time</Text>
+                  <Text style={typography.caption}>Your local time ({phoneTimeZone().replace(/_/g, ' ')}).</Text>
                   <View style={styles.chipRow}>
                     {TIME_OPTIONS.map((option) => {
                       const selected = option === time;

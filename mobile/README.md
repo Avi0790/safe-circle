@@ -339,10 +339,9 @@ second account to acknowledge from.
   "alert my circle if I'm not home by 10pm," set once and then automatic.
   Picks a saved place and a time from chips (no native time-picker
   dependency, matching the chip pattern used for walk durations and sharing
-  windows elsewhere in the app). Entirely server-side after that — see
-  `backend/README.md`'s known simplification about comparing against UTC
-  clock time rather than a per-user timezone, which `profiles` has no
-  column for.
+  windows elsewhere in the app). Entirely server-side after that, checked
+  in the phone's own time zone, which the app sends when saving (migration
+  `...000070`; it used to be compared with UTC).
 
 **Not yet verified on real phones:** ghost mode, meetup pins, and curfew
 were built and their backend logic tested on the hosted DB, but the screens
