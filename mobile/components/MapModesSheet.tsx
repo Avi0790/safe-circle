@@ -26,7 +26,7 @@ export function MapModesSheet({
   return (
     <View style={[styles.sheet, { paddingBottom: bottomInset + 18 }]}>
       <View style={styles.header}>
-        <Text style={styles.title}>Map Modes</Text>
+        <Text style={styles.title} accessibilityRole="header">Map Modes</Text>
         <Pressable style={styles.close} onPress={onClose} accessibilityRole="button" accessibilityLabel="Close">
           <Text style={styles.closeText}>✕</Text>
         </Pressable>

@@ -114,12 +114,12 @@ export default function MembersTab() {
               </Text>
               <View style={styles.stats}>
                 <View style={ui.stat}>
-                  <Text style={ui.statValue}>{sharingNow}</Text>
-                  <Text style={ui.statLabel}>Sharing now</Text>
+                  <Text maxFontSizeMultiplier={1.4} style={ui.statValue}>{sharingNow}</Text>
+                  <Text maxFontSizeMultiplier={1.4} style={ui.statLabel}>Sharing now</Text>
                 </View>
                 <View style={ui.stat}>
-                  <Text style={ui.statValue}>{drivingNow}</Text>
-                  <Text style={ui.statLabel}>Driving</Text>
+                  <Text maxFontSizeMultiplier={1.4} style={ui.statValue}>{drivingNow}</Text>
+                  <Text maxFontSizeMultiplier={1.4} style={ui.statLabel}>Driving</Text>
                 </View>
               </View>
             </HeroCard>
@@ -183,7 +183,7 @@ function MemberRow({
       : null;
   return (
     <View style={styles.row}>
-      <Pressable style={styles.rowMain} onPress={onPress}>
+      <Pressable accessibilityRole="button" style={styles.rowMain} onPress={onPress}>
         <View style={styles.avatarWrap}>
           <Avatar id={member.id} name={member.full_name} url={member.avatar_url} size={48} />
           <View style={[styles.dot, { backgroundColor: dotColor }]} />
@@ -228,10 +228,25 @@ function MemberRow({
       </Pressable>
       {canRemove && (
         <View style={styles.actions}>
-          <Pressable onPress={onMakeOwner} disabled={removing} hitSlop={8} style={styles.actionChip}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Make ${member.full_name} the owner`}
+            onPress={onMakeOwner}
+            disabled={removing}
+            hitSlop={8}
+            style={styles.actionChip}
+          >
             <Text style={styles.ownerLinkText}>Make owner</Text>
           </Pressable>
-          <Pressable onPress={onRemove} disabled={removing} hitSlop={8} style={[styles.actionChip, styles.actionChipDanger]}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Remove ${member.full_name}`}
+            accessibilityState={{ busy: removing }}
+            onPress={onRemove}
+            disabled={removing}
+            hitSlop={8}
+            style={[styles.actionChip, styles.actionChipDanger]}
+          >
             <Text style={styles.removeLinkText}>{removing ? 'Removing…' : 'Remove'}</Text>
           </Pressable>
         </View>

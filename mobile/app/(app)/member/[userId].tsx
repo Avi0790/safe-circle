@@ -131,7 +131,7 @@ export default function MemberHistoryScreen() {
         keyExtractor={(item) => String(item.id)}
         ListHeaderComponent={
           <View style={styles.header}>
-            <Text style={styles.sectionLabel}>
+            <Text style={styles.sectionLabel} accessibilityRole="header">
               Last {pings.length} location{pings.length === 1 ? '' : 's'}
             </Text>
             {maxSpeedMph != null && (
@@ -146,7 +146,7 @@ export default function MemberHistoryScreen() {
             )}
             {trips.length > 0 && (
               <View style={styles.trips}>
-                <Text style={styles.sectionLabel}>🚗 Recent drives</Text>
+                <Text style={styles.sectionLabel} accessibilityRole="header">🚗 Recent drives</Text>
                 {trips.map((trip) => (
                   <View key={trip.tripId} style={styles.tripCard}>
                     <Text style={typography.body}>{formatTripDate(trip.startedAt)}</Text>

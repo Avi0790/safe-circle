@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '@/components/Button';
 import { SosBanner } from '@/components/SosBanner';
 import { SosButton } from '@/components/SosButton';
+import { ErrorText } from '@/components/ErrorText';
 import {
   ActionTile,
   Card,
@@ -22,6 +23,7 @@ import {
 import { useAccount } from '@/contexts/AccountContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useActiveSosEvents } from '@/hooks/useActiveSosEvents';
+import { announce } from '@/lib/announce';
 import { checkInNow, clockInTo, clockOutOf } from '@/lib/clockIn';
 import { formatClockTime, timeAgo } from '@/lib/format';
 import { jobSiteRemindersOn, setJobSiteReminders } from '@/lib/jobSiteReminders';
@@ -153,6 +155,7 @@ export default function WorkScreen() {
       setError(result.reason);
       return;
     }
+    announce(`Clocked in to ${org.name}`);
     if (!result.background) {
       setNotice(
         'Your location is sent only while Safe Circle is open on this phone. Keep it open during your shift.',
@@ -186,6 +189,8 @@ export default function WorkScreen() {
       setError(
         `Your location has stopped sending, but we couldn't record your clock-out (${result.reason}). Tap Clock out again when you have a connection.`,
       );
+    } else {
+      announce(`Clocked out of ${org.name}`);
     }
     await refresh();
     loadViews();
@@ -210,6 +215,8 @@ export default function WorkScreen() {
     setBusyOrg(null);
     if (!result.ok) {
       setError(result.reason);
+    } else {
+      announce('Checked in');
     }
     await refresh();
     refreshSos();
@@ -291,7 +298,7 @@ export default function WorkScreen() {
       <View key={org.org_id} style={styles.org}>
         <HeroCard colors={heroColors}>
           <View style={ui.heroTop}>
-            <Text style={ui.heroOrg} numberOfLines={1}>
+            <Text maxFontSizeMultiplier={1.5} style={ui.heroOrg} numberOfLines={2}>
               {org.name}
             </Text>
             <Pill>{org.on_shift ? '🟢 On shift' : '⚪ Off shift'}</Pill>
@@ -309,7 +316,7 @@ export default function WorkScreen() {
             </>
           ) : (
             <>
-              <Text style={[ui.heroBig, styles.heroWords]}>{ended ? 'Plan ended' : 'Off the clock'}</Text>
+              <Text maxFontSizeMultiplier={1.3} style={[ui.heroBig, styles.heroWords]}>{ended ? 'Plan ended' : 'Off the clock'}</Text>
               <Text style={ui.heroBody}>Nobody at work can see your location.</Text>
               {ended && <Text style={ui.heroSmall}>{workerPlanNotice(org)}</Text>}
             </>
@@ -332,7 +339,7 @@ export default function WorkScreen() {
         {org.on_shift && org.checkin_minutes != null && org.next_checkin_due && (
           <Card tone={overdue ? 'danger' : undefined}>
             <View style={ui.row}>
-              <Text style={styles.bigEmoji}>{overdue ? '⏰' : '✅'}</Text>
+              <Text allowFontScaling={false} style={styles.bigEmoji}>{overdue ? '⏰' : '✅'}</Text>
               <View style={{ flex: 1 }}>
                 <Text style={[ui.rowTitle, overdue && { color: colors.danger }]}>
                   {overdue ? "Check-in overdue — tap I'm OK now." : `Next check-in due at ${formatClockTime(org.next_checkin_due)}.`}
@@ -399,7 +406,7 @@ export default function WorkScreen() {
       <View key={org.org_id} style={styles.org}>
         <HeroCard colors={appColors.crew}>
           <View style={ui.heroTop}>
-            <Text style={ui.heroOrg} numberOfLines={1}>
+            <Text maxFontSizeMultiplier={1.5} style={ui.heroOrg} numberOfLines={2}>
               {org.name}
             </Text>
             <Pill>{ROLE_LABEL[org.role] ?? org.role}</Pill>
@@ -408,21 +415,21 @@ export default function WorkScreen() {
           {isAdmin && (
             <View style={styles.stats}>
               <View style={ui.stat}>
-                <Text style={ui.statValue}>{org.seats_used ?? '–'}</Text>
-                <Text style={ui.statLabel}>{org.seats_used === 1 ? 'Worker' : 'Workers'}</Text>
+                <Text maxFontSizeMultiplier={1.4} style={ui.statValue}>{org.seats_used ?? '–'}</Text>
+                <Text maxFontSizeMultiplier={1.4} style={ui.statLabel}>{org.seats_used === 1 ? 'Worker' : 'Workers'}</Text>
               </View>
               <View style={ui.stat}>
-                <Text style={ui.statValue}>
+                <Text maxFontSizeMultiplier={1.4} style={ui.statValue}>
                   {org.seats_used != null && org.seat_limit != null ? `${org.seats_used}/${org.seat_limit}` : '–'}
                 </Text>
-                <Text style={ui.statLabel}>Seats</Text>
+                <Text maxFontSizeMultiplier={1.4} style={ui.statLabel}>Seats</Text>
               </View>
               {word && (
                 <View style={ui.stat}>
-                  <Text style={ui.statValue} numberOfLines={1} adjustsFontSizeToFit>
+                  <Text maxFontSizeMultiplier={1.4} style={ui.statValue} numberOfLines={1} adjustsFontSizeToFit>
                     {word}
                   </Text>
-                  <Text style={ui.statLabel}>Plan</Text>
+                  <Text maxFontSizeMultiplier={1.4} style={ui.statLabel}>Plan</Text>
                 </View>
               )}
             </View>
@@ -566,7 +573,7 @@ export default function WorkScreen() {
       <ScrollView contentContainerStyle={[styles.content, hasWorker && { paddingBottom: 120 }]}>
         <View>
           <Text style={styles.date}>{todayLabel(now)}</Text>
-          <Text style={styles.title}>Work</Text>
+          <Text maxFontSizeMultiplier={1.3} style={styles.title} accessibilityRole="header">Work</Text>
         </View>
 
         {mine.map((org) => (org.role === 'worker' ? renderWorker(org) : renderOverseer(org)))}
@@ -575,7 +582,7 @@ export default function WorkScreen() {
           <Card>
             <View style={ui.row}>
               <View style={styles.rowIcon}>
-                <Text style={styles.rowEmoji}>📍</Text>
+                <Text allowFontScaling={false} style={styles.rowEmoji}>📍</Text>
               </View>
               <Text style={[ui.rowTitle, { flex: 1 }]}>Job site reminders</Text>
               <Switch
@@ -593,8 +600,12 @@ export default function WorkScreen() {
           </Card>
         )}
 
-        {notice && <Text style={styles.noteText}>{notice}</Text>}
-        {error && <Text style={styles.error}>{error}</Text>}
+        {notice && (
+        <Text style={styles.noteText} accessibilityLiveRegion="polite">
+          {notice}
+        </Text>
+      )}
+        {error && <ErrorText style={styles.error}>{error}</ErrorText>}
 
         <Pressable
           accessibilityRole="button"
@@ -602,7 +613,7 @@ export default function WorkScreen() {
           style={({ pressed }) => [ui.card, ui.row, pressed && { opacity: 0.8 }]}
         >
           <View style={styles.rowIcon}>
-            <Text style={styles.rowEmoji}>🔒</Text>
+            <Text allowFontScaling={false} style={styles.rowEmoji}>🔒</Text>
           </View>
           <Text style={[ui.rowTitle, { flex: 1 }]}>How your privacy works</Text>
           <Text style={styles.chevron}>›</Text>

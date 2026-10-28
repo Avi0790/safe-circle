@@ -4,6 +4,7 @@ import { Button } from '@/components/Button';
 import { InviteQr } from '@/components/InviteQr';
 import { QrScannerModal } from '@/components/QrScannerModal';
 import { TextField } from '@/components/TextField';
+import { ErrorText } from '@/components/ErrorText';
 import { useCircles } from '@/contexts/CircleContext';
 import { supabase } from '@/lib/supabase';
 import { colors, spacing, themed, typography } from '@/lib/theme';
@@ -115,7 +116,7 @@ export function CircleOnboarding({
   if (mode === 'choose') {
     return (
       <View style={styles.content}>
-        <Text style={typography.title}>{heading}</Text>
+        <Text maxFontSizeMultiplier={1.3} style={typography.title}>{heading}</Text>
         <Text style={typography.body}>{intro}</Text>
         <View style={styles.form}>
           <Button title="Create a circle" onPress={() => setMode('create')} />
@@ -128,7 +129,7 @@ export function CircleOnboarding({
   if (mode === 'create') {
     return (
       <View style={styles.content}>
-        <Text style={typography.title}>Create a circle</Text>
+        <Text maxFontSizeMultiplier={1.3} style={typography.title}>Create a circle</Text>
         <View style={styles.form}>
           <TextField
             label="Circle name"
@@ -137,7 +138,7 @@ export function CircleOnboarding({
             onChangeText={setCircleName}
             autoCapitalize="words"
           />
-          {error && <Text style={styles.error}>{error}</Text>}
+          {error && <ErrorText style={styles.error}>{error}</ErrorText>}
           <Button title="Create" onPress={handleCreate} loading={loading} />
           <Button title="Back" variant="secondary" onPress={() => setMode('choose')} />
         </View>
@@ -148,7 +149,7 @@ export function CircleOnboarding({
   if (mode === 'pending') {
     return (
       <View style={styles.content}>
-        <Text style={typography.title}>Request sent</Text>
+        <Text maxFontSizeMultiplier={1.3} style={typography.title}>Request sent</Text>
         <Text style={typography.body}>
           {pendingCircleName} asks its creator to approve new members. You'll get a
           notification when they decide — or tap below to check.
@@ -168,7 +169,7 @@ export function CircleOnboarding({
   if (mode === 'created') {
     return (
       <View style={styles.content}>
-        <Text style={typography.title}>Circle created!</Text>
+        <Text maxFontSizeMultiplier={1.3} style={typography.title}>Circle created!</Text>
         <Text style={typography.body}>
           Share this code, or have people scan the QR code from the Join screen in the app. It's
           shown only once, so save it now.
@@ -184,7 +185,7 @@ export function CircleOnboarding({
 
   return (
     <View style={styles.content}>
-      <Text style={typography.title}>Join a circle</Text>
+      <Text maxFontSizeMultiplier={1.3} style={typography.title}>Join a circle</Text>
       <View style={styles.form}>
         <TextField
           label="Invite code"
@@ -194,7 +195,7 @@ export function CircleOnboarding({
           autoCapitalize="characters"
           maxLength={6}
         />
-        {error && <Text style={styles.error}>{error}</Text>}
+        {error && <ErrorText style={styles.error}>{error}</ErrorText>}
         <Button title="Join" onPress={() => handleJoin()} loading={loading} />
         {Platform.OS !== 'web' && (
           <Button title="Scan QR code" variant="secondary" onPress={() => setScanning(true)} />

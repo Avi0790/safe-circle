@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Location from 'expo-location';
 import { Button } from '@/components/Button';
 import { TextField } from '@/components/TextField';
+import { ErrorText } from '@/components/ErrorText';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCircles } from '@/contexts/CircleContext';
 import { supabase } from '@/lib/supabase';
@@ -216,7 +217,7 @@ export default function PlacesScreen() {
         ListHeaderComponent={
           <>
             <View style={styles.section}>
-              <Text style={styles.sectionLabel}>Add a place</Text>
+              <Text style={styles.sectionLabel} accessibilityRole="header">Add a place</Text>
               <Text style={typography.caption}>
                 Uses your current location — stand where you want the place to be (e.g. at home)
                 before adding it. 150m radius.
@@ -228,11 +229,11 @@ export default function PlacesScreen() {
                 onChangeText={setName}
                 autoCapitalize="words"
               />
-              {error && <Text style={styles.error}>{error}</Text>}
+              {error && <ErrorText style={styles.error}>{error}</ErrorText>}
               <Button title="Add place here" onPress={handleAddPlace} loading={saving} />
             </View>
 
-            <Text style={styles.sectionLabel}>{selectedCircle?.name}'s places</Text>
+            <Text style={styles.sectionLabel} accessibilityRole="header">{selectedCircle?.name}'s places</Text>
           </>
         }
         data={places}
@@ -252,7 +253,7 @@ export default function PlacesScreen() {
                 onChangeText={setRenameRadiusValue}
                 keyboardType="numeric"
               />
-              {renameError && <Text style={styles.error}>{renameError}</Text>}
+              {renameError && <ErrorText style={styles.error}>{renameError}</ErrorText>}
               <View style={styles.renameButtons}>
                 <View style={styles.renameButton}>
                   <Button title="Save" onPress={handleSaveRename} loading={renameSaving} />
@@ -282,10 +283,17 @@ export default function PlacesScreen() {
               </View>
               {item.created_by === session?.user.id && (
                 <View style={styles.placeActions}>
-                  <Pressable onPress={() => startRenamePlace(item)} hitSlop={8}>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`Edit ${item.name}`}
+                    onPress={() => startRenamePlace(item)}
+                    hitSlop={8}
+                  >
                     <Text style={styles.renameLink}>Edit</Text>
                   </Pressable>
                   <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`Remove ${item.name}`}
                     onPress={() => confirmDeletePlace(item)}
                     disabled={deletingId === item.id}
                     hitSlop={8}

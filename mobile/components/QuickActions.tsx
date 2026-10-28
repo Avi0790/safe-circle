@@ -70,8 +70,8 @@ export function QuickActions({ onRideRequested }: { onRideRequested: () => void 
           <MenuRow label="❓ Help" onPress={() => go('/ai-help')} last />
         </View>
       )}
-      <Pressable style={styles.pill} onPress={() => setOpen((v) => !v)}>
-        <Text style={styles.pillText}>{open ? '✕ Close' : '⋯ Quick actions'}</Text>
+      <Pressable accessibilityRole="button" style={styles.pill} onPress={() => setOpen((v) => !v)}>
+        <Text style={styles.pillText} maxFontSizeMultiplier={1.5}>{open ? '✕ Close' : '⋯ Quick actions'}</Text>
       </Pressable>
     </View>
   );
@@ -92,13 +92,14 @@ function MenuRow({
   const [icon, ...words] = label.split(' ');
   return (
     <Pressable
+      accessibilityRole="button"
       style={({ pressed }) => [styles.menuRow, !last && styles.menuRowBorder, pressed && { backgroundColor: colors.chip }]}
       onPress={onPress}
       accessibilityLabel={label}
     >
       <View style={styles.menuRowLeft}>
         <View style={styles.menuIcon}>
-          <Text style={styles.menuIconText}>{icon}</Text>
+          <Text allowFontScaling={false} style={styles.menuIconText}>{icon}</Text>
         </View>
         <Text style={styles.menuRowText}>{words.join(' ')}</Text>
       </View>

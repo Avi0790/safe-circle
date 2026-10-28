@@ -3,6 +3,7 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from
 import { Stack } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '@/components/Button';
+import { ErrorText } from '@/components/ErrorText';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCircles } from '@/contexts/CircleContext';
 import { supabase } from '@/lib/supabase';
@@ -123,6 +124,7 @@ export default function CurfewScreen() {
                     const selected = place.id === placeId;
                     return (
                       <Pressable
+                        accessibilityRole="button"
                         key={place.id}
                         style={[styles.row, selected && styles.rowSelected]}
                         onPress={() => setPlaceId(place.id)}
@@ -145,6 +147,7 @@ export default function CurfewScreen() {
                       const selected = option === time;
                       return (
                         <Pressable
+                          accessibilityRole="button"
                           key={option}
                           style={[styles.chip, selected && styles.chipSelected]}
                           onPress={() => setTime(option)}
@@ -165,7 +168,7 @@ export default function CurfewScreen() {
             {current && (
               <Button title="Turn off curfew" variant="secondary" onPress={handleClear} disabled={saving} />
             )}
-            {error && <Text style={styles.error}>{error}</Text>}
+            {error && <ErrorText style={styles.error}>{error}</ErrorText>}
           </>
         )}
       </ScrollView>

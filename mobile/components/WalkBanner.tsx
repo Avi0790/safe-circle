@@ -3,6 +3,7 @@ import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-nati
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNow } from '@/hooks/useNow';
+import { announce } from '@/lib/announce';
 import { supabase } from '@/lib/supabase';
 import { cancelWalkReminder } from '@/lib/walkReminder';
 import { formatClockTime, formatTimeLeft } from '@/lib/format';
@@ -27,6 +28,7 @@ export function WalkBanner({ walks, onChanged }: { walks: Walk[]; onChanged: () 
     await supabase.rpc('end_walk', { p_walk_id: walk.id });
     await cancelWalkReminder();
     setEndingId(null);
+    announce('Marked safe');
     onChanged();
   }
 
@@ -41,8 +43,17 @@ export function WalkBanner({ walks, onChanged }: { walks: Walk[]; onChanged: () 
             style={[styles.banner, overdue && styles.bannerOverdue]}
             onPress={isMine ? () => router.push('/walk') : undefined}
             disabled={!isMine}
+            // Not one VoiceOver element, or the "I'm safe" button inside
+            // would be unreachable: the text and the button are read apart.
+            accessible={false}
           >
-            <View style={styles.text}>
+            <View
+              style={styles.text}
+              accessible
+              accessibilityRole={isMine ? 'button' : 'text'}
+              accessibilityHint={isMine ? 'Opens the details' : undefined}
+              onAccessibilityTap={isMine ? () => router.push('/walk') : undefined}
+            >
               <Text style={styles.title}>
                 {overdue
                   ? '⏰ Your walk timer ran out'
@@ -57,7 +68,14 @@ export function WalkBanner({ walks, onChanged }: { walks: Walk[]; onChanged: () 
               </Text>
             </View>
             {isMine && (
-              <Pressable style={styles.button} onPress={() => handleSafe(walk)} disabled={endingId === walk.id}>
+              <Pressable
+                style={styles.button}
+                accessibilityRole="button"
+                accessibilityLabel="I'm safe"
+                accessibilityState={{ busy: endingId === walk.id }}
+                onPress={() => handleSafe(walk)}
+                disabled={endingId === walk.id}
+              >
                 {endingId === walk.id ? (
                   <ActivityIndicator color="#fff" size="small" />
                 ) : (

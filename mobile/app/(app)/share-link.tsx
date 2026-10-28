@@ -3,6 +3,7 @@ import { ActivityIndicator, Pressable, ScrollView, Share, StyleSheet, Text, View
 import { Stack } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '@/components/Button';
+import { ErrorText } from '@/components/ErrorText';
 import { supabase } from '@/lib/supabase';
 import { formatClockTime, formatTimeLeft, timeAgo } from '@/lib/format';
 import { ensureSharingFor } from '@/lib/sharingWindow';
@@ -104,6 +105,7 @@ export default function ShareLinkScreen() {
               const selected = option.minutes === minutes;
               return (
                 <Pressable
+                  accessibilityRole="button"
                   key={option.label}
                   style={[styles.chip, selected && styles.chipSelected]}
                   onPress={() => setMinutes(option.minutes)}
@@ -117,7 +119,7 @@ export default function ShareLinkScreen() {
         </View>
 
         <Button title="Create link & share" onPress={handleCreate} loading={busy} />
-        {error && <Text style={styles.error}>{error}</Text>}
+        {error && <ErrorText style={styles.error}>{error}</ErrorText>}
 
         <View style={styles.section}>
           <Text style={styles.label}>Active links</Text>
@@ -138,7 +140,12 @@ export default function ShareLinkScreen() {
                       : `Opened ${link.view_count} ${link.view_count === 1 ? 'time' : 'times'} · last ${timeAgo(link.last_viewed_at!)}`}
                   </Text>
                 </View>
-                <Pressable onPress={() => handleRevoke(link.id)} hitSlop={8}>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={`Revoke the link that expires ${formatClockTime(link.expires_at)}`}
+                  onPress={() => handleRevoke(link.id)}
+                  hitSlop={8}
+                >
                   <Text style={styles.revoke}>Revoke</Text>
                 </Pressable>
               </View>

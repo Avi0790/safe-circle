@@ -11,7 +11,7 @@ export default function DriveScreenWeb() {
     <SafeAreaView style={styles.safeArea}>
       <Stack.Screen options={{ title: 'Directions' }} />
       <View style={styles.body}>
-        <Text style={typography.title}>Directions are on the phone app</Text>
+        <Text maxFontSizeMultiplier={1.3} style={typography.title}>Directions are on the phone app</Text>
         <Text style={typography.body}>
           Turn-by-turn directions and the live speedometer use your phone's GPS, so they're only in
           the mobile app.

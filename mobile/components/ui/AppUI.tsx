@@ -70,13 +70,19 @@ export function Card({ children, tone, style }: { children: ReactNode; tone?: 'w
 }
 
 export function SectionTitle({ children }: { children: ReactNode }) {
-  return <Text style={ui.sectionTitle}>{children}</Text>;
+  return (
+    <Text style={ui.sectionTitle} accessibilityRole="header">
+      {children}
+    </Text>
+  );
 }
 
 export function Pill({ children, light }: { children: ReactNode; light?: boolean }) {
   return (
     <View style={[ui.pill, light && ui.pillLight]}>
-      <Text style={[ui.pillText, light && ui.pillTextLight]}>{children}</Text>
+      <Text maxFontSizeMultiplier={1.4} style={[ui.pillText, light && ui.pillTextLight]}>
+        {children}
+      </Text>
     </View>
   );
 }
@@ -144,11 +150,14 @@ export function ActionTile({
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={accessibilityLabel}
+      // read as "Walk me home, button. Timer, circle alerted if you're late"
+      // rather than the emoji, title and caption as three things
+      accessibilityLabel={accessibilityLabel ?? title}
+      accessibilityHint={caption}
       style={({ pressed }) => [ui.tile, pressed && { transform: [{ scale: 0.97 }], opacity: 0.9 }]}
     >
       <View style={ui.tileIcon}>
-        <Text style={ui.tileEmoji}>{icon}</Text>
+        <Text allowFontScaling={false} style={ui.tileEmoji}>{icon}</Text>
       </View>
       <Text style={ui.tileTitle}>{title}</Text>
       <Text style={ui.tileCaption}>{caption}</Text>
@@ -189,7 +198,7 @@ export function SeatMeter({ used, limit }: { used: number; limit: number }) {
   const share = limit > 0 ? Math.min(1, used / limit) : 1;
   const full = used >= limit;
   return (
-    <View style={ui.meterTrack} accessibilityLabel={`${used} of ${limit} seats used`}>
+    <View style={ui.meterTrack} accessible accessibilityLabel={`${used} of ${limit} seats used`}>
       <View style={[ui.meterFill, { width: `${Math.max(share * 100, 4)}%` }, full && { backgroundColor: colors.dangerFill }]} />
     </View>
   );

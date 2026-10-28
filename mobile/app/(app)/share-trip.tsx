@@ -4,6 +4,7 @@ import { Stack } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '@/components/Button';
 import { TextField } from '@/components/TextField';
+import { ErrorText } from '@/components/ErrorText';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCircles } from '@/contexts/CircleContext';
 import { useActiveTrips } from '@/hooks/useActiveTrips';
@@ -250,6 +251,7 @@ export default function ShareTripScreen() {
               <Text style={styles.label}>{mode === 'flight' ? 'Landing in' : 'Arriving in'}</Text>
               <View style={styles.stepper}>
                 <Pressable
+                  accessibilityRole="button"
                   accessibilityLabel="Earlier"
                   style={styles.stepBtn}
                   onPress={() => setMinutes((v) => stepTripMinutes(mode, v, -1))}
@@ -261,6 +263,7 @@ export default function ShareTripScreen() {
                   <Text style={typography.caption}>about {formatClockTime(new Date(now + minutes * 60_000).toISOString())}</Text>
                 </View>
                 <Pressable
+                  accessibilityRole="button"
                   accessibilityLabel="Later"
                   style={styles.stepBtn}
                   onPress={() => setMinutes((v) => stepTripMinutes(mode, v, 1))}
@@ -271,6 +274,7 @@ export default function ShareTripScreen() {
               <View style={styles.chipRow}>
                 {TRIP_PRESET_MINUTES[mode].map((m) => (
                   <Pressable
+                    accessibilityRole="button"
                     key={m}
                     style={[styles.chip, m === minutes && styles.chipSelected]}
                     onPress={() => setMinutes(m)}
@@ -296,7 +300,7 @@ export default function ShareTripScreen() {
           </>
         )}
         {notice && <Text style={typography.caption}>{notice}</Text>}
-        {error && <Text style={styles.error}>{error}</Text>}
+        {error && <ErrorText style={styles.error}>{error}</ErrorText>}
       </ScrollView>
     </SafeAreaView>
   );

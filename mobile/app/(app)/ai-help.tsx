@@ -78,7 +78,7 @@ export default function AiHelpScreen() {
               {turns.length === 0 && (
                 <View style={styles.starters}>
                   {STARTER_QUESTIONS.map((q) => (
-                    <Pressable key={q} style={styles.starterChip} onPress={() => send(q)}>
+                    <Pressable accessibilityRole="button" key={q} style={styles.starterChip} onPress={() => send(q)}>
                       <Text style={styles.starterText}>{q}</Text>
                     </Pressable>
                   ))}
@@ -93,12 +93,14 @@ export default function AiHelpScreen() {
             style={styles.input}
             value={draft}
             onChangeText={setDraft}
+            accessibilityLabel="Ask a question"
             placeholder="Ask a question…"
             placeholderTextColor={colors.offline}
             multiline
             maxLength={200}
           />
           <Pressable
+            accessibilityRole="button"
             style={[styles.sendButton, !draft.trim() && styles.sendButtonDisabled]}
             onPress={() => send(draft)}
             disabled={!draft.trim()}

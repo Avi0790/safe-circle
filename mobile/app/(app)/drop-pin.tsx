@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Location from 'expo-location';
 import { Button } from '@/components/Button';
 import { TextField } from '@/components/TextField';
+import { ErrorText } from '@/components/ErrorText';
 import { useCircles } from '@/contexts/CircleContext';
 import { supabase } from '@/lib/supabase';
 import { colors, radius, spacing, themed, typography, useThemeVersion } from '@/lib/theme';
@@ -78,12 +79,13 @@ export default function DropPinScreen() {
               const selected = option === emoji;
               return (
                 <Pressable
+                  accessibilityRole="button"
                   key={option}
                   style={[styles.emojiChip, selected && styles.chipSelected]}
                   onPress={() => setEmoji(option)}
                   accessibilityState={{ selected }}
                 >
-                  <Text style={styles.emojiText}>{option}</Text>
+                  <Text allowFontScaling={false} style={styles.emojiText}>{option}</Text>
                 </Pressable>
               );
             })}
@@ -101,6 +103,7 @@ export default function DropPinScreen() {
               const selected = option.minutes === minutes;
               return (
                 <Pressable
+                  accessibilityRole="button"
                   key={option.label}
                   style={[styles.chip, selected && styles.chipSelected]}
                   onPress={() => setMinutes(option.minutes)}
@@ -114,7 +117,7 @@ export default function DropPinScreen() {
         </View>
 
         <Button title="Drop pin" onPress={handleDrop} loading={saving} disabled={!label.trim()} />
-        {error && <Text style={styles.error}>{error}</Text>}
+        {error && <ErrorText style={styles.error}>{error}</ErrorText>}
       </ScrollView>
     </SafeAreaView>
   );

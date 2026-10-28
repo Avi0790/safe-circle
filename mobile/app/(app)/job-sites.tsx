@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Location from 'expo-location';
 import { Button } from '@/components/Button';
 import { TextField } from '@/components/TextField';
+import { ErrorText } from '@/components/ErrorText';
 import { useAccount } from '@/contexts/AccountContext';
 import { MIN_QUERY_LENGTH, searchPlaces, type PlaceResult } from '@/lib/geocode';
 import { MAX_REGIONS } from '@/lib/jobSiteReminders';
@@ -123,7 +124,7 @@ export default function JobSitesScreen() {
           they were there.
         </Text>
 
-        <Text style={styles.sectionLabel}>
+        <Text style={styles.sectionLabel} accessibilityRole="header">
           Sites ({sites.length} of {MAX_REGIONS})
         </Text>
         {sites.length === 0 && <Text style={typography.caption}>No job sites yet.</Text>}
@@ -139,7 +140,7 @@ export default function JobSitesScreen() {
 
         {canEdit && sites.length < MAX_REGIONS && (
           <View style={styles.add}>
-            <Text style={styles.sectionLabel}>Add a site</Text>
+            <Text style={styles.sectionLabel} accessibilityRole="header">Add a site</Text>
             <TextField label="Name" placeholder="Main St yard" value={name} onChangeText={setName} autoCapitalize="words" maxLength={80} />
             <Text style={typography.caption}>How close counts as arriving</Text>
             <View style={styles.chips}>
@@ -158,14 +159,14 @@ export default function JobSitesScreen() {
             />
             <Button title="Search" variant="secondary" onPress={search} disabled={query.trim().length < MIN_QUERY_LENGTH} />
             {results.map((p) => (
-              <Pressable key={p.id} style={styles.result} onPress={() => add(p.latitude, p.longitude, p.title)} accessibilityLabel={`Add ${p.title}`}>
+              <Pressable accessibilityRole="button" key={p.id} style={styles.result} onPress={() => add(p.latitude, p.longitude, p.title)} accessibilityLabel={`Add ${p.title}`}>
                 <Text style={styles.name}>{p.title}</Text>
                 <Text style={typography.caption}>{p.subtitle}</Text>
               </Pressable>
             ))}
           </View>
         )}
-        {error && <Text style={styles.error}>{error}</Text>}
+        {error && <ErrorText style={styles.error}>{error}</ErrorText>}
       </ScrollView>
     </SafeAreaView>
   );

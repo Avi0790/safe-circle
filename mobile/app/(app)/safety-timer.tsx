@@ -4,6 +4,7 @@ import { Stack } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '@/components/Button';
 import { TextField } from '@/components/TextField';
+import { ErrorText } from '@/components/ErrorText';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCircles } from '@/contexts/CircleContext';
 import { useActiveSafetyTimers } from '@/hooks/useActiveSafetyTimers';
@@ -128,6 +129,7 @@ export default function SafetyTimerScreen() {
                   const selected = m === minutes;
                   return (
                     <Pressable
+                      accessibilityRole="button"
                       key={m}
                       style={[styles.chip, selected && styles.chipSelected]}
                       onPress={() => setMinutes(m)}
@@ -148,7 +150,7 @@ export default function SafetyTimerScreen() {
             <Button title="Start timer" onPress={handleStart} loading={busy} />
           </>
         )}
-        {error && <Text style={styles.error}>{error}</Text>}
+        {error && <ErrorText style={styles.error}>{error}</ErrorText>}
       </ScrollView>
     </SafeAreaView>
   );

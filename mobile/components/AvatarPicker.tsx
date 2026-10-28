@@ -55,7 +55,7 @@ export function AvatarPicker({
   return (
     <View style={[styles.sheet, { paddingBottom: bottomInset + 16 }]}>
       <View style={styles.header}>
-        <Text style={styles.title}>Choose driving avatar</Text>
+        <Text style={styles.title} accessibilityRole="header">Choose driving avatar</Text>
         <Pressable style={styles.close} onPress={onClose} accessibilityRole="button" accessibilityLabel="Close">
           <Text style={styles.closeText}>✕</Text>
         </Pressable>

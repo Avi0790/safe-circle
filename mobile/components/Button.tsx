@@ -7,14 +7,20 @@ interface ButtonProps {
   loading?: boolean;
   disabled?: boolean;
   variant?: 'primary' | 'secondary';
+  // what happens, for VoiceOver, when the title alone doesn't say
+  accessibilityHint?: string;
 }
 
-export function Button({ title, onPress, loading, disabled, variant = 'primary' }: ButtonProps) {
+export function Button({ title, onPress, loading, disabled, variant = 'primary', accessibilityHint }: ButtonProps) {
   const isSecondary = variant === 'secondary';
   return (
     <Pressable
       onPress={onPress}
       disabled={disabled || loading}
+      accessibilityRole="button"
+      accessibilityLabel={title}
+      accessibilityHint={accessibilityHint}
+      accessibilityState={{ disabled: !!(disabled || loading), busy: !!loading }}
       style={({ pressed }) => [
         styles.base,
         isSecondary ? styles.secondary : styles.primary,

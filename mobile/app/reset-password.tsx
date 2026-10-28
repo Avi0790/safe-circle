@@ -5,6 +5,7 @@ import { ActivityIndicator, KeyboardAvoidingView, Platform, StyleSheet, Text, Vi
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '@/components/Button';
 import { TextField } from '@/components/TextField';
+import { ErrorText } from '@/components/ErrorText';
 import { supabase } from '@/lib/supabase';
 import { parseRecoveryTokensFromUrl } from '@/lib/passwordReset';
 import { colors, spacing, themed, typography, useThemeVersion } from '@/lib/theme';
@@ -83,7 +84,7 @@ export default function ResetPasswordScreen() {
     return (
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.content}>
-          <Text style={typography.title}>Link expired</Text>
+          <Text maxFontSizeMultiplier={1.3} style={typography.title}>Link expired</Text>
           <Text style={typography.body}>
             This password reset link is invalid or has expired. Request a new one from the
             sign-in screen.
@@ -106,7 +107,7 @@ export default function ResetPasswordScreen() {
         style={styles.flex}
       >
         <View style={styles.content}>
-          <Text style={typography.title}>Set a new password</Text>
+          <Text maxFontSizeMultiplier={1.3} style={typography.title}>Set a new password</Text>
           <View style={styles.form}>
             <TextField
               label="New password"
@@ -116,7 +117,7 @@ export default function ResetPasswordScreen() {
               autoComplete="password-new"
               textContentType="newPassword"
             />
-            {error && <Text style={styles.error}>{error}</Text>}
+            {error && <ErrorText style={styles.error}>{error}</ErrorText>}
             <Button title="Save password" onPress={handleSave} loading={saving} />
           </View>
         </View>

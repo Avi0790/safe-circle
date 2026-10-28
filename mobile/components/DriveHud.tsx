@@ -61,11 +61,11 @@ export function DriveHud(p: DriveHudProps) {
       {/* ---------------------------------------------------- next turn */}
       <View style={[styles.topWrap, { top: p.topInset + 6 }]} pointerEvents="box-none">
         <View style={styles.card}>
-          <Text style={styles.glyph} accessibilityElementsHidden>
+          <Text maxFontSizeMultiplier={1.3} style={styles.glyph} accessibilityElementsHidden>
             {p.rerouting ? '↻' : p.glyph}
           </Text>
           <View style={styles.cardText}>
-            <Text style={styles.distance}>{p.rerouting ? '…' : p.distanceToNext}</Text>
+            <Text maxFontSizeMultiplier={1.3} style={styles.distance}>{p.rerouting ? '…' : p.distanceToNext}</Text>
             <Text style={styles.instruction} numberOfLines={2}>
               {p.rerouting ? 'Rerouting…' : p.instruction}
             </Text>
@@ -75,7 +75,7 @@ export function DriveHud(p: DriveHudProps) {
           <View style={styles.lanes} accessibilityLabel={`Lanes: ${p.lanes.map((l) => (l.valid ? 'use' : 'no')).join(', ')}`}>
             {p.lanes.map((l, i) => (
               <View key={i} style={[styles.lane, i > 0 && styles.laneDivider]}>
-                <Text style={[styles.laneGlyph, !l.valid && styles.laneOff]}>{l.glyph}</Text>
+                <Text maxFontSizeMultiplier={1.3} style={[styles.laneGlyph, !l.valid && styles.laneOff]}>{l.glyph}</Text>
               </View>
             ))}
           </View>
@@ -113,7 +113,7 @@ export function DriveHud(p: DriveHudProps) {
         )}
         {p.onSearch && (
           <Pressable style={styles.round} onPress={p.onSearch} accessibilityRole="button" accessibilityLabel="Add a stop">
-            <Text style={styles.roundIcon}>🔍</Text>
+            <Text allowFontScaling={false} style={styles.roundIcon}>🔍</Text>
           </Pressable>
         )}
         <Pressable
@@ -122,7 +122,7 @@ export function DriveHud(p: DriveHudProps) {
           accessibilityRole="button"
           accessibilityLabel={p.muted ? 'Unmute voice' : 'Mute voice'}
         >
-          <Text style={styles.roundIcon}>{p.muted ? '🔇' : p.voiceMode === 'alerts' ? '🔉' : '🔊'}</Text>
+          <Text allowFontScaling={false} style={styles.roundIcon}>{p.muted ? '🔇' : p.voiceMode === 'alerts' ? '🔉' : '🔊'}</Text>
         </Pressable>
         {p.onOverview && (
           <Pressable
@@ -131,12 +131,12 @@ export function DriveHud(p: DriveHudProps) {
             accessibilityRole="button"
             accessibilityLabel={overview ? 'Re-center' : 'Route overview'}
           >
-            <Text style={styles.roundIcon}>{overview ? '◎' : '🗺️'}</Text>
+            <Text allowFontScaling={false} style={styles.roundIcon}>{overview ? '◎' : '🗺️'}</Text>
           </Pressable>
         )}
         {p.onReport && (
           <Pressable style={styles.report} onPress={p.onReport} accessibilityRole="button" accessibilityLabel="Report an incident">
-            <Text style={styles.reportIcon}>⚠️</Text>
+            <Text allowFontScaling={false} style={styles.reportIcon}>⚠️</Text>
             <Text style={styles.reportText}>Report</Text>
           </Pressable>
         )}
@@ -172,7 +172,7 @@ export function DriveHud(p: DriveHudProps) {
           accessibilityRole="button"
         >
           <View style={styles.handle} />
-          <Text style={styles.eta}>{p.remainingTime}</Text>
+          <Text maxFontSizeMultiplier={1.3} style={styles.eta}>{p.remainingTime}</Text>
           <Text style={styles.etaSub}>
             {p.remainingDistance} · arrive {p.arrival}
           </Text>

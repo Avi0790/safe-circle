@@ -97,6 +97,7 @@ export default function JoinRequestsScreen() {
                     <ActivityIndicator />
                   ) : (
                     <Switch
+                      accessibilityLabel={`Require approval to join ${circle.name}`}
                       value={approval[circle.id] ?? false}
                       onValueChange={(next) => toggle(circle.id, next)}
                       trackColor={{ true: colors.accent }}

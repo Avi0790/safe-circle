@@ -43,11 +43,17 @@ export function AuthScreen({
           <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
             <View style={styles.brand}>
               <LogoMark />
-              <Text style={styles.appName}>Safe Circle</Text>
+              <Text maxFontSizeMultiplier={1.3} style={styles.appName} accessibilityRole="header">
+                Safe Circle
+              </Text>
               <Text style={styles.tagline}>{tagline}</Text>
             </View>
             <View style={styles.card}>
-              {title ? <Text style={styles.title}>{title}</Text> : null}
+              {title ? (
+                <Text style={styles.title} accessibilityRole="header">
+                  {title}
+                </Text>
+              ) : null}
               {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
               {children}
             </View>

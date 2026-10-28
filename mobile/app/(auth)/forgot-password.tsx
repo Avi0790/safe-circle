@@ -3,6 +3,7 @@ import { Link } from 'expo-router';
 import { Text, View } from 'react-native';
 import { Button } from '@/components/Button';
 import { TextField } from '@/components/TextField';
+import { ErrorText } from '@/components/ErrorText';
 import { AuthScreen, authStyles } from '@/components/ui/AuthScreen';
 import { supabase } from '@/lib/supabase';
 import { useThemeVersion } from '@/lib/theme';
@@ -69,7 +70,7 @@ export default function ForgotPasswordScreen() {
           autoComplete="email"
           textContentType="emailAddress"
         />
-        {error && <Text style={authStyles.error}>{error}</Text>}
+        {error && <ErrorText style={authStyles.error}>{error}</ErrorText>}
         <Button title="Send reset link" onPress={handleSend} loading={loading} />
       </View>
     </AuthScreen>

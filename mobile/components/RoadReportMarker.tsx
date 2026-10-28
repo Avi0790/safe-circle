@@ -44,7 +44,7 @@ export function RoadReportMarker({
       onPress={handlePress}
     >
       <View style={styles.ring} accessibilityLabel={`${info.label} reported`}>
-        <Text style={styles.emoji}>{info.emoji}</Text>
+        <Text allowFontScaling={false} style={styles.emoji}>{info.emoji}</Text>
       </View>
     </Marker>
   );

@@ -4,6 +4,7 @@ import { Stack, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '@/components/Button';
 import { TextField } from '@/components/TextField';
+import { ErrorText } from '@/components/ErrorText';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCircles } from '@/contexts/CircleContext';
 import { useCircleMembers } from '@/hooks/useCircleMembers';
@@ -81,6 +82,7 @@ export default function TextForHelpScreen() {
               const isSelected = selected.has(member.phone_number!);
               return (
                 <Pressable
+                  accessibilityRole="button"
                   key={member.id}
                   style={[styles.row, isSelected && styles.rowSelected]}
                   onPress={() => toggle(member.phone_number!)}
@@ -97,7 +99,7 @@ export default function TextForHelpScreen() {
         <View style={styles.section}>
           <Text style={styles.label}>Backup contacts</Text>
           {contacts.length === 0 ? (
-            <Pressable onPress={() => router.push('/backup-contacts')}>
+            <Pressable accessibilityRole="button" onPress={() => router.push('/backup-contacts')}>
               <Text style={styles.renameLinkText}>Add a backup contact</Text>
             </Pressable>
           ) : (
@@ -105,6 +107,7 @@ export default function TextForHelpScreen() {
               const isSelected = selected.has(contact.phone_number);
               return (
                 <Pressable
+                  accessibilityRole="button"
                   key={contact.id}
                   style={[styles.row, isSelected && styles.rowSelected]}
                   onPress={() => toggle(contact.phone_number)}
@@ -134,7 +137,7 @@ export default function TextForHelpScreen() {
           loading={sending}
           disabled={selected.size === 0}
         />
-        {error && <Text style={styles.error}>{error}</Text>}
+        {error && <ErrorText style={styles.error}>{error}</ErrorText>}
       </ScrollView>
     </SafeAreaView>
   );

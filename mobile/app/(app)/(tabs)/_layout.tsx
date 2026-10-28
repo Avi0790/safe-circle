@@ -8,7 +8,7 @@ import { colors, useThemeVersion } from '@/lib/theme';
 
 // Emoji ignore the tint colour, so the tab you're not on is faded instead.
 function TabIcon({ symbol, color, focused }: { symbol: string; color: ColorValue; focused: boolean }) {
-  return <Text style={{ fontSize: 21, color, opacity: focused ? 1 : 0.45 }}>{symbol}</Text>;
+  return <Text allowFontScaling={false} style={{ fontSize: 21, color, opacity: focused ? 1 : 0.45 }}>{symbol}</Text>;
 }
 
 export default function TabsLayout() {

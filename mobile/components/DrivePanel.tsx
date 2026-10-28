@@ -6,6 +6,7 @@ import { colors, radius, spacing, themed, typography } from '@/lib/theme';
 import { VOICE_MODES, type VoiceMode } from '@/lib/voicePreference';
 import { vehicleColorName, vehicleStyleName, type VehiclePreference } from '@/lib/vehiclePreference';
 import { AvatarArt } from '@/components/AvatarArt';
+import { ErrorText } from '@/components/ErrorText';
 
 // The card that slides up over navigation, like Apple Maps': audio, Share
 // ETA, report an incident, add a stop, end the route. Everything is one or two
@@ -63,12 +64,13 @@ export function DrivePanel(p: DrivePanelProps) {
             <View style={styles.grid}>
               {STOP_CATEGORIES.map((c) => (
                 <Pressable
+                  accessibilityRole="button"
                   key={c.key}
                   style={[styles.tile, p.stopCategory === c.key && styles.tileOn]}
                   onPress={() => p.onPickCategory(c.key)}
                   accessibilityState={{ selected: p.stopCategory === c.key }}
                 >
-                  <Text style={styles.tileEmoji}>{c.emoji}</Text>
+                  <Text allowFontScaling={false} style={styles.tileEmoji}>{c.emoji}</Text>
                   <Text style={[styles.tileText, p.stopCategory === c.key && styles.tileTextOn]}>{c.label}</Text>
                 </Pressable>
               ))}
@@ -79,12 +81,12 @@ export function DrivePanel(p: DrivePanelProps) {
                 <Text style={typography.caption}>Looking along your route…</Text>
               </View>
             )}
-            {p.stopError && <Text style={styles.error}>{p.stopError}</Text>}
+            {p.stopError && <ErrorText style={styles.error}>{p.stopError}</ErrorText>}
             {p.stopCategory && !p.stopSearching && p.stopResults.length === 0 && !p.stopError && (
               <Text style={typography.caption}>Nothing found near the road ahead.</Text>
             )}
             {p.stopResults.map((s) => (
-              <Pressable key={s.id} style={styles.row} onPress={() => p.onPickStop(s)}>
+              <Pressable accessibilityRole="button" key={s.id} style={styles.row} onPress={() => p.onPickStop(s)}>
                 <Text style={styles.rowTitle}>{s.title}</Text>
                 <Text style={typography.caption}>
                   {formatNavDistance(s.aheadM)} ahead · {s.offRouteM < 50 ? 'on your route' : `${formatNavDistance(s.offRouteM)} off route`}
@@ -118,17 +120,17 @@ export function DrivePanel(p: DrivePanelProps) {
             </Text>
 
             {p.circleName && (
-              <Pressable style={[styles.action, p.sharing && styles.actionOn]} onPress={p.onToggleShare}>
+              <Pressable accessibilityRole="button" style={[styles.action, p.sharing && styles.actionOn]} onPress={p.onToggleShare}>
                 <Text style={styles.actionText}>{p.sharing ? `👪 Stop sharing ETA with ${p.circleName}` : `👪 Share ETA with ${p.circleName}`}</Text>
               </Pressable>
             )}
 
             {p.linkShared ? (
-              <Pressable style={[styles.action, styles.actionOn]} onPress={p.onStopLink}>
+              <Pressable accessibilityRole="button" style={[styles.action, styles.actionOn]} onPress={p.onStopLink}>
                 <Text style={styles.actionText}>🔗 Stop the live ETA link</Text>
               </Pressable>
             ) : (
-              <Pressable style={styles.action} onPress={p.onShareAnyone}>
+              <Pressable accessibilityRole="button" style={styles.action} onPress={p.onShareAnyone}>
                 <Text style={styles.actionText}>📤 Share ETA with anyone…</Text>
               </Pressable>
             )}
@@ -156,16 +158,16 @@ export function DrivePanel(p: DrivePanelProps) {
             )}
 
             {p.stopTitle ? (
-              <Pressable style={styles.action} onPress={p.onRemoveStop}>
+              <Pressable accessibilityRole="button" style={styles.action} onPress={p.onRemoveStop}>
                 <Text style={styles.actionText}>✕ Remove stop: {p.stopTitle}</Text>
               </Pressable>
             ) : (
-              <Pressable style={styles.action} onPress={p.onAddStop}>
+              <Pressable accessibilityRole="button" style={styles.action} onPress={p.onAddStop}>
                 <Text style={styles.actionText}>➕ Add a stop</Text>
               </Pressable>
             )}
 
-            <Pressable style={[styles.action, styles.endAction]} onPress={p.onEnd}>
+            <Pressable accessibilityRole="button" style={[styles.action, styles.endAction]} onPress={p.onEnd}>
               <Text style={styles.endText}>End route</Text>
             </Pressable>
           </>
@@ -183,13 +185,14 @@ function ReportGrid(p: DrivePanelProps) {
       <View style={styles.grid}>
         {ROAD_REPORT_KINDS.map((k) => (
           <Pressable
+            accessibilityRole="button"
             key={k.kind}
             style={styles.tile}
             disabled={p.reporting}
             onPress={() => p.onReport(k.kind)}
             accessibilityLabel={`Report ${k.label}`}
           >
-            <Text style={styles.tileEmoji}>{k.emoji}</Text>
+            <Text allowFontScaling={false} style={styles.tileEmoji}>{k.emoji}</Text>
             <Text style={styles.tileText}>{k.label}</Text>
           </Pressable>
         ))}

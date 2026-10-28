@@ -22,7 +22,7 @@ export function AccountTypePicker({
             onPress={() => onChange(option.id)}
             style={[styles.card, selected && styles.cardSelected]}
           >
-            <Text style={styles.emoji}>{option.emoji}</Text>
+            <Text allowFontScaling={false} style={styles.emoji}>{option.emoji}</Text>
             <View style={styles.text}>
               <Text style={styles.title}>{option.title}</Text>
               <Text style={typography.caption}>{option.description}</Text>

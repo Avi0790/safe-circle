@@ -4,6 +4,7 @@ import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '@/components/Button';
 import { TextField } from '@/components/TextField';
+import { ErrorText } from '@/components/ErrorText';
 import { useAccount } from '@/contexts/AccountContext';
 import { confirmsName, DELETE_EFFECTS } from '@/lib/orgSettings';
 import { supabase } from '@/lib/supabase';
@@ -68,7 +69,7 @@ export default function OrgSettingsScreen() {
     <SafeAreaView style={styles.safeArea} edges={['bottom']}>
       <Stack.Screen options={{ title: 'Organization', headerBackTitle: 'Work' }} />
       <ScrollView contentContainerStyle={styles.body}>
-        <Text style={styles.sectionLabel}>Name</Text>
+        <Text style={styles.sectionLabel} accessibilityRole="header">Name</Text>
         <TextField label="Organization name" value={name} onChangeText={setName} autoCapitalize="words" maxLength={80} />
         <Button
           title="Save name"
@@ -107,7 +108,7 @@ export default function OrgSettingsScreen() {
             />
           </View>
         )}
-        {error && <Text style={styles.error}>{error}</Text>}
+        {error && <ErrorText style={styles.error}>{error}</ErrorText>}
       </ScrollView>
     </SafeAreaView>
   );

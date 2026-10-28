@@ -4,6 +4,7 @@ import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-rou
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CrewMap, type CrewMapMarker } from '@/components/CrewMap';
 import { SosBanner } from '@/components/SosBanner';
+import { ErrorText } from '@/components/ErrorText';
 import { useActiveSosEvents } from '@/hooks/useActiveSosEvents';
 import {
   crewSummary,
@@ -85,13 +86,13 @@ export default function CrewScreen() {
             Workers can see when you look at their location, in their Work tab. You only ever see
             people while they're clocked in.
           </Text>
-          {error && <Text style={styles.error}>{error}</Text>}
+          {error && <ErrorText style={styles.error}>{error}</ErrorText>}
 
-          {split.onShift.length > 0 && <Text style={styles.sectionLabel}>On shift</Text>}
+          {split.onShift.length > 0 && <Text style={styles.sectionLabel} accessibilityRole="header">On shift</Text>}
           {split.onShift.map((w) => {
             const f = workerFlags(w);
             return (
-              <Pressable key={w.user_id} style={styles.card} onPress={() => openWorker(w.user_id, w.full_name)}>
+              <Pressable accessibilityRole="button" key={w.user_id} style={styles.card} onPress={() => openWorker(w.user_id, w.full_name)}>
                 <Text style={styles.name}>{w.full_name}</Text>
                 <Text style={typography.caption}>
                   On since {formatClockTime(w.clocked_in_at)}
@@ -108,7 +109,7 @@ export default function CrewScreen() {
             );
           })}
 
-          {split.offShift.length > 0 && <Text style={styles.sectionLabel}>Off shift</Text>}
+          {split.offShift.length > 0 && <Text style={styles.sectionLabel} accessibilityRole="header">Off shift</Text>}
           {split.offShift.map((m) => (
             <View key={m.user_id} style={styles.cardQuiet}>
               <Text style={styles.name}>{m.full_name}</Text>
@@ -116,7 +117,7 @@ export default function CrewScreen() {
             </View>
           ))}
 
-          {split.pending.length > 0 && <Text style={styles.sectionLabel}>Waiting to accept</Text>}
+          {split.pending.length > 0 && <Text style={styles.sectionLabel} accessibilityRole="header">Waiting to accept</Text>}
           {split.pending.map((m) => (
             <View key={m.user_id} style={styles.cardQuiet}>
               <Text style={styles.name}>{m.full_name}</Text>

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Button } from '@/components/Button';
 import { TextField } from '@/components/TextField';
+import { ErrorText } from '@/components/ErrorText';
 import { useAccount } from '@/contexts/AccountContext';
 import { activeOrgs, ORG_DISCLOSURE } from '@/lib/orgInfo';
 import { supabase } from '@/lib/supabase';
@@ -118,7 +119,7 @@ export function OrgOnboarding({
   if (pendingInvite) {
     return (
       <View style={styles.content}>
-        <Text style={typography.title}>Join {pendingInvite.name}</Text>
+        <Text maxFontSizeMultiplier={1.3} style={typography.title}>Join {pendingInvite.name}</Text>
         <Text style={typography.body}>
           Before you join, here is exactly what the people who run this organization can see:
         </Text>
@@ -129,7 +130,7 @@ export function OrgOnboarding({
             </Text>
           ))}
         </View>
-        {error && <Text style={styles.error}>{error}</Text>}
+        {error && <ErrorText style={styles.error}>{error}</ErrorText>}
         <View style={styles.form}>
           <Button title="I understand — join" onPress={handleAccept} loading={loading} />
           <Button title="Decline" variant="secondary" onPress={handleDecline} disabled={loading} />
@@ -141,7 +142,7 @@ export function OrgOnboarding({
   if (mode === 'create') {
     return (
       <View style={styles.content}>
-        <Text style={typography.title}>Create an organization</Text>
+        <Text maxFontSizeMultiplier={1.3} style={typography.title}>Create an organization</Text>
         <View style={styles.form}>
           <TextField
             label="Organization name"
@@ -150,7 +151,7 @@ export function OrgOnboarding({
             onChangeText={setOrgName}
             autoCapitalize="words"
           />
-          {error && <Text style={styles.error}>{error}</Text>}
+          {error && <ErrorText style={styles.error}>{error}</ErrorText>}
           <Button title="Create" onPress={handleCreate} loading={loading} />
           <Button title="Back" variant="secondary" onPress={() => setMode('choose')} />
         </View>
@@ -161,7 +162,7 @@ export function OrgOnboarding({
   if (mode === 'created') {
     return (
       <View style={styles.content}>
-        <Text style={typography.title}>Organization created!</Text>
+        <Text maxFontSizeMultiplier={1.3} style={typography.title}>Organization created!</Text>
         <Text style={typography.body}>
           Share this code with your crew. It's shown only once and expires in 48 hours, so save
           it now. You can make a new one later.
@@ -177,7 +178,7 @@ export function OrgOnboarding({
   if (mode === 'join') {
     return (
       <View style={styles.content}>
-        <Text style={typography.title}>Join your crew</Text>
+        <Text maxFontSizeMultiplier={1.3} style={typography.title}>Join your crew</Text>
         <View style={styles.form}>
           <TextField
             label="Invite code"
@@ -187,7 +188,7 @@ export function OrgOnboarding({
             autoCapitalize="characters"
             maxLength={6}
           />
-          {error && <Text style={styles.error}>{error}</Text>}
+          {error && <ErrorText style={styles.error}>{error}</ErrorText>}
           <Button title="Continue" onPress={handleJoin} loading={loading} />
           <Button title="Back" variant="secondary" onPress={() => setMode('choose')} />
         </View>
@@ -197,7 +198,7 @@ export function OrgOnboarding({
 
   return (
     <View style={styles.content}>
-      <Text style={typography.title}>{heading}</Text>
+      <Text maxFontSizeMultiplier={1.3} style={typography.title}>{heading}</Text>
       <Text style={typography.body}>{intro}</Text>
       <View style={styles.form}>
         <Button title="Create an organization" onPress={() => setMode('create')} />

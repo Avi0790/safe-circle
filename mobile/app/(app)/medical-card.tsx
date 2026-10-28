@@ -4,6 +4,7 @@ import { Stack } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '@/components/Button';
 import { TextField } from '@/components/TextField';
+import { ErrorText } from '@/components/ErrorText';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { colors, spacing, themed, typography, useThemeVersion } from '@/lib/theme';
@@ -81,7 +82,7 @@ export default function MedicalCardScreen() {
             <TextField label="Notes for responders" value={notes} onChangeText={setNotes} maxLength={500} multiline autoCapitalize="sentences" />
             <Button title="Save" onPress={handleSave} loading={saving} />
             {saved && <Text style={styles.saved}>Saved.</Text>}
-            {error && <Text style={styles.error}>{error}</Text>}
+            {error && <ErrorText style={styles.error}>{error}</ErrorText>}
           </>
         )}
       </ScrollView>

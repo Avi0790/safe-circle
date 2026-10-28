@@ -927,3 +927,39 @@ and two primitives in `components/` (`Button`, `TextField`) — extend these
 rather than hardcoding styles per-screen, and keep the palette in sync
 with the web dashboard's (`web/src/index.css`) so the two clients feel
 related.
+
+## Accessibility
+
+A safety app has to work for someone who can't see the screen well, so the
+app is built for VoiceOver (and TalkBack) and for iOS's larger text sizes:
+
+- **Every tappable thing is a named control.** Each `Pressable` has a role
+  (button, tab, radio, link), and buttons whose text is vague on its own say
+  what they act on: "Remove Mom", "Rename Family", "Edit your phone number".
+  Switches and text boxes are named by the words beside them (`TextField`
+  passes its label to the field, so it isn't read twice). `Button` reports
+  when it's busy or unavailable.
+- **Nothing hides inside something else.** VoiceOver reads a tappable area as
+  one item, so a button inside it can't be reached. The walk and
+  check-on-me banners keep their text and their "I'm safe" button as
+  separate items, and the crew card's actions sit beside the name.
+- **Things that happen are said out loud** (`lib/announce.ts`): SOS sent,
+  check-in sent, clocked in or out, marked safe. Every error under a form is
+  an `ErrorText`, which is read out as it appears, so nobody is left
+  wondering why a tap did nothing.
+- **Headings** (`accessibilityRole="header"`) on screen titles and section
+  labels, so the VoiceOver rotor can jump between sections of a long screen
+  like Settings.
+- **Text grows with the phone's setting**, up to the largest accessibility
+  sizes, and long text wraps rather than being cut off. As in Apple's own
+  apps, a few things are held back: emoji icons in fixed circles (tab bar,
+  SOS, map buttons) stay their size, and big screen titles, hero numbers and
+  stat tiles grow at most 1.3–1.5×, so a word like "Settings" isn't split
+  across two lines. The vehicle marker's turning animation stops when Reduce
+  Motion is on.
+
+`lib/__tests__/accessibility.test.ts` reads the source and fails if a new
+`Pressable` has no role, a switch or text box has no name, a control is
+nested inside a `Pressable`, or an error is shown without being read out.
+To try it yourself: Settings → Accessibility → VoiceOver, or the
+Accessibility Inspector in Xcode (Open Developer Tool) on the simulator.

@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { colors, radius, spacing, themed, typography, useThemeVersion } from '@/lib/theme';
+import { ErrorText } from '@/components/ErrorText';
 
 interface RetentionOption {
   label: string;
@@ -70,6 +71,7 @@ export default function HistoryRetentionScreen() {
               const selected = option.days === days;
               return (
                 <Pressable
+                  accessibilityRole="button"
                   key={option.label}
                   style={[styles.row, selected && styles.rowSelected]}
                   onPress={() => choose(option)}
@@ -83,7 +85,7 @@ export default function HistoryRetentionScreen() {
             })}
           </View>
         )}
-        {error && <Text style={styles.error}>{error}</Text>}
+        {error && <ErrorText style={styles.error}>{error}</ErrorText>}
       </View>
     </SafeAreaView>
   );

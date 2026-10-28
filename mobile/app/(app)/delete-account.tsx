@@ -3,6 +3,7 @@ import { Pressable, ScrollView, StyleSheet, Text } from 'react-native';
 import { Stack } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { TextField } from '@/components/TextField';
+import { ErrorText } from '@/components/ErrorText';
 import { useAuth } from '@/contexts/AuthContext';
 import { clearDestinations } from '@/lib/savedDestinations';
 import { supabase } from '@/lib/supabase';
@@ -83,13 +84,14 @@ export default function DeleteAccountScreen() {
           autoCapitalize="characters"
         />
         <Pressable
+          accessibilityRole="button"
           style={[styles.button, (!ready || busy) && styles.buttonDisabled]}
           onPress={handleDelete}
           disabled={!ready || busy}
         >
           <Text style={styles.buttonText}>{busy ? 'Deleting…' : 'Permanently delete my account'}</Text>
         </Pressable>
-        {error && <Text style={styles.error}>{error}</Text>}
+        {error && <ErrorText style={styles.error}>{error}</ErrorText>}
       </ScrollView>
     </SafeAreaView>
   );

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ActivityIndicator, Alert, Linking, Pressable, StyleSheet, Text } from 'react-native';
 import { useRouter } from 'expo-router';
+import { announce } from '@/lib/announce';
 import { sendSos, offerTextForHelp } from '@/lib/sos';
 import { colors, spacing, themed } from '@/lib/theme';
 
@@ -43,12 +44,23 @@ export function SosButton({ onSent }: { onSent?: () => void }) {
       offerTextForHelp(result.message, () => router.push('/text-for-help'));
       return;
     }
+    announce('SOS sent. Your circle has your location.');
     onSent?.();
   }
 
   return (
-    <Pressable style={styles.button} onPress={handlePress} disabled={sending}>
-      {sending ? <ActivityIndicator color="#fff" /> : <Text style={styles.text}>SOS</Text>}
+    <Pressable
+      style={styles.button}
+      onPress={handlePress}
+      disabled={sending}
+      accessibilityRole="button"
+      accessibilityLabel="Send SOS"
+      accessibilityHint="Asks first, then alerts everyone in your circle with your location"
+      accessibilityState={{ busy: sending }}
+    >
+      {sending ? <ActivityIndicator color="#fff" /> : <Text style={styles.text} maxFontSizeMultiplier={1.3}>
+          SOS
+        </Text>}
     </Pressable>
   );
 }

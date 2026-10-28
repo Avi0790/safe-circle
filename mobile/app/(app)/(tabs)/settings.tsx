@@ -17,6 +17,7 @@ import { appColors, ui } from '@/components/ui/AppUI';
 import { Button } from '@/components/Button';
 import { InviteQr } from '@/components/InviteQr';
 import { TextField } from '@/components/TextField';
+import { ErrorText } from '@/components/ErrorText';
 import { useAccount } from '@/contexts/AccountContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCircles } from '@/contexts/CircleContext';
@@ -494,11 +495,11 @@ export default function SettingsTab() {
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.title}>Settings</Text>
+        <Text maxFontSizeMultiplier={1.3} style={styles.title} accessibilityRole="header">Settings</Text>
 
         <View style={styles.section}>
           <View style={styles.photoRow}>
-            <Pressable onPress={handleChangePhoto} disabled={avatarBusy} accessibilityLabel="Change profile photo">
+            <Pressable accessibilityRole="button" onPress={handleChangePhoto} disabled={avatarBusy} accessibilityLabel="Change profile photo">
               <View style={avatarBusy && styles.photoBusy}>
                 <Avatar
                   id={session?.user.id ?? ''}
@@ -510,26 +511,34 @@ export default function SettingsTab() {
               {avatarBusy && <ActivityIndicator style={StyleSheet.absoluteFill} />}
             </Pressable>
             <View style={styles.rowText}>
-              <Text style={styles.sectionLabel}>Profile photo</Text>
+              <Text style={styles.sectionLabel} accessibilityRole="header">Profile photo</Text>
               <Text style={typography.caption}>
                 Shown on the map and in your circle instead of your initials.
               </Text>
               <View style={styles.circleRow}>
-                <Pressable onPress={handleChangePhoto} disabled={avatarBusy} hitSlop={8}>
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={handleChangePhoto}
+                  disabled={avatarBusy}
+                  hitSlop={8}
+                >
                   <Text style={styles.renameLinkText}>{avatarUrl ? 'Change photo' : 'Choose photo'}</Text>
                 </Pressable>
                 {avatarUrl && (
-                  <Pressable onPress={handleRemovePhoto} disabled={avatarBusy} hitSlop={8} style={styles.leaveLink}>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="Remove profile photo"
+                    onPress={handleRemovePhoto} disabled={avatarBusy} hitSlop={8} style={styles.leaveLink}>
                     <Text style={styles.leaveLinkText}>Remove</Text>
                   </Pressable>
                 )}
               </View>
             </View>
           </View>
-          {avatarError && <Text style={styles.error}>{avatarError}</Text>}
+          {avatarError && <ErrorText style={styles.error}>{avatarError}</ErrorText>}
 
           <View style={styles.subsection}>
-            <Text style={styles.sectionLabel}>Quick status</Text>
+            <Text style={styles.sectionLabel} accessibilityRole="header">Quick status</Text>
             <Text style={typography.caption}>
               Shown next to your name and pin for {STATUS_DURATION_MINUTES / 60} hours, or until
               you clear it.
@@ -539,6 +548,7 @@ export default function SettingsTab() {
                 const selected = statusEmoji === option.emoji;
                 return (
                   <Pressable
+                    accessibilityRole="button"
                     key={option.emoji}
                     style={[styles.chip, selected && styles.chipSelected]}
                     onPress={() => handleSetStatus(option.emoji, option.label)}
@@ -552,10 +562,10 @@ export default function SettingsTab() {
                 );
               })}
             </View>
-            {statusError && <Text style={styles.error}>{statusError}</Text>}
+            {statusError && <ErrorText style={styles.error}>{statusError}</ErrorText>}
           </View>
 
-          <Text style={styles.sectionLabel}>Signed in as</Text>
+          <Text style={styles.sectionLabel} accessibilityRole="header">Signed in as</Text>
           <Text style={typography.body}>{session?.user.email}</Text>
           {editingName ? (
             <View style={styles.renameForm}>
@@ -565,7 +575,7 @@ export default function SettingsTab() {
                 onChangeText={setNameValue}
                 autoCapitalize="words"
               />
-              {nameError && <Text style={styles.error}>{nameError}</Text>}
+              {nameError && <ErrorText style={styles.error}>{nameError}</ErrorText>}
               <View style={styles.circleRow}>
                 <View style={styles.circleButton}>
                   <Button title="Save" onPress={handleSaveName} loading={nameSaving} />
@@ -583,13 +593,13 @@ export default function SettingsTab() {
           ) : (
             <View style={styles.row}>
               <Text style={[typography.body, styles.rowText]}>{fullName ?? '…'}</Text>
-              <Pressable onPress={startEditName} hitSlop={8}>
+              <Pressable accessibilityRole="button" accessibilityLabel="Edit your name" onPress={startEditName} hitSlop={8}>
                 <Text style={styles.renameLinkText}>Edit</Text>
               </Pressable>
             </View>
           )}
 
-          <Text style={styles.sectionLabel}>Phone number</Text>
+          <Text style={styles.sectionLabel} accessibilityRole="header">Phone number</Text>
           <Text style={typography.caption}>
             Only used for "Text for help" (Map tab) — a text-message fallback for when there's no
             internet for push. Never shown anywhere else.
@@ -603,7 +613,7 @@ export default function SettingsTab() {
                 keyboardType="phone-pad"
                 placeholder="+1 555 123 4567"
               />
-              {phoneError && <Text style={styles.error}>{phoneError}</Text>}
+              {phoneError && <ErrorText style={styles.error}>{phoneError}</ErrorText>}
               <View style={styles.circleRow}>
                 <View style={styles.circleButton}>
                   <Button title="Save" onPress={handleSavePhone} loading={phoneSaving} />
@@ -621,7 +631,12 @@ export default function SettingsTab() {
           ) : (
             <View style={styles.row}>
               <Text style={[typography.body, styles.rowText]}>{phoneNumber ?? 'Not set'}</Text>
-              <Pressable onPress={startEditPhone} hitSlop={8}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Edit your phone number"
+                onPress={startEditPhone}
+                hitSlop={8}
+              >
                 <Text style={styles.renameLinkText}>Edit</Text>
               </Pressable>
             </View>
@@ -629,7 +644,7 @@ export default function SettingsTab() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Backup contacts</Text>
+          <Text style={styles.sectionLabel} accessibilityRole="header">Backup contacts</Text>
           <Text style={typography.caption}>
             People outside your circle (a neighbor, a relative) to text in an emergency, in
             addition to your circle.
@@ -644,7 +659,7 @@ export default function SettingsTab() {
         <View style={styles.section}>
           <View style={styles.row}>
             <View style={styles.rowText}>
-              <Text style={styles.sectionLabel}>Share my location</Text>
+              <Text style={styles.sectionLabel} accessibilityRole="header">Share my location</Text>
               <Text style={typography.caption}>
                 {sharingEnabled && shareUntil
                   ? `Sharing until ${formatClockTime(shareUntil.toISOString())}, then it stops on its own.`
@@ -659,6 +674,7 @@ export default function SettingsTab() {
               <ActivityIndicator />
             ) : (
               <Switch
+                accessibilityLabel="Share my location"
                 value={sharingEnabled}
                 onValueChange={handleToggleSharing}
                 trackColor={{ true: colors.accent }}
@@ -671,6 +687,7 @@ export default function SettingsTab() {
                 const selected = option.minutes === durationMinutes;
                 return (
                   <Pressable
+                    accessibilityRole="button"
                     key={option.label}
                     style={[styles.chip, selected && styles.chipSelected]}
                     onPress={() => setDurationMinutes(option.minutes)}
@@ -684,13 +701,13 @@ export default function SettingsTab() {
               })}
             </View>
           )}
-          {sharingError && <Text style={styles.error}>{sharingError}</Text>}
+          {sharingError && <ErrorText style={styles.error}>{sharingError}</ErrorText>}
         </View>
 
         <View style={styles.section}>
           <View style={styles.row}>
             <View style={styles.rowText}>
-              <Text style={styles.sectionLabel}>Push notifications</Text>
+              <Text style={styles.sectionLabel} accessibilityRole="header">Push notifications</Text>
               <Text style={typography.caption}>
                 Get notified when someone in your circle arrives at or leaves a place, or sends
                 an SOS.
@@ -700,19 +717,20 @@ export default function SettingsTab() {
               <ActivityIndicator />
             ) : (
               <Switch
+                accessibilityLabel="Push notifications"
                 value={pushEnabled}
                 onValueChange={handleTogglePush}
                 trackColor={{ true: colors.accent }}
               />
             )}
           </View>
-          {pushStatus && <Text style={styles.error}>{pushStatus}</Text>}
+          {pushStatus && <ErrorText style={styles.error}>{pushStatus}</ErrorText>}
         </View>
 
         <View style={styles.section}>
           <View style={styles.row}>
             <View style={styles.rowText}>
-              <Text style={styles.sectionLabel}>Nearby alerts</Text>
+              <Text style={styles.sectionLabel} accessibilityRole="header">Nearby alerts</Text>
               <Text style={typography.caption}>
                 Get a notification when someone in your circle comes near you — about 500 m on
                 foot, and farther out when you're driving so the warning comes early. Handy on
@@ -723,17 +741,18 @@ export default function SettingsTab() {
               <ActivityIndicator />
             ) : (
               <Switch
+                accessibilityLabel="Nearby alerts"
                 value={nearbyAlerts}
                 onValueChange={handleToggleNearby}
                 trackColor={{ true: colors.accent }}
               />
             )}
           </View>
-          {nearbyError && <Text style={styles.error}>{nearbyError}</Text>}
+          {nearbyError && <ErrorText style={styles.error}>{nearbyError}</ErrorText>}
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Places</Text>
+          <Text style={styles.sectionLabel} accessibilityRole="header">Places</Text>
           <Text style={typography.caption}>
             Get alerted when someone arrives at or leaves somewhere, like home or school.
           </Text>
@@ -747,19 +766,19 @@ export default function SettingsTab() {
         <View style={styles.section}>
           <View style={styles.row}>
             <View style={styles.rowText}>
-              <Text style={styles.sectionLabel}>Shake for SOS</Text>
+              <Text style={styles.sectionLabel} accessibilityRole="header">Shake for SOS</Text>
               <Text style={typography.caption}>
                 Shake your phone hard a few times to trigger the SOS alert — still asks you to
                 confirm first. Handy if your phone is in a pocket or bag.
               </Text>
             </View>
-            <Switch value={shakeEnabled} onValueChange={setShakeEnabled} trackColor={{ true: colors.accent }} />
+            <Switch accessibilityLabel="Shake for SOS" value={shakeEnabled} onValueChange={setShakeEnabled} trackColor={{ true: colors.accent }} />
           </View>
         </View>
 
         {canChooseAppearance && (
           <View style={styles.section}>
-            <Text style={styles.sectionLabel}>Appearance</Text>
+            <Text style={styles.sectionLabel} accessibilityRole="header">Appearance</Text>
             <Text style={typography.caption}>
               Match your iPhone&apos;s light or dark setting, or always use one.
             </Text>
@@ -790,19 +809,19 @@ export default function SettingsTab() {
         <View style={styles.section}>
           <View style={styles.row}>
             <View style={styles.rowText}>
-              <Text style={styles.sectionLabel}>Lock the app</Text>
+              <Text style={styles.sectionLabel} accessibilityRole="header">Lock the app</Text>
               <Text style={typography.caption}>
                 Ask for Face ID, your fingerprint or your passcode to open Safe Circle, so a
                 borrowed phone can't be used to look at your family's locations.
               </Text>
             </View>
-            <Switch value={lockEnabled} onValueChange={handleToggleLock} trackColor={{ true: colors.accent }} />
+            <Switch accessibilityLabel="Lock the app" value={lockEnabled} onValueChange={handleToggleLock} trackColor={{ true: colors.accent }} />
           </View>
-          {lockError && <Text style={styles.error}>{lockError}</Text>}
+          {lockError && <ErrorText style={styles.error}>{lockError}</ErrorText>}
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Privacy</Text>
+          <Text style={styles.sectionLabel} accessibilityRole="header">Privacy</Text>
           <Text style={typography.caption}>
             See who's checked on your location, choose how long your location history is kept, and
             hide your location from specific people if you'd rather not share with everyone.
@@ -826,7 +845,7 @@ export default function SettingsTab() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Emergency & guests</Text>
+          <Text style={styles.sectionLabel} accessibilityRole="header">Emergency & guests</Text>
           <Text style={typography.caption}>
             A medical card your circle can read only during an active SOS, and time-limited live
             links for people who don't have the app.
@@ -836,7 +855,7 @@ export default function SettingsTab() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Curfew</Text>
+          <Text style={styles.sectionLabel} accessibilityRole="header">Curfew</Text>
           <Text style={typography.caption}>
             Alert your circle automatically if you're not home by a set time.
           </Text>
@@ -845,7 +864,7 @@ export default function SettingsTab() {
 
         {circles.some((c) => c.created_by === session?.user.id) && (
           <View style={styles.subsection}>
-            <Text style={styles.sectionLabel}>Join approvals</Text>
+            <Text style={styles.sectionLabel} accessibilityRole="header">Join approvals</Text>
             <Text style={typography.caption}>
               Require your OK before anyone new joins a circle you created, and review who's
               waiting.
@@ -862,7 +881,7 @@ export default function SettingsTab() {
             circle at all (see canEnterApp in lib/accountType.ts), so this
             section covers both "your first circle" and "another one". */}
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>{circles.length === 0 ? 'Circles' : 'More circles'}</Text>
+          <Text style={styles.sectionLabel} accessibilityRole="header">{circles.length === 0 ? 'Circles' : 'More circles'}</Text>
           <Text style={typography.caption}>
             {circles.length === 0
               ? "You're not in a circle yet. Create or join one to share your location with family or friends."
@@ -878,7 +897,7 @@ export default function SettingsTab() {
         {/* One account for family and work: whatever was picked at signup,
             anyone can join an organization here (app/(app)/add-org.tsx). */}
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Work</Text>
+          <Text style={styles.sectionLabel} accessibilityRole="header">Work</Text>
           <Text style={typography.caption}>
             {pendingInvite
               ? `You started joining ${pendingInvite.name}. See what they can see before you decide.`
@@ -901,7 +920,7 @@ export default function SettingsTab() {
 
         {circles.length > 0 && (
           <View style={styles.subsection}>
-            <Text style={styles.sectionLabel}>Circles</Text>
+            <Text style={styles.sectionLabel} accessibilityRole="header">Circles</Text>
             {circles.map((circle) =>
               renamingCircleId === circle.id ? (
                 <View key={circle.id} style={styles.renameForm}>
@@ -911,7 +930,7 @@ export default function SettingsTab() {
                     onChangeText={setRenameValue}
                     autoCapitalize="words"
                   />
-                  {renameError && <Text style={styles.error}>{renameError}</Text>}
+                  {renameError && <ErrorText style={styles.error}>{renameError}</ErrorText>}
                   <View style={styles.circleRow}>
                     <View style={styles.circleButton}>
                       <Button title="Save" onPress={handleSaveRename} loading={renameSaving} />
@@ -938,6 +957,8 @@ export default function SettingsTab() {
                   {circle.created_by === session?.user.id ? (
                     <>
                       <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel={`Rename ${circle.name}`}
                         onPress={() => startRenameCircle(circle)}
                         style={styles.leaveLink}
                         hitSlop={8}
@@ -947,6 +968,8 @@ export default function SettingsTab() {
                       {/* Creators delete instead of leave — leaving your own
                           circle would orphan it, see handleDeleteCircle. */}
                       <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel={`Delete ${circle.name}`}
                         onPress={() => confirmDeleteCircle(circle)}
                         disabled={deletingCircleId === circle.id}
                         style={styles.leaveLink}
@@ -961,6 +984,8 @@ export default function SettingsTab() {
                     </>
                   ) : (
                     <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={`Leave ${circle.name}`}
                       onPress={() => confirmLeaveCircle(circle)}
                       disabled={leavingCircleId === circle.id}
                       style={styles.leaveLink}
@@ -981,7 +1006,7 @@ export default function SettingsTab() {
 
         {selectedCircle && (
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Invite someone to {selectedCircle.name}</Text>
+          <Text style={styles.sectionLabel} accessibilityRole="header">Invite someone to {selectedCircle.name}</Text>
           {inviteCode ? (
             <>
               <InviteQr code={inviteCode} />
@@ -994,7 +1019,7 @@ export default function SettingsTab() {
               Generate a code to share. Creating a new one invalidates any earlier code.
             </Text>
           )}
-          {error && <Text style={styles.error}>{error}</Text>}
+          {error && <ErrorText style={styles.error}>{error}</ErrorText>}
           <Button title="Get invite code" onPress={handleGetInviteCode} loading={loading} />
           {inviteCode && (
             <Button title="Share invite" variant="secondary" onPress={handleShareInvite} />
@@ -1003,7 +1028,7 @@ export default function SettingsTab() {
         )}
 
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Your data</Text>
+          <Text style={styles.sectionLabel} accessibilityRole="header">Your data</Text>
           <Text style={typography.caption}>
             Download everything Safe Circle holds about you, or delete your account for good.
           </Text>
@@ -1058,7 +1083,8 @@ const styles = themed(() => StyleSheet.create({
   photoBusy: { opacity: 0.4 },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   rowText: { flex: 1, gap: 2 },
-  circleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  // wraps at large text sizes rather than pushing links off the screen
+  circleRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: spacing.sm },
   circleButton: { flex: 1 },
   leaveLink: { paddingHorizontal: spacing.xs },
   leaveLinkText: { color: colors.danger, fontSize: 14, fontWeight: '700' },

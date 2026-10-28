@@ -4,6 +4,7 @@ import { Text, View } from 'react-native';
 import { AccountTypePicker } from '@/components/AccountTypePicker';
 import { Button } from '@/components/Button';
 import { TextField } from '@/components/TextField';
+import { ErrorText } from '@/components/ErrorText';
 import { AuthScreen, authStyles } from '@/components/ui/AuthScreen';
 import { DEFAULT_ACCOUNT_TYPE, type AccountType } from '@/lib/accountType';
 import { supabase } from '@/lib/supabase';
@@ -91,7 +92,7 @@ export default function SignupScreen() {
           textContentType="newPassword"
         />
 
-        {error && <Text style={authStyles.error}>{error}</Text>}
+        {error && <ErrorText style={authStyles.error}>{error}</ErrorText>}
 
         <Button title="Sign up" onPress={handleSignUp} loading={loading} />
       </View>

@@ -20,6 +20,8 @@ import { useCircleMembers } from '@/hooks/useCircleMembers';
 import { useCircleMessages } from '@/hooks/useCircleMessages';
 import { Avatar } from '@/components/Avatar';
 import { appColors } from '@/components/ui/AppUI';
+import { ErrorText } from '@/components/ErrorText';
+import { announce } from '@/lib/announce';
 import { timeAgo } from '@/lib/format';
 import type { Message } from '@/lib/types';
 import { colors, spacing, themed, typography, useThemeVersion } from '@/lib/theme';
@@ -77,6 +79,7 @@ export default function ChatTab() {
     const result = await checkIn();
     setCheckingIn(false);
     if (!result.ok) setSendError(result.error);
+    else announce('Check-in sent to your circle');
   }
 
   return (
@@ -88,13 +91,13 @@ export default function ChatTab() {
       >
         <View style={styles.header}>
           <Text style={styles.kicker}>CIRCLE CHAT</Text>
-          <Text style={styles.title}>{selectedCircle?.name ?? 'Chat'}</Text>
+          <Text maxFontSizeMultiplier={1.3} style={styles.title} accessibilityRole="header">{selectedCircle?.name ?? 'Chat'}</Text>
           <Text style={styles.subtitle}>
             {members.length} {members.length === 1 ? 'person' : 'people'} · only your circle can read this
           </Text>
         </View>
 
-        {error && <Text style={styles.error}>{error}</Text>}
+        {error && <ErrorText style={styles.error}>{error}</ErrorText>}
 
         <FlatList
           ref={listRef}
@@ -132,6 +135,7 @@ export default function ChatTab() {
 
         <View style={styles.composer}>
           <Pressable
+            accessibilityRole="button"
             style={[styles.checkInButton, checkingIn && styles.sendButtonDisabled]}
             onPress={handleCheckIn}
             disabled={checkingIn}
@@ -147,6 +151,7 @@ export default function ChatTab() {
             style={styles.input}
             value={draft}
             onChangeText={setDraft}
+            accessibilityLabel="Message your circle"
             placeholder="Message your circle…"
             placeholderTextColor={colors.offline}
             multiline
@@ -166,7 +171,7 @@ export default function ChatTab() {
             )}
           </Pressable>
         </View>
-        {sendError && <Text style={styles.error}>{sendError}</Text>}
+        {sendError && <ErrorText style={styles.error}>{sendError}</ErrorText>}
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -193,6 +198,7 @@ function MessageRow({
         </Text>
         {message.latitude != null && message.longitude != null && (
           <Pressable
+            accessibilityRole="button"
             onPress={() =>
               Linking.openURL(
                 `https://www.google.com/maps/search/?api=1&query=${message.latitude},${message.longitude}`,

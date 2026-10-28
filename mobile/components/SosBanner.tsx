@@ -68,12 +68,13 @@ export function SosBanner({ events, onChanged }: { events: SosEvent[]; onChanged
               <Text style={styles.time}>{timeAgo(event.created_at)}</Text>
               <View style={styles.buttonRow}>
                 {!isMine && (
-                  <Pressable style={styles.button} onPress={() => handleMedical(event)}>
+                  <Pressable accessibilityRole="button" style={styles.button} onPress={() => handleMedical(event)}>
                     <Text style={styles.buttonText}>🩺 Medical</Text>
                   </Pressable>
                 )}
                 {!isMine && (
                   <Pressable
+                    accessibilityRole="button"
                     style={styles.button}
                     onPress={() => handleAcknowledge(event.id)}
                     disabled={acknowledgingId === event.id || iAcknowledged}
@@ -88,6 +89,7 @@ export function SosBanner({ events, onChanged }: { events: SosEvent[]; onChanged
                   </Pressable>
                 )}
                 <Pressable
+                  accessibilityRole="button"
                   style={styles.button}
                   onPress={() => handleResolve(event.id)}
                   disabled={resolvingId === event.id}

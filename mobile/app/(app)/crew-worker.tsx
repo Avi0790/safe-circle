@@ -3,6 +3,7 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CrewMap } from '@/components/CrewMap';
+import { ErrorText } from '@/components/ErrorText';
 import type { CrewShift, TrackPoint } from '@/lib/crew';
 import { formatClockTime } from '@/lib/format';
 import { formatShiftElapsed } from '@/lib/shift';
@@ -71,7 +72,7 @@ export default function CrewWorkerScreen() {
             or after they clocked out is ever shown. {name ? `${name} can` : 'They can'} see that you
             looked.
           </Text>
-          {error && <Text style={styles.error}>{error}</Text>}
+          {error && <ErrorText style={styles.error}>{error}</ErrorText>}
           {loaded && !error && track.length === 0 && (
             <Text style={typography.body}>No on-shift positions in the last 24 hours.</Text>
           )}
@@ -79,7 +80,7 @@ export default function CrewWorkerScreen() {
             <Text style={typography.body}>{track.length} positions recorded on shift.</Text>
           )}
 
-          <Text style={styles.sectionLabel}>Recent shifts</Text>
+          <Text style={styles.sectionLabel} accessibilityRole="header">Recent shifts</Text>
           {loaded && shifts.length === 0 && <Text style={typography.caption}>No shifts in the last 7 days.</Text>}
           {shifts.map((s) => (
             <View key={s.shift_id} style={styles.card}>

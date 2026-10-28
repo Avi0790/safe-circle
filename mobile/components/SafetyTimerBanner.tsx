@@ -3,6 +3,7 @@ import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-nati
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNow } from '@/hooks/useNow';
+import { announce } from '@/lib/announce';
 import { supabase } from '@/lib/supabase';
 import { formatClockTime, formatTimeLeft } from '@/lib/format';
 import type { SafetyTimer } from '@/lib/types';
@@ -31,6 +32,7 @@ export function SafetyTimerBanner({
     setEndingId(timer.id);
     await supabase.rpc('end_safety_timer', { p_id: timer.id });
     setEndingId(null);
+    announce('Marked safe');
     onChanged();
   }
 
@@ -45,8 +47,17 @@ export function SafetyTimerBanner({
             style={[styles.banner, overdue && styles.bannerOverdue]}
             onPress={isMine ? () => router.push('/safety-timer') : undefined}
             disabled={!isMine}
+            // Not one VoiceOver element, or the "I'm safe" button inside
+            // would be unreachable: the text and the button are read apart.
+            accessible={false}
           >
-            <View style={styles.text}>
+            <View
+              style={styles.text}
+              accessible
+              accessibilityRole={isMine ? 'button' : 'text'}
+              accessibilityHint={isMine ? 'Opens the details' : undefined}
+              onAccessibilityTap={isMine ? () => router.push('/safety-timer') : undefined}
+            >
               <Text style={styles.title}>
                 {overdue
                   ? '⏰ Your check-on-me timer ran out'
@@ -61,7 +72,14 @@ export function SafetyTimerBanner({
               </Text>
             </View>
             {isMine && (
-              <Pressable style={styles.button} onPress={() => handleSafe(timer)} disabled={endingId === timer.id}>
+              <Pressable
+                style={styles.button}
+                accessibilityRole="button"
+                accessibilityLabel="I'm safe"
+                accessibilityState={{ busy: endingId === timer.id }}
+                onPress={() => handleSafe(timer)}
+                disabled={endingId === timer.id}
+              >
                 {endingId === timer.id ? (
                   <ActivityIndicator color="#fff" size="small" />
                 ) : (

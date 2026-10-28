@@ -4,6 +4,7 @@ import { Stack } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '@/components/Button';
 import { TextField } from '@/components/TextField';
+import { ErrorText } from '@/components/ErrorText';
 import { supabase } from '@/lib/supabase';
 import type { BackupContact } from '@/lib/types';
 import { colors, spacing, themed, typography, useThemeVersion } from '@/lib/theme';
@@ -78,7 +79,7 @@ export default function BackupContactsScreen() {
                 keyboardType="phone-pad"
                 placeholder="+1 555 123 4567"
               />
-              {error && <Text style={styles.error}>{error}</Text>}
+              {error && <ErrorText style={styles.error}>{error}</ErrorText>}
               <Button
                 title="Add contact"
                 onPress={handleAdd}
@@ -94,7 +95,13 @@ export default function BackupContactsScreen() {
               <Text style={typography.body}>{item.name}</Text>
               <Text style={typography.caption}>{item.phone_number}</Text>
             </View>
-            <Pressable onPress={() => handleRemove(item.id)} disabled={deletingId === item.id} hitSlop={8}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`Remove ${item.name}`}
+              onPress={() => handleRemove(item.id)}
+              disabled={deletingId === item.id}
+              hitSlop={8}
+            >
               <Text style={styles.removeText}>{deletingId === item.id ? 'Removing…' : 'Remove'}</Text>
             </Pressable>
           </View>

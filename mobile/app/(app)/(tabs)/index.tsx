@@ -277,15 +277,15 @@ export default function MapTab() {
         <View style={styles.circleCard}>
           <View style={styles.circleText}>
             <Text style={styles.circleKicker}>YOUR CIRCLE</Text>
-            <Text style={styles.circleName} numberOfLines={1}>
+            <Text maxFontSizeMultiplier={1.3} style={styles.circleName} numberOfLines={1}>
               {selectedCircle?.name ?? 'Safe Circle'}
             </Text>
             <Text style={styles.circleSub}>
               {sharingNow} of {members.length} sharing now
             </Text>
           </View>
-          <Pressable style={styles.mapTypeButton} onPress={() => setModesOpen(true)} accessibilityLabel="Map modes">
-            <Text style={styles.mapTypeButtonText}>
+          <Pressable accessibilityRole="button" style={styles.mapTypeButton} onPress={() => setModesOpen(true)} accessibilityLabel="Map modes">
+            <Text allowFontScaling={false} style={styles.mapTypeButtonText}>
               {mapMode.mode === 'satellite' || mapMode.mode === 'flyover' ? '🛰️' : '🗺️'}
             </Text>
           </Pressable>
@@ -296,7 +296,7 @@ export default function MapTab() {
         <RideBanner requests={rideRequests} onChanged={refreshRides} onAskEveryone={handleAskEveryone} />
         <TripBanner trips={trips} />
         {locationIssue === 'denied' && (
-          <Pressable style={styles.locationBanner} onPress={() => Linking.openSettings()}>
+          <Pressable accessibilityRole="button" style={styles.locationBanner} onPress={() => Linking.openSettings()}>
             <Text style={styles.locationBannerText}>
               📍 Location access is off, so the map can't center on you. Tap to open Settings.
             </Text>

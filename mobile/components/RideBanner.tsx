@@ -106,7 +106,7 @@ export function RideBanner({
             ) : (
               <View style={styles.actions}>
                 {actions.map((a) => (
-                  <Pressable key={a.label} style={styles.button} onPress={a.onPress}>
+                  <Pressable accessibilityRole="button" key={a.label} style={styles.button} onPress={a.onPress}>
                     <Text style={styles.buttonText}>{a.label}</Text>
                   </Pressable>
                 ))}

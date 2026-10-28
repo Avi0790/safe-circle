@@ -3,6 +3,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '@/components/Button';
+import { ErrorText } from '@/components/ErrorText';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCircles } from '@/contexts/CircleContext';
 import { useActiveWalks } from '@/hooks/useActiveWalks';
@@ -157,6 +158,7 @@ export default function WalkScreen() {
                   const selected = place.id === placeId;
                   return (
                     <Pressable
+                      accessibilityRole="button"
                       key={place.id}
                       style={[styles.placeRow, selected && styles.placeRowSelected]}
                       onPress={() => setPlaceId(place.id)}
@@ -181,6 +183,7 @@ export default function WalkScreen() {
                       const selected = m === minutes;
                       return (
                         <Pressable
+                          accessibilityRole="button"
                           key={m}
                           style={[styles.chip, selected && styles.chipSelected]}
                           onPress={() => setMinutes(m)}
@@ -202,7 +205,7 @@ export default function WalkScreen() {
             )}
           </>
         )}
-        {error && <Text style={styles.error}>{error}</Text>}
+        {error && <ErrorText style={styles.error}>{error}</ErrorText>}
       </ScrollView>
     </SafeAreaView>
   );

@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useCircles } from '@/contexts/CircleContext';
 import { useCircleMembers } from '@/hooks/useCircleMembers';
 import { Avatar } from '@/components/Avatar';
+import { ErrorText } from '@/components/ErrorText';
 import { supabase } from '@/lib/supabase';
 import { colors, spacing, themed, typography, useThemeVersion } from '@/lib/theme';
 
@@ -78,6 +79,7 @@ export default function GhostModeScreen() {
                     <ActivityIndicator />
                   ) : (
                     <Switch
+                      accessibilityLabel={`Hide my location from ${member.full_name}`}
                       value={hidden}
                       onValueChange={(next) => toggle(member.id, next)}
                       trackColor={{ true: colors.textHeading }}
@@ -91,7 +93,7 @@ export default function GhostModeScreen() {
             )}
           </View>
         )}
-        {error && <Text style={styles.error}>{error}</Text>}
+        {error && <ErrorText style={styles.error}>{error}</ErrorText>}
       </View>
     </SafeAreaView>
   );

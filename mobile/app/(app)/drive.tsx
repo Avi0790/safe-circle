@@ -17,6 +17,7 @@ import { DEFAULT_MAP_MODE, getMapMode, mapViewProps, setMapMode, type MapModePre
 import { glideDuration } from '@/lib/glide';
 import { useRoadReports } from '@/hooks/useRoadReports';
 import { TextField } from '@/components/TextField';
+import { ErrorText } from '@/components/ErrorText';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCircles } from '@/contexts/CircleContext';
 import { externalMapsUrl } from '@/lib/externalMaps';
@@ -911,7 +912,7 @@ export default function DriveScreen() {
       <SafeAreaView style={styles.safeArea}>
         <Stack.Screen options={{ headerShown: false }} />
         <View style={styles.padded}>
-          <Text style={typography.title}>Location is off</Text>
+          <Text maxFontSizeMultiplier={1.3} style={typography.title}>Location is off</Text>
           <Text style={typography.body}>
             Directions need your location to start from where you are. Turn it on for Safe Circle
             in Settings.
@@ -948,7 +949,7 @@ export default function DriveScreen() {
         <Stack.Screen options={{ headerShown: false, gestureEnabled: true }} />
         <View style={styles.padded}>
           <View style={styles.headerRow}>
-            <Text style={typography.title}>Where to?</Text>
+            <Text maxFontSizeMultiplier={1.3} style={typography.title}>Where to?</Text>
             <Button title="Close" variant="secondary" onPress={() => router.back()} />
           </View>
 
@@ -999,7 +1000,7 @@ export default function DriveScreen() {
             autoCapitalize="words"
             autoCorrect
           />
-          {error && <Text style={styles.error}>{error}</Text>}
+          {error && <ErrorText style={styles.error}>{error}</ErrorText>}
           {(searching || routing) && (
             <View style={styles.inline}>
               <ActivityIndicator />
@@ -1014,11 +1015,12 @@ export default function DriveScreen() {
           contentContainerStyle={styles.list}
           keyboardShouldPersistTaps="handled"
           renderItem={({ item }) => {
-            if (item.kind === 'header') return <Text style={styles.sectionLabel}>{item.title}</Text>;
+            if (item.kind === 'header') return <Text style={styles.sectionLabel} accessibilityRole="header">{item.title}</Text>;
             const place = item.mineId ? mine.find((m) => m.id === item.mineId) : undefined;
             return (
               <View style={styles.placeRow}>
                 <Pressable
+                  accessibilityRole="button"
                   style={[styles.row, styles.rowGrow]}
                   disabled={routing || moving}
                   onPress={() => (plan === 'transit' ? openTransit(item.target) : chooseDestination(item.target))}
@@ -1028,6 +1030,7 @@ export default function DriveScreen() {
                 </Pressable>
                 {place && (
                   <Pressable
+                    accessibilityRole="button"
                     accessibilityLabel={`Remove ${place.name}`}
                     hitSlop={8}
                     style={styles.removeBtn}
@@ -1109,12 +1112,12 @@ export default function DriveScreen() {
           )}
           {stop && (
             <Marker coordinate={stop} title={`Stop: ${stop.title}`}>
-              <Text style={styles.mapEmoji}>{stop.emoji}</Text>
+              <Text allowFontScaling={false} style={styles.mapEmoji}>{stop.emoji}</Text>
             </Marker>
           )}
           {reports.map((r) => (
             <Marker key={r.id} coordinate={r} title={`${reportInfo(r.kind).label} reported`}>
-              <Text style={styles.mapEmoji}>{reportInfo(r.kind).emoji}</Text>
+              <Text allowFontScaling={false} style={styles.mapEmoji}>{reportInfo(r.kind).emoji}</Text>
             </Marker>
           ))}
         </MapView>
@@ -1138,11 +1141,11 @@ export default function DriveScreen() {
                   <Text style={typography.caption}>Save this place on this phone (not shared):</Text>
                   <View style={styles.chipRow}>
                     {PINNED_NAMES.map((name) => (
-                      <Pressable key={name} style={styles.chip} onPress={() => savePlace(name)}>
+                      <Pressable accessibilityRole="button" key={name} style={styles.chip} onPress={() => savePlace(name)}>
                         <Text style={styles.chipText}>{name}</Text>
                       </Pressable>
                     ))}
-                    <Pressable style={styles.chip} onPress={() => savePlace(dest.title)}>
+                    <Pressable accessibilityRole="button" style={styles.chip} onPress={() => savePlace(dest.title)}>
                       <Text style={styles.chipText} numberOfLines={1}>
                         As “{dest.title}”
                       </Text>
@@ -1150,7 +1153,7 @@ export default function DriveScreen() {
                   </View>
                 </>
               )}
-              {saveNotice && <Text style={styles.error}>{saveNotice}</Text>}
+              {saveNotice && <ErrorText style={styles.error}>{saveNotice}</ErrorText>}
             </View>
           )}
           <Text style={styles.footnote}>
@@ -1167,7 +1170,7 @@ export default function DriveScreen() {
                   when you arrive. Not your route. Off unless you turn it on.
                 </Text>
               </View>
-              <Switch value={shareTrip} onValueChange={setShareTrip} trackColor={{ true: colors.accent }} />
+              <Switch accessibilityLabel={`Share this trip with ${selectedCircle.name}`} value={shareTrip} onValueChange={setShareTrip} trackColor={{ true: colors.accent }} />
             </View>
           )}
           <Button title="Start" onPress={startDriving} />
@@ -1278,7 +1281,7 @@ export default function DriveScreen() {
 
       {phase === 'arrived' && dest && (
         <View style={[styles.sheet, { paddingBottom: insets.bottom + spacing.md }]}>
-          <Text style={typography.title}>You've arrived</Text>
+          <Text maxFontSizeMultiplier={1.3} style={typography.title}>You've arrived</Text>
           <Text style={typography.body}>{dest.title}</Text>
           <Button title="Done" onPress={() => router.back()} />
         </View>

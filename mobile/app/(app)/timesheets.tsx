@@ -3,6 +3,7 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '@/components/Button';
+import { ErrorText } from '@/components/ErrorText';
 import type { CrewShift } from '@/lib/crew';
 import { shareTextFile } from '@/lib/shareFile';
 import { supabase } from '@/lib/supabase';
@@ -71,7 +72,7 @@ export default function TimesheetsScreen() {
     <SafeAreaView style={styles.safeArea} edges={['bottom']}>
       <Stack.Screen options={{ title: 'Timesheets', headerBackTitle: 'Work' }} />
       <ScrollView contentContainerStyle={styles.content}>
-        <Text style={typography.title}>{name}</Text>
+        <Text maxFontSizeMultiplier={1.3} style={typography.title}>{name}</Text>
 
         <View style={styles.weekRow}>
           <Button
@@ -87,12 +88,12 @@ export default function TimesheetsScreen() {
           <Button title="Later ›" variant="secondary" onPress={() => setWeeksBack((w) => w - 1)} disabled={weeksBack === 0} />
         </View>
 
-        {error && <Text style={styles.error}>{error}</Text>}
+        {error && <ErrorText style={styles.error}>{error}</ErrorText>}
 
         {loaded && !error && (
           <>
             <View style={styles.total}>
-              <Text style={styles.totalHours}>{hours(sheet.totalMinutes)} h</Text>
+              <Text maxFontSizeMultiplier={1.3} style={styles.totalHours}>{hours(sheet.totalMinutes)} h</Text>
               <Text style={typography.caption}>
                 {sheet.rows.length === 0
                   ? 'No shifts this week.'
@@ -127,7 +128,7 @@ export default function TimesheetsScreen() {
             {sheet.rows.length > 0 && (
               <Button title="Download timesheet (CSV)" onPress={handleExport} />
             )}
-            {exportError && <Text style={styles.error}>{exportError}</Text>}
+            {exportError && <ErrorText style={styles.error}>{exportError}</ErrorText>}
           </>
         )}
 

@@ -9,8 +9,12 @@ interface TextFieldProps extends TextInputProps {
 export function TextField({ label, style, ...rest }: TextFieldProps) {
   return (
     <View style={styles.container}>
-      <Text style={styles.label}>{label}</Text>
+      {/* hidden from VoiceOver: the field itself carries the label */}
+      <Text style={styles.label} accessible={false} importantForAccessibility="no">
+        {label}
+      </Text>
       <TextInput
+        accessibilityLabel={label}
         style={[styles.input, style]}
         placeholderTextColor={colors.offline}
         autoCapitalize="none"

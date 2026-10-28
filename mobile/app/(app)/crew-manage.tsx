@@ -4,6 +4,7 @@ import { Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '@/components/Button';
 import { TextField } from '@/components/TextField';
+import { ErrorText } from '@/components/ErrorText';
 import { useAccount } from '@/contexts/AccountContext';
 import { useAuth } from '@/contexts/AuthContext';
 import type { RosterMember } from '@/lib/crew';
@@ -150,28 +151,32 @@ export default function CrewManageScreen() {
           A manager sees the workers on teams they lead. Make someone a manager, add them to a team
           as its lead, then add the workers they oversee.
         </Text>
-        {error && <Text style={styles.error}>{error}</Text>}
+        {error && <ErrorText style={styles.error}>{error}</ErrorText>}
 
-        <Text style={styles.sectionLabel}>People</Text>
+        <Text style={styles.sectionLabel} accessibilityRole="header">People</Text>
         {people.map((p) => {
           const isSelf = p.user_id === session?.user.id;
           const actions = allowedMemberActions(callerRole as OrgRole, p, isSelf);
           const open = expandedPerson === p.user_id;
           return (
-            <Pressable
-              key={p.user_id}
-              style={styles.card}
-              disabled={actions.length === 0}
-              onPress={() => setExpandedPerson(open ? null : p.user_id)}
-            >
-              <Text style={styles.name}>
-                {p.full_name}
-                {isSelf ? ' (you)' : ''}
-              </Text>
-              <Text style={typography.caption}>
-                {p.role}
-                {p.status === 'invited' ? ' · waiting to accept' : ''}
-              </Text>
+            // The card's action buttons sit beside the tappable name, not
+            // inside it, so VoiceOver can reach each one.
+            <View key={p.user_id} style={styles.card}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityState={{ expanded: open, disabled: actions.length === 0 }}
+                disabled={actions.length === 0}
+                onPress={() => setExpandedPerson(open ? null : p.user_id)}
+              >
+                <Text style={styles.name}>
+                  {p.full_name}
+                  {isSelf ? ' (you)' : ''}
+                </Text>
+                <Text style={typography.caption}>
+                  {p.role}
+                  {p.status === 'invited' ? ' · waiting to accept' : ''}
+                </Text>
+              </Pressable>
               {open &&
                 actions.map((a) => (
                   <Button
@@ -182,11 +187,11 @@ export default function CrewManageScreen() {
                     onPress={() => applyAction(p, a)}
                   />
                 ))}
-            </Pressable>
+            </View>
           );
         })}
 
-        <Text style={styles.sectionLabel}>Teams</Text>
+        <Text style={styles.sectionLabel} accessibilityRole="header">Teams</Text>
         <View style={styles.newTeam}>
           <TextField
             label="New team"
@@ -203,7 +208,11 @@ export default function CrewManageScreen() {
           const open = expandedTeam === team.id;
           return (
             <View key={team.id} style={styles.card}>
-              <Pressable onPress={() => setExpandedTeam(open ? null : team.id)}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityState={{ expanded: open }}
+                onPress={() => setExpandedTeam(open ? null : team.id)}
+              >
                 <Text style={styles.name}>{team.name}</Text>
                 <Text style={typography.caption}>
                   {team.members.length} {team.members.length === 1 ? 'person' : 'people'} · tap to{' '}
@@ -249,7 +258,7 @@ export default function CrewManageScreen() {
                     </View>
                   ))}
 
-                  {team.candidates.length > 0 && <Text style={styles.sectionLabel}>Add to team</Text>}
+                  {team.candidates.length > 0 && <Text style={styles.sectionLabel} accessibilityRole="header">Add to team</Text>}
                   {team.candidates.map((c) => (
                     <Button
                       key={c.user_id}
