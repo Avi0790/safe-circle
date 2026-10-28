@@ -6,7 +6,7 @@ import { QrScannerModal } from '@/components/QrScannerModal';
 import { TextField } from '@/components/TextField';
 import { useCircles } from '@/contexts/CircleContext';
 import { supabase } from '@/lib/supabase';
-import { colors, spacing, typography } from '@/lib/theme';
+import { colors, spacing, themed, typography } from '@/lib/theme';
 
 type Mode = 'choose' | 'create' | 'join' | 'created' | 'pending';
 
@@ -214,7 +214,7 @@ export function CircleOnboarding({
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   // the screen around it (a card) does the centering and padding
   content: { gap: spacing.md + 2 },
   form: { gap: spacing.md },
@@ -227,4 +227,4 @@ const styles = StyleSheet.create({
     color: colors.accent,
     paddingVertical: spacing.lg,
   },
-});
+}));

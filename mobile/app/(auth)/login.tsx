@@ -5,8 +5,10 @@ import { Button } from '@/components/Button';
 import { TextField } from '@/components/TextField';
 import { AuthScreen, authStyles } from '@/components/ui/AuthScreen';
 import { supabase } from '@/lib/supabase';
+import { useThemeVersion } from '@/lib/theme';
 
 export default function LoginScreen() {
+  useThemeVersion(); // redraw on a theme switch (lib/theme.ts)
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);

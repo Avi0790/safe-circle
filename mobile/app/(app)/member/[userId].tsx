@@ -10,7 +10,7 @@ import { formatDistanceMiles } from '@/lib/geo';
 import { shareLocationReport } from '@/lib/locationReport';
 import { fetchTrips, formatTripDate, formatTripDuration, type Trip } from '@/lib/trips';
 import { fetchWeather, type Weather } from '@/lib/weather';
-import { colors, radius, spacing, typography } from '@/lib/theme';
+import { colors, radius, spacing, themed, typography, useThemeVersion } from '@/lib/theme';
 
 interface HistoryPing {
   id: number;
@@ -26,6 +26,7 @@ const HISTORY_LIMIT = 100;
 // Location history stretch goal (proposal page 3). `locations` is already
 // append-only, so this is purely a new read — no backend changes needed.
 export default function MemberHistoryScreen() {
+  useThemeVersion(); // redraw on a theme switch (lib/theme.ts)
   const { userId } = useLocalSearchParams<{ userId: string }>();
   const [fullName, setFullName] = useState('');
   const [pings, setPings] = useState<HistoryPing[]>([]);
@@ -191,7 +192,7 @@ export default function MemberHistoryScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.bg },
   map: { height: '40%' },
   list: { flex: 1 },
@@ -220,4 +221,4 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.border,
     gap: 2,
   },
-});
+}));

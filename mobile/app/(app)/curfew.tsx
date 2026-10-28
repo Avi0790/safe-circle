@@ -8,7 +8,7 @@ import { useCircles } from '@/contexts/CircleContext';
 import { supabase } from '@/lib/supabase';
 import { formatTimeOfDay } from '@/lib/format';
 import { placeIcon } from '@/lib/places';
-import { colors, radius, spacing, typography } from '@/lib/theme';
+import { colors, radius, spacing, themed, typography, useThemeVersion } from '@/lib/theme';
 
 interface PlaceRow {
   id: string;
@@ -25,6 +25,7 @@ const TIME_OPTIONS = ['20:00', '21:00', '22:00', '23:00', '00:00'];
 // Alert your circle automatically if you're not home by a set time — set
 // once, then entirely automatic (see migration ...000037_curfew.sql).
 export default function CurfewScreen() {
+  useThemeVersion(); // redraw on a theme switch (lib/theme.ts)
   const { session } = useAuth();
   const { selectedCircle } = useCircles();
   const [places, setPlaces] = useState<PlaceRow[]>([]);
@@ -170,7 +171,7 @@ export default function CurfewScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.bg },
   content: { padding: spacing.lg, gap: spacing.lg },
   section: { gap: spacing.sm },
@@ -205,4 +206,4 @@ const styles = StyleSheet.create({
   chipText: { fontSize: 13, color: colors.text, fontWeight: '600' },
   chipTextSelected: { color: '#fff' },
   error: { color: colors.danger, fontSize: 14 },
-});
+}));

@@ -335,26 +335,27 @@ describe('Settings tab: appearance', () => {
     mockAppearance.set.mockClear();
   });
 
-  it('matches the iPhone by default; choosing Dark saves it and asks to reopen the app', async () => {
+  it('matches the iPhone by default; choosing Dark saves it and switches the app at once', async () => {
+    const theme = require('@/lib/theme') as typeof import('@/lib/theme');
     const alert = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
     const r = await render(<SettingsTab />);
     expect(allText(r)).toContain('Match your iPhone');
     const option = (label: string) =>
       r.root.findAll((n) => n.props.accessibilityRole === 'radio' && text({ children: n.children }) === label)[0];
     expect(option('Match iPhone').props.accessibilityState).toEqual({ selected: true });
+    expect(theme.isDark).toBe(false);
 
     await press(r, 'Dark');
     expect(mockAppearance.set).toHaveBeenCalledWith('dark');
-    expect(alert).toHaveBeenCalledWith('Reopen Safe Circle', expect.stringContaining('"Dark"'));
     expect(option('Dark').props.accessibilityState).toEqual({ selected: true });
-    expect(allText(r)).toContain('Applies the next time you open Safe Circle.');
+    expect(theme.isDark).toBe(true);
+    expect(theme.colors.page).toBe('#0b0c10');
+    expect(alert).not.toHaveBeenCalled(); // no "reopen the app" any more
 
-    // going back to what it opened with needs no reopen
-    alert.mockClear();
-    await press(r, 'Match iPhone');
-    expect(mockAppearance.set).toHaveBeenLastCalledWith('system');
-    expect(alert).not.toHaveBeenCalled();
-    expect(allText(r)).not.toContain('Applies the next time');
+    await press(r, 'Light');
+    expect(mockAppearance.set).toHaveBeenLastCalledWith('light');
+    expect(theme.isDark).toBe(false);
+    expect(theme.colors.page).toBe('#f3f2f8');
     alert.mockRestore();
   });
 });

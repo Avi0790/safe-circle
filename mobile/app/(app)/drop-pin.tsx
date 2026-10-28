@@ -7,7 +7,7 @@ import { Button } from '@/components/Button';
 import { TextField } from '@/components/TextField';
 import { useCircles } from '@/contexts/CircleContext';
 import { supabase } from '@/lib/supabase';
-import { colors, radius, spacing, typography } from '@/lib/theme';
+import { colors, radius, spacing, themed, typography, useThemeVersion } from '@/lib/theme';
 
 const EMOJI_OPTIONS = ['📍', '🎪', '🍔', '🎉', '🅿️', '🚪', '⛺'];
 const DURATIONS = [
@@ -21,6 +21,7 @@ const DURATIONS = [
 // place. Pushes to the rest of the circle and cleans itself up (see
 // migration ...000036_map_pins.sql).
 export default function DropPinScreen() {
+  useThemeVersion(); // redraw on a theme switch (lib/theme.ts)
   const router = useRouter();
   const { selectedCircle } = useCircles();
   const [emoji, setEmoji] = useState(EMOJI_OPTIONS[0]);
@@ -119,7 +120,7 @@ export default function DropPinScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.bg },
   content: { padding: spacing.lg, gap: spacing.lg },
   section: { gap: spacing.sm },
@@ -152,4 +153,4 @@ const styles = StyleSheet.create({
   chipText: { fontSize: 13, color: colors.text, fontWeight: '600' },
   chipTextSelected: { color: '#fff' },
   error: { color: colors.danger, fontSize: 14 },
-});
+}));

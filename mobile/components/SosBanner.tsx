@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { timeAgo } from '@/lib/format';
 import { formatMedicalCard } from '@/lib/medicalCard';
 import type { SosEvent } from '@/lib/types';
-import { colors, radius, spacing, typography } from '@/lib/theme';
+import { colors, radius, spacing, themed, typography } from '@/lib/theme';
 
 export function SosBanner({ events, onChanged }: { events: SosEvent[]; onChanged: () => void }) {
   const { session } = useAuth();
@@ -107,7 +107,7 @@ export function SosBanner({ events, onChanged }: { events: SosEvent[]; onChanged
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   container: { gap: spacing.xs, padding: spacing.sm },
   banner: {
     backgroundColor: colors.dangerFill,
@@ -134,4 +134,4 @@ const styles = StyleSheet.create({
     borderRadius: radius.sm,
   },
   buttonText: { color: '#fff', fontWeight: '600', fontSize: 13 },
-});
+}));

@@ -11,7 +11,7 @@ import { useNow } from '@/hooks/useNow';
 import { supabase } from '@/lib/supabase';
 import { formatClockTime, formatTimeLeft } from '@/lib/format';
 import { ensureSharingFor } from '@/lib/sharingWindow';
-import { colors, radius, spacing, typography } from '@/lib/theme';
+import { colors, radius, spacing, themed, typography, useThemeVersion } from '@/lib/theme';
 
 const DURATIONS = [15, 30, 60, 120];
 
@@ -21,6 +21,7 @@ const DURATIONS = [15, 30, 60, 120];
 // SOS goes out automatically at your last known location (see migration
 // ...000040_safety_timer.sql).
 export default function SafetyTimerScreen() {
+  useThemeVersion(); // redraw on a theme switch (lib/theme.ts)
   const { session } = useAuth();
   const { selectedCircle } = useCircles();
   const { timers, refresh } = useActiveSafetyTimers();
@@ -153,7 +154,7 @@ export default function SafetyTimerScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.bg },
   content: { padding: spacing.lg, gap: spacing.lg },
   section: { gap: spacing.sm },
@@ -176,4 +177,4 @@ const styles = StyleSheet.create({
   chipText: { fontSize: 13, color: colors.text, fontWeight: '600' },
   chipTextSelected: { color: '#fff' },
   error: { color: colors.danger, fontSize: 14 },
-});
+}));

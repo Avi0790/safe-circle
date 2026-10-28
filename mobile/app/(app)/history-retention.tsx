@@ -4,7 +4,7 @@ import { Stack } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
-import { colors, radius, spacing, typography } from '@/lib/theme';
+import { colors, radius, spacing, themed, typography, useThemeVersion } from '@/lib/theme';
 
 interface RetentionOption {
   label: string;
@@ -23,6 +23,7 @@ const OPTIONS: RetentionOption[] = [
 // ...000029_history_retention.sql), not just hidden in the UI — and your
 // current pin on the map is never deleted, however old your last update is.
 export default function HistoryRetentionScreen() {
+  useThemeVersion(); // redraw on a theme switch (lib/theme.ts)
   const { session } = useAuth();
   const [days, setDays] = useState<number | null | undefined>(undefined);
   const [saving, setSaving] = useState(false);
@@ -88,7 +89,7 @@ export default function HistoryRetentionScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.bg },
   content: { padding: spacing.lg, gap: spacing.lg },
   options: { gap: spacing.sm },
@@ -105,4 +106,4 @@ const styles = StyleSheet.create({
   rowText: { fontSize: 16, color: colors.textHeading, fontWeight: '500' },
   check: { color: colors.accent, fontWeight: '700', fontSize: 16 },
   error: { color: colors.danger, fontSize: 14 },
-});
+}));

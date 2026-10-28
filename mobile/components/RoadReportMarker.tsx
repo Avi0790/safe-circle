@@ -1,7 +1,7 @@
 import { Alert, StyleSheet, Text, View } from 'react-native';
 import { Marker } from 'react-native-maps';
 import { clearReport, reportDetails, reportInfo, type RoadReport } from '@/lib/roadReports';
-import { colors, radius } from '@/lib/theme';
+import { colors, radius, themed } from '@/lib/theme';
 
 // A crash, hazard, speed check or closed road someone in the circle reported
 // while driving (lib/roadReports.ts). Tapping says who and when; your own
@@ -50,7 +50,7 @@ export function RoadReportMarker({
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   ring: {
     width: 34,
     height: 34,
@@ -62,4 +62,4 @@ const styles = StyleSheet.create({
     borderColor: colors.danger,
   },
   emoji: { fontSize: 16 },
-});
+}));

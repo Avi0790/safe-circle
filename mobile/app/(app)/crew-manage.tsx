@@ -16,7 +16,7 @@ import {
   type TeamMemberRow,
   type TeamRow,
 } from '@/lib/teams';
-import { colors, radius, spacing, typography } from '@/lib/theme';
+import { colors, radius, spacing, themed, typography, useThemeVersion } from '@/lib/theme';
 
 const ROLE_RANK: Record<OrgRole, number> = { owner: 0, admin: 1, manager: 2, worker: 3 };
 
@@ -25,6 +25,7 @@ const ROLE_RANK: Record<OrgRole, number> = { owner: 0, admin: 1, manager: 2, wor
 // team as its lead, add the workers they oversee. The database enforces who
 // may do what (migration ...000048); the buttons shown here just mirror it.
 export default function CrewManageScreen() {
+  useThemeVersion(); // redraw on a theme switch (lib/theme.ts)
   const { session } = useAuth();
   const { orgs } = useAccount();
   const { orgId, orgName } = useLocalSearchParams<{ orgId: string; orgName?: string }>();
@@ -283,7 +284,7 @@ export default function CrewManageScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.bg },
   body: { padding: spacing.lg, gap: spacing.sm },
   sectionLabel: {
@@ -307,4 +308,4 @@ const styles = StyleSheet.create({
   rowButtons: { flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap' },
   name: { fontSize: 16, fontWeight: '600', color: colors.textHeading },
   error: { color: colors.danger, fontSize: 14 },
-});
+}));

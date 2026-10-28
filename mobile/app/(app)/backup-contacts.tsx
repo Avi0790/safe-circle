@@ -6,7 +6,7 @@ import { Button } from '@/components/Button';
 import { TextField } from '@/components/TextField';
 import { supabase } from '@/lib/supabase';
 import type { BackupContact } from '@/lib/types';
-import { colors, spacing, typography } from '@/lib/theme';
+import { colors, spacing, themed, typography, useThemeVersion } from '@/lib/theme';
 
 // People outside any circle to text in an emergency — a neighbor, a
 // grandparent, a family doctor. Kept separate from circle membership
@@ -15,6 +15,7 @@ import { colors, spacing, typography } from '@/lib/theme';
 // location the way a circle-mate does; they only ever receive the one
 // text you choose to send them from "Text for help".
 export default function BackupContactsScreen() {
+  useThemeVersion(); // redraw on a theme switch (lib/theme.ts)
   const [contacts, setContacts] = useState<BackupContact[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [name, setName] = useState('');
@@ -103,7 +104,7 @@ export default function BackupContactsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.bg },
   content: { padding: spacing.lg, gap: spacing.md },
   form: { gap: spacing.sm, marginBottom: spacing.md },
@@ -118,4 +119,4 @@ const styles = StyleSheet.create({
   rowText: { gap: 2 },
   removeText: { color: colors.danger, fontSize: 14, fontWeight: '600' },
   error: { color: colors.danger, fontSize: 14 },
-});
+}));

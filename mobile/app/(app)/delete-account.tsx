@@ -10,7 +10,7 @@ import { removeAvatar } from '@/lib/avatarUpload';
 import { stopSharing } from '@/lib/sharingWindow';
 import { deregisterPushNotifications } from '@/lib/pushNotifications';
 import { clearMembersCache } from '@/lib/membersCache';
-import { colors, radius, spacing, typography } from '@/lib/theme';
+import { colors, radius, spacing, themed, typography, useThemeVersion } from '@/lib/theme';
 
 const CONFIRM_WORD = 'DELETE';
 
@@ -20,6 +20,7 @@ const CONFIRM_WORD = 'DELETE';
 // ...000045_account_data_and_ownership.sql), so leaving never wipes a
 // circle out from under everyone else.
 export default function DeleteAccountScreen() {
+  useThemeVersion(); // redraw on a theme switch (lib/theme.ts)
   const { session } = useAuth();
   const [typed, setTyped] = useState('');
   const [busy, setBusy] = useState(false);
@@ -94,7 +95,7 @@ export default function DeleteAccountScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.bg },
   content: { padding: spacing.lg, gap: spacing.md },
   button: {
@@ -106,4 +107,4 @@ const styles = StyleSheet.create({
   buttonDisabled: { opacity: 0.4 },
   buttonText: { color: '#fff', fontWeight: '600', fontSize: 16 },
   error: { color: colors.danger, fontSize: 14 },
-});
+}));

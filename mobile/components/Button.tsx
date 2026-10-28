@@ -1,5 +1,5 @@
 import { ActivityIndicator, Pressable, StyleSheet, Text } from 'react-native';
-import { colors, spacing } from '@/lib/theme';
+import { colors, spacing, themed } from '@/lib/theme';
 
 interface ButtonProps {
   title: string;
@@ -31,7 +31,7 @@ export function Button({ title, onPress, loading, disabled, variant = 'primary' 
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   base: {
     borderRadius: 16,
     paddingVertical: spacing.md - 1,
@@ -67,4 +67,4 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
   },
-});
+}));

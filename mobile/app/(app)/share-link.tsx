@@ -8,7 +8,7 @@ import { formatClockTime, formatTimeLeft, timeAgo } from '@/lib/format';
 import { ensureSharingFor } from '@/lib/sharingWindow';
 import { buildTrackUrl, getWebBaseUrl, isLocalUrl } from '@/lib/shareLink';
 import type { ShareLink } from '@/lib/types';
-import { colors, radius, spacing, typography } from '@/lib/theme';
+import { colors, radius, spacing, themed, typography, useThemeVersion } from '@/lib/theme';
 
 const DURATIONS = [
   { label: '1 hour', minutes: 60 },
@@ -21,6 +21,7 @@ const DURATIONS = [
 // location and first name, and expires on its own (see migration
 // ...000043_share_links.sql). Unlike a circle, they never join anything.
 export default function ShareLinkScreen() {
+  useThemeVersion(); // redraw on a theme switch (lib/theme.ts)
   const [minutes, setMinutes] = useState(DURATIONS[1].minutes);
   const [links, setLinks] = useState<ShareLink[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -149,7 +150,7 @@ export default function ShareLinkScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.bg },
   content: { padding: spacing.lg, gap: spacing.lg },
   section: { gap: spacing.sm },
@@ -183,4 +184,4 @@ const styles = StyleSheet.create({
   linkText: { flex: 1, gap: 2 },
   revoke: { color: colors.danger, fontSize: 14, fontWeight: '600' },
   error: { color: colors.danger, fontSize: 14 },
-});
+}));

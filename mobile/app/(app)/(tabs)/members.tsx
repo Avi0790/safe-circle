@@ -20,9 +20,10 @@ import {
 } from '@/lib/format';
 import { formatDistanceMiles, haversineMeters } from '@/lib/geo';
 import type { MemberWithLocation } from '@/lib/types';
-import { colors, spacing, typography } from '@/lib/theme';
+import { colors, spacing, themed, typography, useThemeVersion } from '@/lib/theme';
 
 export default function MembersTab() {
+  useThemeVersion(); // redraw on a theme switch (lib/theme.ts)
   const router = useRouter();
   const { session } = useAuth();
   const { selectedCircle, refresh: refreshCircles } = useCircles();
@@ -239,7 +240,7 @@ function MemberRow({
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: appColors.page },
   headerWrap: { gap: spacing.sm, marginBottom: spacing.xs },
   kicker: { fontSize: 13, fontWeight: '700', color: appColors.muted, letterSpacing: 0.6 },
@@ -288,4 +289,4 @@ const styles = StyleSheet.create({
   rowText: { flex: 1, gap: 3 },
   chevron: { fontSize: 24, color: colors.chevron, fontWeight: '300' },
   name: { fontSize: 16, fontWeight: '700', color: appColors.ink },
-});
+}));

@@ -15,7 +15,7 @@ import {
 } from '@/lib/crew';
 import { formatClockTime, timeAgo } from '@/lib/format';
 import { supabase } from '@/lib/supabase';
-import { colors, radius, spacing, typography } from '@/lib/theme';
+import { colors, radius, spacing, themed, typography, useThemeVersion } from '@/lib/theme';
 
 const POLL_MS = 30_000;
 
@@ -25,6 +25,7 @@ const POLL_MS = 30_000;
 // at (deduped to once per 15 minutes) and they can read that in their Work
 // tab — which is also why this screen says so.
 export default function CrewScreen() {
+  useThemeVersion(); // redraw on a theme switch (lib/theme.ts)
   const router = useRouter();
   const { orgId, orgName } = useLocalSearchParams<{ orgId: string; orgName?: string }>();
   const { events: sosEvents, refresh: refreshSos } = useActiveSosEvents();
@@ -137,7 +138,7 @@ export default function CrewScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.bg },
   body: { padding: spacing.lg, gap: spacing.sm },
   summary: typography.heading,
@@ -167,4 +168,4 @@ const styles = StyleSheet.create({
   name: { fontSize: 16, fontWeight: '600', color: colors.textHeading },
   warn: { fontSize: 13, color: colors.stale },
   error: { color: colors.danger, fontSize: 14 },
-});
+}));

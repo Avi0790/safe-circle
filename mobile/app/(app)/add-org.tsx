@@ -1,6 +1,7 @@
 import { Stack, useRouter } from 'expo-router';
 import { OrgOnboarding } from '@/components/OrgOnboarding';
 import { CardScreen } from '@/components/ui/AuthScreen';
+import { useThemeVersion } from '@/lib/theme';
 
 // Join or create a work organization from Settings → Work, whatever account
 // type you signed up with — the signup choice only picks the first screen
@@ -9,6 +10,7 @@ import { CardScreen } from '@/components/ui/AuthScreen';
 // untouched: family sees you by circle rules, the organization only while
 // you're clocked in.
 export default function AddOrgScreen() {
+  useThemeVersion(); // redraw on a theme switch (lib/theme.ts)
   const router = useRouter();
 
   return (

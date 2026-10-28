@@ -3,12 +3,13 @@ import { Stack, useRouter, type Href } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '@/components/Button';
 import { PRIVACY_LIMITS, PRIVACY_NOT_DONE, PRIVACY_SECTIONS } from '@/lib/privacyInfo';
-import { colors, radius, spacing, typography } from '@/lib/theme';
+import { colors, radius, spacing, themed, typography, useThemeVersion } from '@/lib/theme';
 
 // A plain-language tour of what protects you and where the controls live.
 // Content lives in lib/privacyInfo.ts so it can be tested against the real
 // routes — every button here has to go somewhere that exists.
 export default function PrivacyScreen() {
+  useThemeVersion(); // redraw on a theme switch (lib/theme.ts)
   const router = useRouter();
 
   return (
@@ -54,7 +55,7 @@ export default function PrivacyScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.bg },
   content: { padding: spacing.lg, gap: spacing.md },
   card: {
@@ -66,4 +67,4 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   cardTitle: typography.heading,
-});
+}));

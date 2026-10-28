@@ -7,7 +7,7 @@ import { supabase } from '@/lib/supabase';
 import { cancelWalkReminder } from '@/lib/walkReminder';
 import { formatClockTime, formatTimeLeft } from '@/lib/format';
 import type { Walk } from '@/lib/types';
-import { colors, radius, spacing } from '@/lib/theme';
+import { colors, radius, spacing, themed } from '@/lib/theme';
 
 // Shows who is on a walk. Your own tap-through to the walk screen; other
 // people's are informational. A circle-mate's overdue walk is deliberately
@@ -72,7 +72,7 @@ export function WalkBanner({ walks, onChanged }: { walks: Walk[]; onChanged: () 
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   container: { gap: spacing.xs, paddingHorizontal: spacing.sm, paddingBottom: spacing.sm },
   banner: {
     flexDirection: 'row',
@@ -93,4 +93,4 @@ const styles = StyleSheet.create({
     borderRadius: radius.sm,
   },
   buttonText: { color: '#fff', fontWeight: '600', fontSize: 13 },
-});
+}));

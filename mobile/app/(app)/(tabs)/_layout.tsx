@@ -4,7 +4,7 @@ import type { ColorValue } from 'react-native';
 import { useAccount } from '@/contexts/AccountContext';
 import { useCircles } from '@/contexts/CircleContext';
 import { ChatReadProvider, useChatRead } from '@/contexts/ChatReadContext';
-import { colors } from '@/lib/theme';
+import { colors, useThemeVersion } from '@/lib/theme';
 
 // Emoji ignore the tint colour, so the tab you're not on is faded instead.
 function TabIcon({ symbol, color, focused }: { symbol: string; color: ColorValue; focused: boolean }) {
@@ -12,6 +12,7 @@ function TabIcon({ symbol, color, focused }: { symbol: string; color: ColorValue
 }
 
 export default function TabsLayout() {
+  useThemeVersion(); // redraw on a theme switch (lib/theme.ts)
   const { selectedCircleId } = useCircles();
   return (
     <ChatReadProvider circleId={selectedCircleId}>

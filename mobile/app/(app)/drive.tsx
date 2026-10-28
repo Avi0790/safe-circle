@@ -61,7 +61,7 @@ import { searchStops, STOP_CATEGORIES, type StopCategory, type StopResult } from
 import { getVoiceMode, setVoiceMode, shouldSpeak, type SpeechKind, type VoiceMode } from '@/lib/voicePreference';
 import { DEFAULT_VEHICLE, getVehicle, nextHeading, setVehicle, type VehiclePreference } from '@/lib/vehiclePreference';
 import { isOverLimit, lookUpSpeedLimit, shouldLookUpLimit } from '@/lib/speedLimit';
-import { colors, radius, spacing, typography } from '@/lib/theme';
+import { colors, radius, spacing, themed, typography, useThemeVersion } from '@/lib/theme';
 
 type Phase = 'plan' | 'preview' | 'driving' | 'arrived';
 
@@ -98,6 +98,7 @@ const STOP_REACHED_M = 60;
 // Typing a destination is blocked while the vehicle is moving: ask a
 // passenger, or pull over.
 export default function DriveScreen() {
+  useThemeVersion(); // redraw on a theme switch (lib/theme.ts)
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { selectedCircle } = useCircles();
@@ -1286,7 +1287,7 @@ export default function DriveScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.bg },
   full: { flex: 1, backgroundColor: colors.bg },
   padded: { padding: spacing.lg, gap: spacing.md },
@@ -1363,4 +1364,4 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 8,
   },
-});
+}));

@@ -1,6 +1,6 @@
 import { StyleSheet, Text, TextInput, View } from 'react-native';
 import type { TextInputProps } from 'react-native';
-import { colors, spacing, typography } from '@/lib/theme';
+import { colors, spacing, themed, typography } from '@/lib/theme';
 
 interface TextFieldProps extends TextInputProps {
   label: string;
@@ -21,7 +21,7 @@ export function TextField({ label, style, ...rest }: TextFieldProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   container: {
     gap: spacing.xs,
   },
@@ -40,4 +40,4 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: colors.textHeading,
   },
-});
+}));

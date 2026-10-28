@@ -1,18 +1,29 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View, type ViewStyle } from 'react-native';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
-import { colors } from '@/lib/theme';
+import { colors, themed } from '@/lib/theme';
 
 // Safe Circle's shared look (first made for the Work tab): gradient hero cards, white grouped
 // cards, icon tiles, pills and a seat meter. Drawn with react-native-svg and
 // plain views, so they need no extra native modules.
 
 export const appColors = {
-  page: colors.page,
-  card: colors.card,
-  ink: colors.ink,
-  muted: colors.muted,
-  line: colors.line,
+  // getters: read the current theme each time (lib/theme.ts)
+  get page() {
+    return colors.page;
+  },
+  get card() {
+    return colors.card;
+  },
+  get ink() {
+    return colors.ink;
+  },
+  get muted() {
+    return colors.muted;
+  },
+  get line() {
+    return colors.line;
+  },
   // hero gradients: [from, to]
   offShift: ['#3b1f8f', '#7c3aed'] as const,
   onShift: ['#047857', '#10b981'] as const,
@@ -217,7 +228,7 @@ export function LiveElapsed({ since, style }: { since: string; style?: object })
   );
 }
 
-export const ui = StyleSheet.create({
+export const ui = themed(() => StyleSheet.create({
   hero: {
     borderRadius: 24,
     overflow: 'hidden',
@@ -324,4 +335,4 @@ export const ui = StyleSheet.create({
   stat: { flex: 1, backgroundColor: 'rgba(255,255,255,0.14)', borderRadius: 14, paddingVertical: 10, paddingHorizontal: 12 },
   statValue: { fontSize: 20, fontWeight: '800', color: '#fff', fontVariant: ['tabular-nums'] },
   statLabel: { fontSize: 11, fontWeight: '600', color: 'rgba(255,255,255,0.75)', textTransform: 'uppercase', letterSpacing: 0.5 },
-});
+}));

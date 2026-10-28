@@ -6,7 +6,7 @@ import { Button } from '@/components/Button';
 import { TextField } from '@/components/TextField';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
-import { colors, spacing, typography } from '@/lib/theme';
+import { colors, spacing, themed, typography, useThemeVersion } from '@/lib/theme';
 
 // Your medical card: blood type, allergies, conditions, medications, a note.
 // Circle-mates can read it ONLY while you have an active SOS (enforced by RLS
@@ -14,6 +14,7 @@ import { colors, spacing, typography } from '@/lib/theme';
 // responder or worried family member needs shows up exactly when it matters
 // and isn't permanently visible to everyone in your circles.
 export default function MedicalCardScreen() {
+  useThemeVersion(); // redraw on a theme switch (lib/theme.ts)
   const { session } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -88,9 +89,9 @@ export default function MedicalCardScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.bg },
   content: { padding: spacing.lg, gap: spacing.md },
   saved: { color: colors.online, fontSize: 14, fontWeight: '600' },
   error: { color: colors.danger, fontSize: 14 },
-});
+}));

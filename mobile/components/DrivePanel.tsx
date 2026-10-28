@@ -2,7 +2,7 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from
 import { formatNavDistance } from '@/lib/navigation';
 import { ROAD_REPORT_KINDS, type RoadReportKind } from '@/lib/roadReports';
 import { STOP_CATEGORIES, type StopCategory, type StopResult } from '@/lib/stops';
-import { colors, radius, spacing, typography } from '@/lib/theme';
+import { colors, radius, spacing, themed, typography } from '@/lib/theme';
 import { VOICE_MODES, type VoiceMode } from '@/lib/voicePreference';
 import { vehicleColorName, vehicleStyleName, type VehiclePreference } from '@/lib/vehiclePreference';
 import { AvatarArt } from '@/components/AvatarArt';
@@ -201,7 +201,7 @@ function ReportGrid(p: DrivePanelProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   sheet: {
     position: 'absolute',
     left: 0,
@@ -300,4 +300,4 @@ const styles = StyleSheet.create({
   },
   avatarText: { flex: 1, gap: 2 },
   chevron: { fontSize: 26, color: colors.offline },
-});
+}));

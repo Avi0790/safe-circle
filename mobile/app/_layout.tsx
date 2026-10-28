@@ -3,7 +3,7 @@ import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { ActivityIndicator, View } from 'react-native';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
-import { colors, isDark } from '@/lib/theme';
+import { colors, followPhoneAppearance, isDark, useThemeVersion } from '@/lib/theme';
 // Side-effect import: registers the background location task (AJ's
 // layer) at module scope. Must happen unconditionally on every app
 // launch, not inside a component — see lib/locationTracking.ts.
@@ -12,27 +12,33 @@ import { resumeForegroundWatchIfActive, startQueueFlushOnReconnect } from '@/lib
 import '@/lib/jobSiteReminders';
 
 // Headers, screen backgrounds and the tab bar follow the app's theme
-// (lib/theme.ts: light or dark, chosen when the app starts).
-const navigationTheme = {
-  ...(isDark ? DarkTheme : DefaultTheme),
-  colors: {
-    ...(isDark ? DarkTheme : DefaultTheme).colors,
-    primary: colors.accent,
-    background: colors.page,
-    card: colors.card,
-    text: colors.ink,
-    border: colors.line,
-  },
-};
+// (lib/theme.ts), rebuilt whenever it switches.
+function navigationTheme() {
+  const base = isDark ? DarkTheme : DefaultTheme;
+  return {
+    ...base,
+    colors: {
+      ...base.colors,
+      primary: colors.accent,
+      background: colors.page,
+      card: colors.card,
+      text: colors.ink,
+      border: colors.line,
+    },
+  };
+}
 
 export default function RootLayout() {
+  useThemeVersion(); // redraw on a theme switch
+  // "Match iPhone": follow the phone switching while the app is open
+  useEffect(() => followPhoneAppearance(), []);
   useEffect(() => startQueueFlushOnReconnect(), []);
   useEffect(() => {
     resumeForegroundWatchIfActive();
   }, []);
 
   return (
-    <ThemeProvider value={navigationTheme}>
+    <ThemeProvider value={navigationTheme()}>
       <AuthProvider>
         <StatusBar style="auto" />
         <RootNavigator />

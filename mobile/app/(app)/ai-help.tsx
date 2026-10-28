@@ -12,7 +12,7 @@ import {
 import { Stack } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { findFaqAnswer, HELP_FAQ, HELP_FALLBACK_ANSWER } from '@/lib/helpFaq';
-import { colors, radius, spacing, typography } from '@/lib/theme';
+import { colors, radius, spacing, themed, typography, useThemeVersion } from '@/lib/theme';
 
 interface DisplayTurn {
   id: string;
@@ -30,6 +30,7 @@ const STARTER_QUESTIONS = HELP_FAQ.slice(0, 4).map((entry) => entry.question);
 // a capstone demo someone could forget to keep funded before presenting.
 // Chat history is kept in memory only — nothing is saved anywhere.
 export default function AiHelpScreen() {
+  useThemeVersion(); // redraw on a theme switch (lib/theme.ts)
   const [turns, setTurns] = useState<DisplayTurn[]>([]);
   const [draft, setDraft] = useState('');
   const listRef = useRef<FlatList>(null);
@@ -110,7 +111,7 @@ export default function AiHelpScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.bg },
   flex: { flex: 1 },
   list: { paddingHorizontal: spacing.lg, paddingVertical: spacing.sm, gap: spacing.sm, flexGrow: 1 },
@@ -157,4 +158,4 @@ const styles = StyleSheet.create({
   },
   sendButtonDisabled: { opacity: 0.5 },
   sendButtonText: { color: '#fff', fontWeight: '600', fontSize: 15 },
-});
+}));

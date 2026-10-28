@@ -11,8 +11,10 @@ import { useShakeToSos } from '@/hooks/useShakeToSos';
 import { CarPlayBridge } from '@/components/CarPlayBridge';
 import { canEnterApp } from '@/lib/accountType';
 import { offerTextForHelp, sendSos } from '@/lib/sos';
+import { useThemeVersion } from '@/lib/theme';
 
 export default function AppLayout() {
+  useThemeVersion(); // redraw on a theme switch (lib/theme.ts)
   return (
     <AppLockProvider>
       <AccountProvider>

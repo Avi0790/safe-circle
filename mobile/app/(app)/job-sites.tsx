@@ -9,7 +9,7 @@ import { useAccount } from '@/contexts/AccountContext';
 import { MIN_QUERY_LENGTH, searchPlaces, type PlaceResult } from '@/lib/geocode';
 import { MAX_REGIONS } from '@/lib/jobSiteReminders';
 import { supabase } from '@/lib/supabase';
-import { colors, radius, spacing, typography } from '@/lib/theme';
+import { colors, radius, spacing, themed, typography, useThemeVersion } from '@/lib/theme';
 
 interface Site {
   id: string;
@@ -26,6 +26,7 @@ const RADII = [100, 150, 300, 500];
 // their own phone when they arrive at one without clocking in; nobody at work
 // is told (lib/jobSiteReminders.ts).
 export default function JobSitesScreen() {
+  useThemeVersion(); // redraw on a theme switch (lib/theme.ts)
   const { orgs } = useAccount();
   const { orgId } = useLocalSearchParams<{ orgId: string }>();
   const org = orgs.find((o) => o.org_id === orgId);
@@ -170,7 +171,7 @@ export default function JobSitesScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.bg },
   body: { padding: spacing.lg, gap: spacing.md },
   sectionLabel: {
@@ -200,4 +201,4 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
   },
   error: { color: colors.danger, fontSize: 14 },
-});
+}));

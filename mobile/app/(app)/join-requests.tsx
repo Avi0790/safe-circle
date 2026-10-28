@@ -7,7 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useCircles } from '@/contexts/CircleContext';
 import { supabase } from '@/lib/supabase';
 import { timeAgo } from '@/lib/format';
-import { colors, spacing, typography } from '@/lib/theme';
+import { colors, spacing, themed, typography, useThemeVersion } from '@/lib/theme';
 
 interface PendingRequest {
   id: string;
@@ -22,6 +22,7 @@ interface PendingRequest {
 // instead of adding a stranger to a group that can see everyone's live
 // location.
 export default function JoinRequestsScreen() {
+  useThemeVersion(); // redraw on a theme switch (lib/theme.ts)
   const { session } = useAuth();
   const { circles, refresh: refreshCircles } = useCircles();
   const mine = circles.filter((c) => c.created_by === session?.user.id);
@@ -139,7 +140,7 @@ export default function JoinRequestsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.bg },
   content: { padding: spacing.lg, gap: spacing.lg },
   card: {
@@ -155,4 +156,4 @@ const styles = StyleSheet.create({
   request: { gap: spacing.sm, paddingTop: spacing.sm, borderTopWidth: 1, borderTopColor: colors.border },
   actions: { flexDirection: 'row', gap: spacing.sm },
   action: { flex: 1 },
-});
+}));

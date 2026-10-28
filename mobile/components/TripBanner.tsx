@@ -2,7 +2,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNow } from '@/hooks/useNow';
 import { liveTripsOfOthers, tripEtaText, tripHeadline, type SharedTrip } from '@/lib/sharedTrips';
-import { colors, radius, spacing } from '@/lib/theme';
+import { colors, radius, spacing, themed } from '@/lib/theme';
 
 // Who in your circles is driving or walking somewhere, and when they expect to arrive.
 // Informational only: nothing to tap, and it disappears on its own when they
@@ -27,7 +27,7 @@ export function TripBanner({ trips }: { trips: SharedTrip[] }) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   container: { paddingHorizontal: spacing.sm, gap: spacing.xs, marginTop: spacing.xs },
   card: {
     backgroundColor: colors.bg,
@@ -40,4 +40,4 @@ const styles = StyleSheet.create({
   },
   title: { fontSize: 14, fontWeight: '700', color: colors.textHeading },
   sub: { fontSize: 13, color: colors.text },
-});
+}));

@@ -4,7 +4,7 @@ import { CameraView, useCameraPermissions } from 'expo-camera';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '@/components/Button';
 import { parseJoinCode } from '@/lib/joinCode';
-import { colors, spacing, typography } from '@/lib/theme';
+import { colors, spacing, themed, typography } from '@/lib/theme';
 
 // Scans a circle invite QR code and hands back the code. It only ever returns
 // something that parses as a real invite code; any other QR code shows a
@@ -80,11 +80,11 @@ export function QrScannerModal({
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.bg },
   header: { padding: spacing.lg, gap: spacing.md },
   center: { padding: spacing.lg, gap: spacing.md },
   camera: { flex: 1, margin: spacing.lg, overflow: 'hidden', borderRadius: 12, backgroundColor: '#000' },
   banner: { position: 'absolute', bottom: spacing.lg, left: spacing.lg, right: spacing.lg, backgroundColor: colors.dangerFill, padding: spacing.md, borderRadius: 8 },
   bannerText: { color: '#fff', textAlign: 'center', fontWeight: '600' },
-});
+}));

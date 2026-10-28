@@ -31,7 +31,7 @@ import { supabase } from '@/lib/supabase';
 import { Avatar } from '@/components/Avatar';
 import { formatClockTime, formatTimeLeft, getShareStatus, isDriving, isStale, isStatusActive, speedToMph } from '@/lib/format';
 import type { LatestLocation, MapPin, MemberWithLocation } from '@/lib/types';
-import { colors, isDark, radius, spacing } from '@/lib/theme';
+import { colors, isDark, radius, spacing, themed, useThemeVersion } from '@/lib/theme';
 
 const DEFAULT_REGION = {
   latitude: 37.7749,
@@ -148,6 +148,7 @@ function PinMarker({ pin, isMine, onRemoved }: { pin: MapPin; isMine: boolean; o
 // to the background tracking service in lib/locationTracking.ts (AJ's
 // layer). This screen only ever reads from the backend.
 export default function MapTab() {
+  useThemeVersion(); // redraw on a theme switch (lib/theme.ts)
   const { session } = useAuth();
   const { selectedCircleId, selectedCircle } = useCircles();
   const { members, isLoading } = useCircleMembers(selectedCircleId);
@@ -353,7 +354,7 @@ export default function MapTab() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   safeArea: { flex: 1 },
   map: { flex: 1 },
   markerAvatar: {
@@ -429,4 +430,4 @@ const styles = StyleSheet.create({
     right: 0,
     alignItems: 'center',
   },
-});
+}));

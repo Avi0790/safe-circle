@@ -6,7 +6,7 @@ import { Button } from '@/components/Button';
 import type { CrewShift } from '@/lib/crew';
 import { shareTextFile } from '@/lib/shareFile';
 import { supabase } from '@/lib/supabase';
-import { colors, radius, spacing, typography } from '@/lib/theme';
+import { colors, radius, spacing, themed, typography, useThemeVersion } from '@/lib/theme';
 import {
   buildTimesheet,
   DAY_LABELS,
@@ -23,6 +23,7 @@ import {
 // for payroll. Uses org_shifts(), so managers see only the teams they lead.
 // Still available after a plan ends: a company's own records aren't held back.
 export default function TimesheetsScreen() {
+  useThemeVersion(); // redraw on a theme switch (lib/theme.ts)
   const { orgId, orgName } = useLocalSearchParams<{ orgId: string; orgName?: string }>();
   const name = orgName ? String(orgName) : 'Organization';
   const [weeksBack, setWeeksBack] = useState(0);
@@ -140,7 +141,7 @@ export default function TimesheetsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.bg },
   content: { padding: spacing.lg, gap: spacing.md },
   weekRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
@@ -163,4 +164,4 @@ const styles = StyleSheet.create({
   dayHours: { fontSize: 13, fontWeight: '600', color: colors.textHeading },
   dayNone: { fontSize: 13, color: colors.border },
   error: { color: colors.danger, fontSize: 14 },
-});
+}));

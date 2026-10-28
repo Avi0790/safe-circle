@@ -2,7 +2,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { useActiveSosEvents } from '@/hooks/useActiveSosEvents';
 import { SosBanner } from '@/components/SosBanner';
 import { SosButton } from '@/components/SosButton';
-import { colors, spacing, typography } from '@/lib/theme';
+import { colors, spacing, themed, typography } from '@/lib/theme';
 
 // react-native-maps has no web renderer. This mobile app targets iOS/Android
 // only (the read-only web experience is the separate `web/` dashboard) —
@@ -28,7 +28,7 @@ export default function MapTabWebFallback() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   centerContent: {
     flex: 1,
@@ -38,4 +38,4 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   hint: { textAlign: 'center' },
-});
+}));

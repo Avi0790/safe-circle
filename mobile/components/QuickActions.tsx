@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { requestRide } from '@/lib/rides';
-import { colors, spacing } from '@/lib/theme';
+import { colors, spacing, themed } from '@/lib/theme';
 
 // The Safe Circle actions that go beyond sharing a dot on a map — five of
 // them now, too many to stack as separate pills without covering half the
@@ -107,7 +107,7 @@ function MenuRow({
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   container: { position: 'absolute', bottom: spacing.lg, left: spacing.md },
   menu: {
     backgroundColor: colors.card,
@@ -155,4 +155,4 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   pillText: { color: colors.accent, fontWeight: '800', fontSize: 15 },
-});
+}));

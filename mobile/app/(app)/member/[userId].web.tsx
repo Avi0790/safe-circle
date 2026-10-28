@@ -7,7 +7,7 @@ import { isDriving, speedToMph, timeAgo } from '@/lib/format';
 import { formatDistanceMiles } from '@/lib/geo';
 import { fetchTrips, formatTripDate, formatTripDuration, type Trip } from '@/lib/trips';
 import { fetchWeather, type Weather } from '@/lib/weather';
-import { colors, radius, spacing, typography } from '@/lib/theme';
+import { colors, radius, spacing, themed, typography } from '@/lib/theme';
 
 interface HistoryPing {
   id: number;
@@ -135,7 +135,7 @@ export default function MemberHistoryScreenWeb() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.bg },
   listContent: { padding: spacing.lg, gap: spacing.xs },
   header: { gap: 2, marginBottom: spacing.xs },
@@ -161,4 +161,4 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.border,
     gap: 2,
   },
-});
+}));

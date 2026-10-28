@@ -12,7 +12,7 @@ import { formatClockTime, formatTimeLeft } from '@/lib/format';
 import { placeIcon } from '@/lib/places';
 import { ensureSharingFor } from '@/lib/sharingWindow';
 import { cancelWalkReminder, scheduleWalkReminder } from '@/lib/walkReminder';
-import { colors, radius, spacing, typography } from '@/lib/theme';
+import { colors, radius, spacing, themed, typography, useThemeVersion } from '@/lib/theme';
 
 interface PlaceRow {
   id: string;
@@ -26,6 +26,7 @@ const DURATIONS = [10, 15, 20, 30, 45, 60];
 // arrive nor tap "I'm safe" in time, an SOS goes out on its own with your
 // last known location (see migration ...000026_walk_me_home.sql).
 export default function WalkScreen() {
+  useThemeVersion(); // redraw on a theme switch (lib/theme.ts)
   const router = useRouter();
   const { session } = useAuth();
   const { selectedCircle } = useCircles();
@@ -207,7 +208,7 @@ export default function WalkScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.bg },
   content: { padding: spacing.lg, gap: spacing.lg },
   section: { gap: spacing.sm },
@@ -242,4 +243,4 @@ const styles = StyleSheet.create({
   chipText: { fontSize: 13, color: colors.text, fontWeight: '600' },
   chipTextSelected: { color: '#fff' },
   error: { color: colors.danger, fontSize: 14 },
-});
+}));

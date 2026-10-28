@@ -4,7 +4,7 @@ import { AppState, Platform, StyleSheet, Text, View } from 'react-native';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { Button } from '@/components/Button';
 import { getAppLockEnabled, setAppLockEnabled, shouldRelock } from '@/lib/appLock';
-import { colors, spacing, typography } from '@/lib/theme';
+import { colors, spacing, themed, typography, useThemeVersion } from '@/lib/theme';
 
 interface AppLockValue {
   enabled: boolean;
@@ -34,6 +34,7 @@ async function authenticate(): Promise<boolean> {
 // locked) and an opaque screen covers it — also whenever the app is not
 // active, so the map doesn't show up in the phone's app-switcher preview.
 export function AppLockProvider({ children }: { children: ReactNode }) {
+  useThemeVersion(); // the lock screen redraws on a theme switch
   const [enabled, setEnabledState] = useState(false);
   const [locked, setLocked] = useState(true);
   const [appActive, setAppActive] = useState(AppState.currentState === 'active');
@@ -123,7 +124,7 @@ export function useAppLock() {
   return useContext(AppLockContext);
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   cover: {
     position: 'absolute',
     top: 0,
@@ -139,4 +140,4 @@ const styles = StyleSheet.create({
     elevation: 1000,
   },
   text: { textAlign: 'center' },
-});
+}));

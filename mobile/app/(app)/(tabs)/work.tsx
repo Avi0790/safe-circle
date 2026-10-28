@@ -29,7 +29,7 @@ import { activeOrgs, ORG_DISCLOSURE, type OrgMembership } from '@/lib/orgInfo';
 import { DEMO_SEAT_OPTIONS, planSummary, seatsFull, workerPlanNotice } from '@/lib/orgPlan';
 import { describeOrgAudit, shiftAutoEndsAt } from '@/lib/shift';
 import { supabase } from '@/lib/supabase';
-import { colors, isDark } from '@/lib/theme';
+import { colors, isDark, themed, useThemeVersion } from '@/lib/theme';
 
 // How often a lone worker wants to be asked "are you OK?" — and the people
 // who oversee them alerted if they don't answer (migration ...000053).
@@ -79,6 +79,7 @@ interface ViewRow {
 // clocked in, only positions recorded during the shift, and every look is
 // logged — which is the list at the bottom.
 export default function WorkScreen() {
+  useThemeVersion(); // redraw on a theme switch (lib/theme.ts)
   const router = useRouter();
   const { session } = useAuth();
   const { orgs, refresh } = useAccount();
@@ -612,7 +613,7 @@ export default function WorkScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: appColors.page },
   content: { padding: 16, gap: 16 },
   date: { fontSize: 13, fontWeight: '700', color: appColors.muted, letterSpacing: 0.6 },
@@ -649,4 +650,4 @@ const styles = StyleSheet.create({
   rowEmoji: { fontSize: 18 },
   chevron: { fontSize: 24, color: colors.chevron, fontWeight: '300' },
   error: { color: colors.danger, fontSize: 14 },
-});
+}));

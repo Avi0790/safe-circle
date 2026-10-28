@@ -6,7 +6,7 @@ import { useNow } from '@/hooks/useNow';
 import { supabase } from '@/lib/supabase';
 import { formatClockTime, formatTimeLeft } from '@/lib/format';
 import type { SafetyTimer } from '@/lib/types';
-import { colors, radius, spacing } from '@/lib/theme';
+import { colors, radius, spacing, themed } from '@/lib/theme';
 
 // Walk me home's WalkBanner, for a destination-less "check on me" timer.
 // A circle-mate's overdue timer isn't repeated here — it's already raised
@@ -76,7 +76,7 @@ export function SafetyTimerBanner({
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   container: { gap: spacing.xs, paddingHorizontal: spacing.sm, paddingBottom: spacing.sm },
   banner: {
     flexDirection: 'row',
@@ -97,4 +97,4 @@ const styles = StyleSheet.create({
     borderRadius: radius.sm,
   },
   buttonText: { color: '#fff', fontWeight: '600', fontSize: 13 },
-});
+}));

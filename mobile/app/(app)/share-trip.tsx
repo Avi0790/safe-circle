@@ -27,7 +27,7 @@ import {
   updateSharedTrip,
   type ManualMode,
 } from '@/lib/sharedTrips';
-import { colors, radius, spacing, typography } from '@/lib/theme';
+import { colors, radius, spacing, themed, typography, useThemeVersion } from '@/lib/theme';
 
 const LABEL: Record<ManualMode, string> = { bus: '🚌 Bus', train: '🚆 Train', flight: '✈️ Flight' };
 const PLACEHOLDER: Record<ManualMode, string> = { bus: 'Campus', train: 'Chicago Union Station', flight: 'Denver' };
@@ -40,6 +40,7 @@ const RUNNING_LATE_MS = 15 * 60_000;
 // destination's name and the time are shared: not a route, and not where you
 // are along the way (your live location is a separate setting).
 export default function ShareTripScreen() {
+  useThemeVersion(); // redraw on a theme switch (lib/theme.ts)
   const { session } = useAuth();
   const { circles, selectedCircle } = useCircles();
   const { trips, refresh } = useActiveTrips();
@@ -301,7 +302,7 @@ export default function ShareTripScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.bg },
   content: { padding: spacing.lg, gap: spacing.lg },
   section: { gap: spacing.sm },
@@ -349,4 +350,4 @@ const styles = StyleSheet.create({
   stepMain: { fontSize: 22, fontWeight: '700', color: colors.textHeading },
   warning: { color: colors.stale, fontWeight: '600', fontSize: 14 },
   error: { color: colors.danger, fontSize: 14 },
-});
+}));

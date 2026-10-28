@@ -7,7 +7,7 @@ import { Button } from '@/components/Button';
 import { TextField } from '@/components/TextField';
 import { supabase } from '@/lib/supabase';
 import { parseRecoveryTokensFromUrl } from '@/lib/passwordReset';
-import { colors, spacing, typography } from '@/lib/theme';
+import { colors, spacing, themed, typography, useThemeVersion } from '@/lib/theme';
 
 type Status = 'checking' | 'ready' | 'invalid';
 
@@ -16,6 +16,7 @@ type Status = 'checking' | 'ready' | 'invalid';
 // an unguarded sibling of (app)/(auth) in the root layout so it's reachable
 // regardless of whether the tapper is currently signed in.
 export default function ResetPasswordScreen() {
+  useThemeVersion(); // redraw on a theme switch (lib/theme.ts)
   const router = useRouter();
   const [status, setStatus] = useState<Status>('checking');
   const [password, setPassword] = useState('');
@@ -124,7 +125,7 @@ export default function ResetPasswordScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.bg },
   flex: { flex: 1 },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
@@ -136,4 +137,4 @@ const styles = StyleSheet.create({
   },
   form: { gap: spacing.md },
   error: { color: colors.danger, fontSize: 14 },
-});
+}));

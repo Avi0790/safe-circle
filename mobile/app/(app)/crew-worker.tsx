@@ -7,13 +7,14 @@ import type { CrewShift, TrackPoint } from '@/lib/crew';
 import { formatClockTime } from '@/lib/format';
 import { formatShiftElapsed } from '@/lib/shift';
 import { supabase } from '@/lib/supabase';
-import { colors, radius, spacing, typography } from '@/lib/theme';
+import { colors, radius, spacing, themed, typography, useThemeVersion } from '@/lib/theme';
 
 // One worker's recent shifts and the path they covered during them. The
 // track comes from org_worker_track, which only returns positions recorded
 // inside a shift — personal time before clock-in or after clock-out is never
 // part of it — and opening this logs the look for the worker to see.
 export default function CrewWorkerScreen() {
+  useThemeVersion(); // redraw on a theme switch (lib/theme.ts)
   const { orgId, userId, name } = useLocalSearchParams<{ orgId: string; userId: string; name?: string }>();
   const [track, setTrack] = useState<TrackPoint[]>([]);
   const [shifts, setShifts] = useState<CrewShift[]>([]);
@@ -98,7 +99,7 @@ export default function CrewWorkerScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.bg },
   body: { padding: spacing.lg, gap: spacing.sm },
   sectionLabel: {
@@ -119,4 +120,4 @@ const styles = StyleSheet.create({
   },
   shiftTitle: { fontSize: 15, fontWeight: '600', color: colors.textHeading },
   error: { color: colors.danger, fontSize: 14 },
-});
+}));

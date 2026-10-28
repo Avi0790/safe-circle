@@ -5,7 +5,7 @@ import { TextField } from '@/components/TextField';
 import { useAccount } from '@/contexts/AccountContext';
 import { activeOrgs, ORG_DISCLOSURE } from '@/lib/orgInfo';
 import { supabase } from '@/lib/supabase';
-import { colors, spacing, typography } from '@/lib/theme';
+import { colors, spacing, themed, typography } from '@/lib/theme';
 
 type Mode = 'choose' | 'create' | 'join' | 'created';
 
@@ -207,7 +207,7 @@ export function OrgOnboarding({
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   // the screen around it (a card) does the centering, padding and scrolling
   content: { gap: spacing.md + 2 },
   list: { gap: spacing.sm },
@@ -221,4 +221,4 @@ const styles = StyleSheet.create({
     color: colors.accent,
     paddingVertical: spacing.lg,
   },
-});
+}));

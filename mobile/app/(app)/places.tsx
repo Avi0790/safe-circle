@@ -10,7 +10,7 @@ import { useCircles } from '@/contexts/CircleContext';
 import { supabase } from '@/lib/supabase';
 import { timeAgo } from '@/lib/format';
 import { placeIcon } from '@/lib/places';
-import { colors, spacing, typography } from '@/lib/theme';
+import { colors, spacing, themed, typography, useThemeVersion } from '@/lib/theme';
 
 interface Place {
   id: string;
@@ -35,6 +35,7 @@ interface GeofenceEvent {
 // existed since the backend layer was built - this is the UI that
 // actually makes it usable.
 export default function PlacesScreen() {
+  useThemeVersion(); // redraw on a theme switch (lib/theme.ts)
   const { session } = useAuth();
   const { selectedCircle } = useCircles();
   const [places, setPlaces] = useState<Place[]>([]);
@@ -322,7 +323,7 @@ export default function PlacesScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.bg },
   content: { padding: spacing.lg, gap: spacing.md },
   section: { gap: spacing.sm, marginBottom: spacing.lg },
@@ -351,4 +352,4 @@ const styles = StyleSheet.create({
   renameForm: { gap: spacing.sm },
   renameButtons: { flexDirection: 'row', gap: spacing.sm },
   renameButton: { flex: 1 },
-});
+}));

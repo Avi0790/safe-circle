@@ -22,13 +22,14 @@ import { Avatar } from '@/components/Avatar';
 import { appColors } from '@/components/ui/AppUI';
 import { timeAgo } from '@/lib/format';
 import type { Message } from '@/lib/types';
-import { colors, spacing, typography } from '@/lib/theme';
+import { colors, spacing, themed, typography, useThemeVersion } from '@/lib/theme';
 
 // In-circle chat — Life360's most-used feature, and one the proposal never
 // scoped in: circles could share location and alerts but had no way to
 // actually talk without leaving the app. See backend/supabase/migrations/
 // ...000016_messages.sql for the (deliberately append-only) schema.
 export default function ChatTab() {
+  useThemeVersion(); // redraw on a theme switch (lib/theme.ts)
   const { session } = useAuth();
   const { selectedCircle } = useCircles();
   const { members } = useCircleMembers(selectedCircle?.id ?? null);
@@ -209,7 +210,7 @@ function MessageRow({
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: appColors.page },
   flex: { flex: 1 },
   header: { paddingHorizontal: spacing.md, paddingTop: spacing.sm, paddingBottom: spacing.sm, gap: 2 },
@@ -282,4 +283,4 @@ const styles = StyleSheet.create({
   mapLinkMine: { fontSize: 13, fontWeight: '700', color: '#fff', textDecorationLine: 'underline' },
   sendButtonText: { color: '#fff', fontWeight: '800', fontSize: 20, marginTop: -2 },
   error: { color: colors.danger, fontSize: 13, paddingHorizontal: spacing.lg, paddingBottom: spacing.xs },
-});
+}));

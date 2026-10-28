@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '@/lib/supabase';
 import { timeAgo } from '@/lib/format';
 import type { LocationView } from '@/lib/types';
-import { colors, spacing, typography } from '@/lib/theme';
+import { colors, spacing, themed, typography, useThemeVersion } from '@/lib/theme';
 
 const LIMIT = 100;
 
@@ -15,6 +15,7 @@ const LIMIT = 100;
 // migration ...000028_location_views.sql). Deliberately not every glance
 // at the live map, which everyone in a circle already sees continuously.
 export default function LocationViewsScreen() {
+  useThemeVersion(); // redraw on a theme switch (lib/theme.ts)
   const [views, setViews] = useState<LocationView[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -64,7 +65,7 @@ export default function LocationViewsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.bg },
   content: { padding: spacing.lg, gap: spacing.sm },
   row: {
@@ -76,4 +77,4 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.border,
   },
   empty: { marginTop: spacing.lg, textAlign: 'center' },
-});
+}));

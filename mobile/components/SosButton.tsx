@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { ActivityIndicator, Alert, Linking, Pressable, StyleSheet, Text } from 'react-native';
 import { useRouter } from 'expo-router';
 import { sendSos, offerTextForHelp } from '@/lib/sos';
-import { colors, spacing } from '@/lib/theme';
+import { colors, spacing, themed } from '@/lib/theme';
 
 // One-tap emergency alert (the proposal's last stretch goal, page 3).
 // Confirms first to avoid accidental fires, then shares current location
@@ -53,7 +53,7 @@ export function SosButton({ onSent }: { onSent?: () => void }) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   button: {
     position: 'absolute',
     bottom: spacing.lg,
@@ -71,4 +71,4 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   text: { color: '#fff', fontWeight: '700', fontSize: 15 },
-});
+}));

@@ -25,7 +25,7 @@ import { pickAndUploadAvatar, removeAvatar } from '@/lib/avatarUpload';
 import { QUICK_STATUSES, STATUS_DURATION_MINUTES } from '@/lib/status';
 import { useShakeSettings } from '@/contexts/ShakeSettingsContext';
 import { useAppLock } from '@/contexts/AppLockContext';
-import { colors, isDark, radius, spacing, typography } from '@/lib/theme';
+import { applyAppearancePref, colors, isDark, radius, spacing, themed, typography, useThemeVersion } from '@/lib/theme';
 import {
   getShareUntil,
   isBackgroundTaskActive,
@@ -47,15 +47,14 @@ import {
 import { activeOrgs } from '@/lib/orgInfo';
 
 export default function SettingsTab() {
+  useThemeVersion(); // redraw on a theme switch (lib/theme.ts)
   const router = useRouter();
   const { session } = useAuth();
   const { enabled: shakeEnabled, setEnabled: setShakeEnabled } = useShakeSettings();
   const { enabled: lockEnabled, setEnabled: setLockEnabled } = useAppLock();
   const [lockError, setLockError] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
-  // what's saved; the app shows it from the next launch (lib/theme.ts)
   const [appearance, setAppearance] = useState<AppearancePref>(() => getAppearancePref());
-  const [appearanceAtLaunch] = useState<AppearancePref>(() => getAppearancePref());
 
   async function handleToggleLock(next: boolean) {
     setLockError(null);
@@ -775,12 +774,7 @@ export default function SettingsTab() {
                       if (selected) return;
                       setAppearancePref(option.value);
                       setAppearance(option.value);
-                      if (option.value !== appearanceAtLaunch) {
-                        Alert.alert(
-                          'Reopen Safe Circle',
-                          `Close Safe Circle and open it again to switch to "${option.label}".`,
-                        );
-                      }
+                      applyAppearancePref(option.value); // switches the whole app now
                     }}
                     accessibilityRole="radio"
                     accessibilityState={{ selected }}
@@ -790,9 +784,6 @@ export default function SettingsTab() {
                 );
               })}
             </View>
-            {appearance !== appearanceAtLaunch && (
-              <Text style={typography.caption}>Applies the next time you open Safe Circle.</Text>
-            )}
           </View>
         )}
 
@@ -1034,7 +1025,7 @@ export default function SettingsTab() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: appColors.page },
   aboutSection: { alignItems: 'center', gap: 2, paddingTop: spacing.md },
   aboutTitle: { ...typography.caption, color: colors.textHeading, fontWeight: '700' },
@@ -1095,4 +1086,4 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   error: { color: colors.danger, fontSize: 14 },
-});
+}));

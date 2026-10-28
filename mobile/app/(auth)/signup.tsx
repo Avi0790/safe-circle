@@ -7,8 +7,10 @@ import { TextField } from '@/components/TextField';
 import { AuthScreen, authStyles } from '@/components/ui/AuthScreen';
 import { DEFAULT_ACCOUNT_TYPE, type AccountType } from '@/lib/accountType';
 import { supabase } from '@/lib/supabase';
+import { useThemeVersion } from '@/lib/theme';
 
 export default function SignupScreen() {
+  useThemeVersion(); // redraw on a theme switch (lib/theme.ts)
   const [accountType, setAccountType] = useState<AccountType>(DEFAULT_ACCOUNT_TYPE);
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');

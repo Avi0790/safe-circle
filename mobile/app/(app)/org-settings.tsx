@@ -7,12 +7,13 @@ import { TextField } from '@/components/TextField';
 import { useAccount } from '@/contexts/AccountContext';
 import { confirmsName, DELETE_EFFECTS } from '@/lib/orgSettings';
 import { supabase } from '@/lib/supabase';
-import { colors, radius, spacing, typography } from '@/lib/theme';
+import { colors, radius, spacing, themed, typography, useThemeVersion } from '@/lib/theme';
 
 // Rename the organization (owners and admins) or delete it (owners only,
 // typing its name). The database checks both (migration ...000067); this
 // screen offers the timesheet first, since deleting removes every shift.
 export default function OrgSettingsScreen() {
+  useThemeVersion(); // redraw on a theme switch (lib/theme.ts)
   const router = useRouter();
   const { orgs, refresh } = useAccount();
   const { orgId } = useLocalSearchParams<{ orgId: string }>();
@@ -112,7 +113,7 @@ export default function OrgSettingsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.bg },
   body: { padding: spacing.lg, gap: spacing.md },
   sectionLabel: {
@@ -132,4 +133,4 @@ const styles = StyleSheet.create({
   },
   dangerTitle: { ...typography.heading, color: colors.danger },
   error: { color: colors.danger, fontSize: 14 },
-});
+}));

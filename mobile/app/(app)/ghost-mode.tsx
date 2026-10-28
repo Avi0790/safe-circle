@@ -7,7 +7,7 @@ import { useCircles } from '@/contexts/CircleContext';
 import { useCircleMembers } from '@/hooks/useCircleMembers';
 import { Avatar } from '@/components/Avatar';
 import { supabase } from '@/lib/supabase';
-import { colors, spacing, typography } from '@/lib/theme';
+import { colors, spacing, themed, typography, useThemeVersion } from '@/lib/theme';
 
 // Ghost mode: hide your location from one specific circle-mate while
 // everyone else still sees you normally — Life360 has no per-person
@@ -16,6 +16,7 @@ import { colors, spacing, typography } from '@/lib/theme';
 // ...000035_ghost_mode.sql) — this screen is the only place that says who,
 // on purpose, so it isn't obvious from the outside.
 export default function GhostModeScreen() {
+  useThemeVersion(); // redraw on a theme switch (lib/theme.ts)
   const { session } = useAuth();
   const { selectedCircle } = useCircles();
   const { members, isLoading: membersLoading } = useCircleMembers(selectedCircle?.id ?? null);
@@ -96,7 +97,7 @@ export default function GhostModeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.bg },
   content: { padding: spacing.lg, gap: spacing.lg },
   list: { gap: spacing.xs },
@@ -110,4 +111,4 @@ const styles = StyleSheet.create({
   },
   name: { flex: 1, fontSize: 16, color: colors.textHeading, fontWeight: '500' },
   error: { color: colors.danger, fontSize: 14 },
-});
+}));

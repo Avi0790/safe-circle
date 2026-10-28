@@ -3,7 +3,7 @@ import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } fr
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Circle } from 'react-native-svg';
 import { GradientFill } from '@/components/ui/AppUI';
-import { colors } from '@/lib/theme';
+import { colors, themed } from '@/lib/theme';
 
 // The Safe Circle mark: you at the centre, your circle around you.
 export function LogoMark({ size = 72 }: { size?: number }) {
@@ -74,15 +74,15 @@ export function CardScreen({ children }: { children: ReactNode }) {
 }
 
 // For links and text sitting on the gradient, under the card.
-export const authStyles = StyleSheet.create({
+export const authStyles = themed(() => StyleSheet.create({
   footerText: { fontSize: 14, color: 'rgba(255,255,255,0.8)' },
   footerLink: { fontSize: 14, color: '#fff', fontWeight: '800' },
   cardLink: { fontSize: 14, color: colors.accent, fontWeight: '700', textAlign: 'center' },
   error: { color: colors.danger, fontSize: 14 },
   form: { gap: 14 },
-});
+}));
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   root: { flex: 1, backgroundColor: '#1e1b4b' },
   flex: { flex: 1 },
   orb: { position: 'absolute', borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.07)' },
@@ -113,4 +113,4 @@ const styles = StyleSheet.create({
   subtitle: { fontSize: 15, color: colors.muted, lineHeight: 21, marginTop: -6 },
   footer: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6 },
   cardScreen: { flexGrow: 1, justifyContent: 'center', padding: 16 },
-});
+}));

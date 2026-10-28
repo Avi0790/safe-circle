@@ -10,7 +10,7 @@ import { useCircleMembers } from '@/hooks/useCircleMembers';
 import { supabase } from '@/lib/supabase';
 import { textForHelp } from '@/lib/textForHelp';
 import type { BackupContact } from '@/lib/types';
-import { colors, radius, spacing, typography } from '@/lib/theme';
+import { colors, radius, spacing, themed, typography, useThemeVersion } from '@/lib/theme';
 
 // A fallback for when push notifications can't reach anyone — SOS, walks,
 // curfew, and every other alert in this app depend on this phone and
@@ -18,6 +18,7 @@ import { colors, radius, spacing, typography } from '@/lib/theme';
 // Composes (doesn't silently send) a text with a location link to whoever
 // you pick here. See lib/textForHelp.ts.
 export default function TextForHelpScreen() {
+  useThemeVersion(); // redraw on a theme switch (lib/theme.ts)
   const router = useRouter();
   const { session } = useAuth();
   const { selectedCircle } = useCircles();
@@ -139,7 +140,7 @@ export default function TextForHelpScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.bg },
   content: { padding: spacing.lg, gap: spacing.lg },
   section: { gap: spacing.sm },
@@ -164,4 +165,4 @@ const styles = StyleSheet.create({
   check: { color: colors.accent, fontWeight: '700', fontSize: 16 },
   renameLinkText: { color: colors.accent, fontSize: 14, fontWeight: '600' },
   error: { color: colors.danger, fontSize: 14 },
-});
+}));
