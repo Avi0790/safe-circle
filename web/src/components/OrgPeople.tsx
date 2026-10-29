@@ -87,7 +87,7 @@ export function OrgPeople({ org, myUserId }: { org: OrgMembership; myUserId: str
         A manager sees the workers on teams they lead. Make someone a manager, add them to a team as
         its lead, then add the workers they oversee.
       </p>
-      {error && <p className="org-error">{error}</p>}
+      {error && <p className="org-error" role="alert">{error}</p>}
 
       <section className="org-block">
         <h3>Invite your crew</h3>
@@ -104,10 +104,10 @@ export function OrgPeople({ org, myUserId }: { org: OrgMembership; myUserId: str
         <table className="org-table">
           <thead>
             <tr>
-              <th>Name</th>
-              <th>Role</th>
-              <th>Status</th>
-              <th />
+              <th scope="col">Name</th>
+              <th scope="col">Role</th>
+              <th scope="col">Status</th>
+              <th scope="col"><span className="visually-hidden">Actions</span></th>
             </tr>
           </thead>
           <tbody>
@@ -149,7 +149,7 @@ export function OrgPeople({ org, myUserId }: { org: OrgMembership; myUserId: str
             run(() => supabase.rpc('create_team', { p_org: org.org_id, p_name: name }))
           }}
         >
-          <input value={newTeam} onChange={(e) => setNewTeam(e.target.value)} placeholder="New team name" maxLength={60} />
+          <input value={newTeam} onChange={(e) => setNewTeam(e.target.value)} placeholder="New team name" aria-label="New team name" maxLength={60} />
           <button type="submit" disabled={busy}>
             Create team
           </button>
@@ -189,6 +189,7 @@ export function OrgPeople({ org, myUserId }: { org: OrgMembership; myUserId: str
                 <select
                   value=""
                   disabled={busy}
+                  aria-label={`Add someone to ${team.name}`}
                   onChange={(e) => {
                     const userId = e.target.value
                     if (userId) run(() => supabase.rpc('set_team_member', { p_team: team.id, p_user: userId, p_is_lead: false }))

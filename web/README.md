@@ -195,6 +195,27 @@ database in the backend's rolled-back transaction tests. Logic is unit tested
 in `src/lib/__tests__/crew.test.ts` (crew split and flags, team and permission
 rules, CSV escaping).
 
+## Accessibility
+
+The dashboard works from the keyboard and with a screen reader, and meets
+WCAG AA contrast in light and dark:
+
+- **Keyboard**: everything clickable is a button or link, or (for whole rows
+  and cards) a `role="button"` that Enter and Space activate
+  (`lib/keyboard.ts`). Every element shows a focus ring (`:focus-visible`),
+  and a "Skip to content" link appears on the first Tab.
+- **Screen readers**: every field and dropdown has a name; the current tab is
+  marked `aria-current`; errors and SOS alerts are `role="alert"` so they're
+  read out as they appear (trips and walks are polite `role="status"`); map
+  markers are named after the person or pin; table headers have `scope`.
+- **Contrast**: amber warning text and dimmed zero-hour cells use darker
+  `--warn-text` and `--muted` tokens (the original amber was 2.2:1 on white).
+- **Motion**: transitions are switched off for people who ask their system
+  for reduced motion.
+
+`src/lib/__tests__/accessibility.test.ts` checks all of this, including
+computing the contrast of every text colour against both backgrounds.
+
 ## Deploying
 
 Per the proposal, this deploys to Vercel:

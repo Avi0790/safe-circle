@@ -88,7 +88,7 @@ export function OrgSettings({
           </div>
         </div>
       )}
-      {error && <p className="org-error">{error}</p>}
+      {error && <p className="org-error" role="alert">{error}</p>}
     </div>
   )
 }

@@ -568,6 +568,7 @@ export function Dashboard({ myUserId }: { myUserId: string }) {
             value={selectedCircleId ?? ''}
             onChange={(e) => setSelectedCircleId(e.target.value)}
             className="circle-select"
+            aria-label="Circle"
           >
             {circles.map((c) => (
               <option key={c.id} value={c.id}>
@@ -578,7 +579,7 @@ export function Dashboard({ myUserId }: { myUserId: string }) {
         )}
         {circles.length === 1 && <div className="circle-name">{circles[0].name}</div>}
 
-        {error && <p className="error">{error}</p>}
+        {error && <p className="error" role="alert">{error}</p>}
 
         <SosBanner events={sosEvents} />
         <WalkRideBanner walks={walks} timers={safetyTimers} rides={rides} />

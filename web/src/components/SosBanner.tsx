@@ -9,7 +9,7 @@ export function SosBanner({ events }: { events: SosEvent[] }) {
   if (events.length === 0) return null
 
   return (
-    <div className="sos-banner">
+    <div className="sos-banner" role="alert">
       {events.map((event) => (
         <div key={event.id} className="sos-alert">
           <span className="sos-alert-title">

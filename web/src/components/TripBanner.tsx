@@ -19,7 +19,7 @@ export function TripBanner({ trips, myUserId }: { trips: SharedTrip[]; myUserId:
   if (visible.length === 0) return null
 
   return (
-    <div className="sos-banner">
+    <div className="sos-banner" role="status">
       {visible.map((trip) => (
         <div key={trip.id} className="info-alert">
           <span className="sos-alert-title">

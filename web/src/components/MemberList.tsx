@@ -10,6 +10,7 @@ import {
   timeAgo,
 } from '../lib/format'
 import { formatDistanceMiles, haversineMeters } from '../lib/geo'
+import { activateOnKey } from '../lib/keyboard'
 import type { Weather } from '../lib/weather'
 import { Avatar } from './Avatar'
 
@@ -58,8 +59,10 @@ export function MemberList({
             key={member.id}
             className={`member-row${selected ? ' member-row-selected' : ''}`}
             onClick={member.location ? () => onSelect?.(member.id) : undefined}
+            onKeyDown={member.location ? activateOnKey(() => onSelect?.(member.id)) : undefined}
             role={member.location ? 'button' : undefined}
             tabIndex={member.location ? 0 : undefined}
+            aria-pressed={member.location ? selected : undefined}
           >
             <div className="avatar-wrap">
               <Avatar id={member.id} name={member.full_name} url={member.avatar_url} />

@@ -54,7 +54,7 @@ export function OrgShifts({ org }: { org: OrgMembership }) {
   return (
     <div className="org-page">
       <div className="org-inline">
-        <select value={days} onChange={(e) => setDays(Number(e.target.value))}>
+        <select value={days} onChange={(e) => setDays(Number(e.target.value))} aria-label="Time range">
           {RANGES.map((r) => (
             <option key={r.days} value={r.days}>
               {r.label}
@@ -65,17 +65,17 @@ export function OrgShifts({ org }: { org: OrgMembership }) {
           Download CSV
         </button>
       </div>
-      {error && <p className="org-error">{error}</p>}
+      {error && <p className="org-error" role="alert">{error}</p>}
       {loaded && !error && shifts.length === 0 && <p className="org-note">No shifts in this range.</p>}
       {shifts.length > 0 && (
         <table className="org-table">
           <thead>
             <tr>
-              <th>Worker</th>
-              <th>Date</th>
-              <th>Clock in</th>
-              <th>Clock out</th>
-              <th>Time</th>
+              <th scope="col">Worker</th>
+              <th scope="col">Date</th>
+              <th scope="col">Clock in</th>
+              <th scope="col">Clock out</th>
+              <th scope="col">Time</th>
             </tr>
           </thead>
           <tbody>

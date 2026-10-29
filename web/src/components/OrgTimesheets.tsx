@@ -77,20 +77,20 @@ export function OrgTimesheets({ org }: { org: OrgMembership }) {
         </button>
       </div>
 
-      {error && <p className="org-error">{error}</p>}
+      {error && <p className="org-error" role="alert">{error}</p>}
       {loaded && !error && sheet.rows.length === 0 && <p className="org-note">No shifts this week.</p>}
 
       {sheet.rows.length > 0 && (
         <table className="org-table ts-table">
           <thead>
             <tr>
-              <th>Worker</th>
+              <th scope="col">Worker</th>
               {DAY_LABELS.map((d) => (
-                <th key={d} className="ts-num">
+                <th key={d} scope="col" className="ts-num">
                   {d}
                 </th>
               ))}
-              <th className="ts-num">Total</th>
+              <th scope="col" className="ts-num">Total</th>
             </tr>
           </thead>
           <tbody>

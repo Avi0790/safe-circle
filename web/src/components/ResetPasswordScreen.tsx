@@ -43,7 +43,7 @@ export function ResetPasswordScreen({ onDone }: { onDone: () => void }) {
           />
         </label>
 
-        {error && <p className="error">{error}</p>}
+        {error && <p className="error" role="alert">{error}</p>}
 
         <button type="submit" disabled={loading}>
           {loading ? 'Saving…' : 'Save password'}

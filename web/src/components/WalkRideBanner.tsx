@@ -19,7 +19,7 @@ export function WalkRideBanner({
   if (activeWalks.length === 0 && activeTimers.length === 0 && openRides.length === 0) return null
 
   return (
-    <div className="sos-banner">
+    <div className="sos-banner" role="status">
       {activeWalks.map((walk) => (
         <div key={walk.id} className="info-alert">
           <span className="sos-alert-title">

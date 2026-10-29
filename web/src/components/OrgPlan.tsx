@@ -179,7 +179,7 @@ export function OrgPlan({
               </button>
             )}
           </div>
-          {error && <p className="org-error">{error}</p>}
+          {error && <p className="org-error" role="alert">{error}</p>}
         </div>
       ) : (
         !owner && <p className="org-note">Only the owner can change the plan.</p>

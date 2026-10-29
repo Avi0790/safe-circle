@@ -81,6 +81,8 @@ export function OrgMap({
             key={w.user_id}
             position={[w.latitude, w.longitude]}
             icon={workerIcon(w, w.user_id === selectedId, flags.stale)}
+            title={w.full_name}
+            alt={w.full_name}
             eventHandlers={{ click: () => onSelect(w.user_id) }}
           >
             <Popup>

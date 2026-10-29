@@ -12,6 +12,7 @@ import {
   type TrackPoint,
 } from '../lib/crew'
 import { formatClockTime, timeAgo } from '../lib/format'
+import { activateOnKey } from '../lib/keyboard'
 import { OrgMap } from './OrgMap'
 
 const POLL_MS = 30_000
@@ -91,7 +92,7 @@ export function OrgLive({ org }: { org: OrgMembership }) {
             Workers can see when you look at their location, in their Work tab. You only ever see
             people while they're clocked in.
           </p>
-          {error && <p className="org-error">{error}</p>}
+          {error && <p className="org-error" role="alert">{error}</p>}
         </div>
 
         {selected && (
@@ -132,7 +133,7 @@ export function OrgLive({ org }: { org: OrgMembership }) {
                   role="button"
                   tabIndex={0}
                   onClick={() => select(w.user_id)}
-                  onKeyDown={(e) => e.key === 'Enter' && select(w.user_id)}
+                  onKeyDown={activateOnKey(() => select(w.user_id))}
                 >
                   <strong>{w.full_name}</strong>
                   <span className="org-note">

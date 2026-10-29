@@ -142,12 +142,12 @@ export function MapView({
         />
       )}
       {history.length > 0 && (
-        <Marker position={[history[0].latitude, history[0].longitude]}>
+        <Marker position={[history[0].latitude, history[0].longitude]} title="Oldest position" alt="Oldest position">
           <Popup>Oldest · {timeAgo(history[0].recorded_at)}</Popup>
         </Marker>
       )}
       {history.length > 1 && (
-        <Marker position={[history[history.length - 1].latitude, history[history.length - 1].longitude]}>
+        <Marker position={[history[history.length - 1].latitude, history[history.length - 1].longitude]} title="Most recent position" alt="Most recent position">
           <Popup>Most recent · {timeAgo(history[history.length - 1].recorded_at)}</Popup>
         </Marker>
       )}
@@ -172,7 +172,7 @@ export function MapView({
         </Circle>
       ))}
       {pins.map((pin) => (
-        <Marker key={pin.id} position={[pin.latitude, pin.longitude]} icon={pinIcon(pin.emoji)}>
+        <Marker key={pin.id} position={[pin.latitude, pin.longitude]} icon={pinIcon(pin.emoji)} title={`Pin: ${pin.label}`} alt={`Pin: ${pin.label}`}>
           <Popup>
             <strong>
               {pin.emoji} {pin.label}
@@ -186,7 +186,7 @@ export function MapView({
       {reports.map((report) => {
         const { title, body } = reportDetails(report, myUserId)
         return (
-          <Marker key={report.id} position={[report.latitude, report.longitude]} icon={reportIcon(reportInfo(report.kind).emoji)}>
+          <Marker key={report.id} position={[report.latitude, report.longitude]} icon={reportIcon(reportInfo(report.kind).emoji)} title={title} alt={title}>
             <Popup>
               <strong>{title}</strong>
               <br />
@@ -200,6 +200,8 @@ export function MapView({
           key={member.id}
           position={[member.location!.latitude, member.location!.longitude]}
           icon={avatarIcon(member.id, member.full_name, member.avatar_url)}
+          title={member.full_name}
+          alt={member.full_name}
         >
           <Popup>
             <strong>{member.full_name}</strong>

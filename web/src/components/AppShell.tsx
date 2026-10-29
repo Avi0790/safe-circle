@@ -44,14 +44,21 @@ export function AppShell({ myUserId }: { myUserId: string }) {
 
   const current: View = view ?? (overseen.length > 0 ? 'work' : 'circles')
   const tab = (v: View, label: string) => (
-    <button className={current === v ? 'org-tab org-tab-on' : 'org-tab'} onClick={() => setView(v)}>
+    <button
+      className={current === v ? 'org-tab org-tab-on' : 'org-tab'}
+      aria-current={current === v ? 'page' : undefined}
+      onClick={() => setView(v)}
+    >
       {label}
     </button>
   )
 
   return (
     <div className="shell">
-      <nav className="shell-bar">
+      <a className="skip-link" href="#content">
+        Skip to content
+      </a>
+      <nav className="shell-bar" aria-label="Sections">
         {overseen.length > 0 && tab('work', 'Work')}
         {tab('circles', 'Circles')}
         {platformAdmin && tab('platform', 'Platform')}
@@ -60,7 +67,7 @@ export function AppShell({ myUserId }: { myUserId: string }) {
           Sign out
         </button>
       </nav>
-      <div className="shell-body">
+      <div className="shell-body" id="content" tabIndex={-1}>
         {current === 'work' && overseen.length > 0 ? (
           <OrgDashboard orgs={overseen} myUserId={myUserId} onOrgsChanged={reloadOrgs} />
         ) : current === 'platform' && platformAdmin ? (

@@ -80,7 +80,11 @@ export function OrgDashboard({
   const activeTab: Tab =
     ((tab === 'people' || tab === 'settings') && !admin) || (tab === 'plan' && !plan) ? 'live' : tab
   const tabButton = (t: Tab, label: string) => (
-    <button className={activeTab === t ? 'org-tab org-tab-on' : 'org-tab'} onClick={() => setTab(t)}>
+    <button
+      className={activeTab === t ? 'org-tab org-tab-on' : 'org-tab'}
+      aria-current={activeTab === t ? 'page' : undefined}
+      onClick={() => setTab(t)}
+    >
       {label}
     </button>
   )
@@ -89,7 +93,7 @@ export function OrgDashboard({
     <div className="org-dashboard">
       <header className="org-header">
         {orgs.length > 1 ? (
-          <select value={orgId} onChange={(e) => setOrgId(e.target.value)}>
+          <select value={orgId} onChange={(e) => setOrgId(e.target.value)} aria-label="Organization">
             {orgs.map((o) => (
               <option key={o.org_id} value={o.org_id}>
                 {o.name}
@@ -105,7 +109,7 @@ export function OrgDashboard({
             {plan.title}
           </button>
         )}
-        <nav className="org-tabs">
+        <nav className="org-tabs" aria-label="Organization">
           {tabButton('live', 'Live crew')}
           {admin && tabButton('people', 'People & teams')}
           {tabButton('shifts', 'Shifts')}

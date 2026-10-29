@@ -74,7 +74,7 @@ export function LoginScreen({ initialError = null }: { initialError?: string | n
             />
           </label>
 
-          {error && <p className="error">{error}</p>}
+          {error && <p className="error" role="alert">{error}</p>}
 
           <button type="submit" disabled={loading}>
             {loading ? 'Sending…' : 'Send reset link'}
@@ -115,7 +115,7 @@ export function LoginScreen({ initialError = null }: { initialError?: string | n
           />
         </label>
 
-        {error && <p className="error">{error}</p>}
+        {error && <p className="error" role="alert">{error}</p>}
 
         <button type="submit" disabled={loading}>
           {loading ? 'Signing in…' : 'Sign in'}

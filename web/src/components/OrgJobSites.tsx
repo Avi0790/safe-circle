@@ -52,9 +52,9 @@ export function OrgJobSites({ org }: { org: OrgMembership }) {
         <table className="org-table">
           <thead>
             <tr>
-              <th>Site</th>
-              <th>Radius</th>
-              <th />
+              <th scope="col">Site</th>
+              <th scope="col">Radius</th>
+              <th scope="col"><span className="visually-hidden">Actions</span></th>
             </tr>
           </thead>
           <tbody>
@@ -72,7 +72,7 @@ export function OrgJobSites({ org }: { org: OrgMembership }) {
           </tbody>
         </table>
       )}
-      {error && <p className="org-error">{error}</p>}
+      {error && <p className="org-error" role="alert">{error}</p>}
     </div>
   )
 }

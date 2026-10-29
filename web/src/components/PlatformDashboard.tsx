@@ -32,7 +32,7 @@ export function PlatformDashboard() {
   if (error) {
     return (
       <div className="org-page">
-        <p className="org-error">{error}</p>
+        <p className="org-error" role="alert">{error}</p>
       </div>
     )
   }
@@ -91,8 +91,8 @@ export function PlatformDashboard() {
           <table className="org-table ts-table">
             <thead>
               <tr>
-                <th>Day</th>
-                <th className="ts-num">Sign-ups</th>
+                <th scope="col">Day</th>
+                <th scope="col" className="ts-num">Sign-ups</th>
               </tr>
             </thead>
             <tbody>

@@ -35,7 +35,7 @@ export function OrgSosBanner({ events, onChanged }: { events: SosEvent[]; onChan
   }
 
   return (
-    <div className="sos-banner">
+    <div className="sos-banner" role="alert">
       {events.map((event) => (
         <div key={event.id} className="sos-alert">
           <span className="sos-alert-title">🆘 {event.profiles?.full_name ?? 'Someone'} needs help</span>
