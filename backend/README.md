@@ -667,6 +667,31 @@ signature for `STRIPE_WEBHOOK_SECRET` can change a plan, through
 same 7-day grace as the demo, and SOS, clocking out and running shifts are
 never affected by billing.
 
+## Before a demo
+
+Sample data for presenting, and a check that the live project is ready:
+
+```bash
+supabase db query --linked -f scripts/demo_seed.sql   # load or refresh "Demo Crew"
+scripts/demo_check.sh                                 # PASS / WARN / FAIL, read-only
+supabase db query --linked -f scripts/demo_reset.sql  # remove the demo data afterwards
+```
+
+`demo_seed.sql` adds a "Demo Crew" organization owned by the platform owner:
+six fictional workers (`@demo.safecircle.invalid`, no password, nobody can sign
+in as them), a paid 10-seat plan, two job sites, nine days of shifts, and two
+workers on shift with a trail of positions. Run it on the day: shifts close on
+their own when a phone stops reporting (`close-stale-shifts`), and the demo
+"phones" stop once seeded, so after a few hours nobody is on shift any more.
+
+`demo_check.sh` runs `scripts/demo_check.sql` (the demo data, that every
+scheduled job ran recently and succeeded, that push requests are getting
+through, and privacy: row level security on every table, nothing readable
+without signing in, a worker can't see coworkers' locations or shifts, app
+users can't run the internal jobs), then checks that every migration is
+applied and every Edge Function the app uses is deployed. Each FAIL says what
+to do; it exits 1 if anything fails.
+
 ## Example usage (client SDK)
 
 ```ts
