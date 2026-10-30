@@ -789,6 +789,25 @@ quick UI iteration, except the map tab — `react-native-maps` has no web
 renderer, so `index.web.tsx` shows a placeholder there by design (this app
 targets iOS/Android; the web dashboard is the separate `web/` package).
 
+### Android
+
+The app also builds for Android. Android Studio's own Java (25) breaks the
+native build step, so point Gradle at Java 17:
+
+```bash
+export ANDROID_HOME=~/Library/Android/sdk
+export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk-17.jdk/Contents/Home
+~/Library/Android/sdk/emulator/emulator -avd Medium_Phone &   # or plug in a phone with USB debugging on
+CI=1 npx expo run:android --variant release --no-bundler
+```
+
+The first build takes about 10 minutes (it compiles the native code for
+four processor types); the installable file is
+`android/app/build/outputs/apk/release/app-release.apk` (~120 MB). Not yet
+working on Android: the map needs a Google Maps API key
+(`android.config.googleMaps.apiKey` in `app.config.js`), push needs a
+Firebase project (`google-services.json`), and CarPlay is iPhone-only.
+
 ### Environment variables
 
 Needs `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_ANON_KEY`.
