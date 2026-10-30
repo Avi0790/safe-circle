@@ -5,16 +5,18 @@ import { eventsMissingNames, fillSosNames, type SosDetailRow } from '../lib/sosN
 import { isAdminRole, type OrgMembership } from '../lib/org'
 import { billingReturnNotice } from '../lib/billing'
 import { planSummary } from '../lib/plan'
+import { OrgIncidents } from './OrgIncidents'
 import { OrgLive } from './OrgLive'
 import { OrgPeople } from './OrgPeople'
 import { OrgPlan } from './OrgPlan'
 import { OrgShifts } from './OrgShifts'
+import { OrgSafety } from './OrgSafety'
 import { OrgSettings } from './OrgSettings'
 import { OrgSosBanner } from './OrgSosBanner'
 import { OrgTimesheets } from './OrgTimesheets'
 import { t } from '../lib/i18n'
 
-type Tab = 'live' | 'people' | 'shifts' | 'timesheets' | 'plan' | 'settings'
+type Tab = 'live' | 'people' | 'shifts' | 'timesheets' | 'safety' | 'incidents' | 'plan' | 'settings'
 
 // The work view for owners, admins and managers: a live crew map, people and
 // teams (owners/admins), and shift history. Unlike the circle dashboard this
@@ -80,13 +82,13 @@ export function OrgDashboard({
 
   const activeTab: Tab =
     ((tab === 'people' || tab === 'settings') && !admin) || (tab === 'plan' && !plan) ? 'live' : tab
-  const tabButton = (t: Tab, label: string) => (
+  const tabButton = (tab: Tab, label: string) => (
     <button
-      className={activeTab === t ? 'org-tab org-tab-on' : 'org-tab'}
-      aria-current={activeTab === t ? 'page' : undefined}
-      onClick={() => setTab(t)}
+      className={activeTab === tab ? 'org-tab org-tab-on' : 'org-tab'}
+      aria-current={activeTab === tab ? 'page' : undefined}
+      onClick={() => setTab(tab)}
     >
-      {label}
+      {t(label)}
     </button>
   )
 
@@ -115,6 +117,8 @@ export function OrgDashboard({
           {admin && tabButton('people', 'People & teams')}
           {tabButton('shifts', 'Shifts')}
           {tabButton('timesheets', 'Timesheets')}
+          {tabButton('safety', 'Safety report')}
+          {tabButton('incidents', 'Incidents')}
           {plan && tabButton('plan', 'Plan')}
           {admin && tabButton('settings', 'Settings')}
         </nav>
@@ -127,6 +131,8 @@ export function OrgDashboard({
         {activeTab === 'people' && <OrgPeople key={org.org_id} org={org} myUserId={myUserId} />}
         {activeTab === 'shifts' && <OrgShifts key={org.org_id} org={org} />}
         {activeTab === 'timesheets' && <OrgTimesheets key={org.org_id} org={org} />}
+        {activeTab === 'safety' && <OrgSafety key={org.org_id} org={org} />}
+        {activeTab === 'incidents' && <OrgIncidents key={org.org_id} org={org} />}
         {activeTab === 'plan' && <OrgPlan key={org.org_id} org={org} onChanged={onOrgsChanged} notice={billingNotice} />}
         {activeTab === 'settings' && (
           <OrgSettings key={org.org_id} org={org} onChanged={onOrgsChanged} onOpenTimesheets={() => setTab('timesheets')} />

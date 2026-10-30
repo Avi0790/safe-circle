@@ -684,6 +684,25 @@ sends, worded exactly as the SQL writes it (CI runs it on every push). A new
 alert in SQL needs a rule in `pushText.ts` and a line in its test, or it
 reaches Spanish speakers in English.
 
+## Incident reports and the safety report
+
+- **Incident reports** (`...000072`): `report_incident()` checks the
+  reporter is in the organization, stores the position only if they're
+  clocked in there, and pushes the people who oversee them
+  (`incident_audience`). Readable by the reporter, owners and admins, and a
+  manager who leads one of the reporter's teams (`can_see_incident`);
+  `resolve_incident()` for owners, admins and those managers. Photos in the
+  private `incident-photos` bucket under `<org>/<reporter>/`, readable by the
+  same people. Included in "Download my data". Tests:
+  `tests/organizations/16_incident_reports.sql` (24 checks).
+- **Safety report** (`...000073`): `org_safety_report(org, weeks, tz)`
+  returns one row per week: hours, shifts, workers, SOS on shift and how many
+  were answered with the median time, missed check-ins, quiet phones,
+  incidents and location views. Missed check-ins and quiet phones were only
+  flags on the open shift, so triggers log each one to `org_safety_events`
+  as it's raised. Tests: `tests/organizations/17_safety_report.sql`
+  (11 checks).
+
 ## Before a demo
 
 Sample data for presenting, and a check that the live project is ready:

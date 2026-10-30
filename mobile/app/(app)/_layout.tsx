@@ -12,6 +12,7 @@ import { useFallDetection } from '@/hooks/useFallDetection';
 import { useShakeToSos } from '@/hooks/useShakeToSos';
 import { CarPlayBridge } from '@/components/CarPlayBridge';
 import { FallCheck } from '@/components/FallCheck';
+import { LockScreenSync } from '@/components/LockScreenSync';
 import { canEnterApp } from '@/lib/accountType';
 import { announce } from '@/lib/announce';
 import { offerTextForHelp, sendSos } from '@/lib/sos';
@@ -29,6 +30,7 @@ export default function AppLayout() {
             <MembersScope>
               <AppNavigator />
               <CarPlayBridge />
+              <LockScreenSync />
             </MembersScope>
           </ShakeSettingsProvider>
         </CircleProvider>
@@ -84,6 +86,8 @@ function AppNavigator() {
             <Stack.Screen name="timesheets" options={{ headerShown: true }} />
             <Stack.Screen name="org-settings" options={{ headerShown: true }} />
             <Stack.Screen name="job-sites" options={{ headerShown: true }} />
+            <Stack.Screen name="report-incident" options={{ headerShown: true }} />
+            <Stack.Screen name="incidents" options={{ headerShown: true }} />
             <Stack.Screen name="ghost-mode" options={{ headerShown: true }} />
             <Stack.Screen name="drop-pin" options={{ headerShown: true, presentation: 'modal' }} />
             <Stack.Screen name="curfew" options={{ headerShown: true }} />

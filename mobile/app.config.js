@@ -64,6 +64,8 @@ module.exports = {
       './plugins/withSceneLifecycle',
       // CarPlay screens; the entitlement only with SAFECIRCLE_CARPLAY=1.
       './plugins/withCarPlay',
+      // lock-screen countdowns; only with SAFECIRCLE_LIVE_ACTIVITY=1
+      './plugins/withLiveActivity',
       'expo-router',
       'expo-status-bar',
       [
@@ -81,7 +83,7 @@ module.exports = {
       [
         'expo-image-picker',
         {
-          photosPermission: 'Safe Circle uses your photos so you can choose a profile picture.',
+          photosPermission: 'Safe Circle uses your photos so you can choose a profile picture or add one to an incident report.',
         },
       ],
       [
@@ -100,7 +102,7 @@ module.exports = {
       [
         'expo-camera',
         {
-          cameraPermission: 'Safe Circle uses the camera to scan a circle invite QR code.',
+          cameraPermission: 'Safe Circle uses the camera to scan a circle invite QR code and to take photos for incident reports.',
           microphonePermission: false,
           recordAudioAndroid: false,
         },

@@ -57,7 +57,7 @@ Safe Circle is one account with two kinds of circle:
 
 - **SOS**: one tap (or a hard shake) alerts your circle with your location, with **Call 911** on the same prompt. Circle-mates tap "I'm on my way"; an SOS nobody answers is pushed again automatically. No internet? It offers a **text message** with your location instead.
 - **Fall and crash detection**: a hard fall followed by stillness opens a 30-second, vibrating "Are you OK?"; no answer sends the SOS for you.
-- **Walk me home** and **Check on me**: timers that send an SOS on their own if you don't arrive or check in.
+- **Walk me home** and **Check on me**: timers that send an SOS on their own if you don't arrive or check in, counting down on the **lock screen and Dynamic Island** (in builds made with the Live Activity extension).
 - **Curfew**: your circle is alerted if you're not home by a set time, in your own time zone.
 - **Medical card**: readable by your circle only during an active SOS.
 - **Backup contacts**: people outside the app to text in an emergency.
@@ -79,6 +79,8 @@ Safe Circle is one account with two kinds of circle:
 - Managers see a **live crew map** only of people on shift, only of the teams they lead. Shifts end by themselves after 14 hours.
 - Optional **check-ins**: a missed one alerts the managers. A phone that goes **quiet** for about 20 minutes on shift alerts them too.
 - Every time a manager looks at a worker's location, the worker sees it in **"Who's looked at you"**.
+- **Incident reports**: a worker reports a hazard, a near miss or an injury with a note and a photo; the people who oversee them are alerted at once and mark it resolved. The position goes with it only on shift.
+- **Safety report**: week by week on the web dashboard: hours, SOS alerts and how fast someone answered, missed check-ins, quiet phones, incidents and location views, for the whole crew or a manager's teams.
 - **Job-site reminders** that never leave the worker's phone; **timesheets** with a payroll CSV (times only, never places).
 - A **web dashboard** for owners and managers, and a platform view that shows totals only.
 

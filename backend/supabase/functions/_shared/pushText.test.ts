@@ -75,6 +75,10 @@ const ALERTS: [string, string, string | undefined, string, string][] = [
    "✈️ Maya está volando", "Vuela a Dallas; aterriza en unos 2 h 10 min."],
   ["🚶 Maya is walking to Home", "Due within 20 min. You'll be alerted if they don't arrive.", "walk",
    "🚶 Maya está caminando a Home", "Debe llegar en 20 min. Se te avisará si no llega."],
+  ["⚠️ Hazard reported by Wendy Worker", "Loose scaffolding on level 3", "incident",
+   "⚠️ Peligro reportado por Wendy Worker", "Loose scaffolding on level 3"], // the note is hers: untouched
+  ["⚠️ Near miss reported by Walt", "Forklift left running", "incident",
+   "⚠️ Casi accidente reportado por Walt", "Forklift left running"],
   ["👑 You're now the owner of Smith", "Ana made you the creator. You can rename it, remove members and manage join approvals.", "ownership",
    "👑 Ahora eres el propietario de Smith", "Ana te hizo creador. Puedes renombrarlo, quitar miembros y administrar las aprobaciones."],
 ];

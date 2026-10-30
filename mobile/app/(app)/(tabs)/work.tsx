@@ -381,6 +381,19 @@ export default function WorkScreen() {
           </Card>
         )}
 
+        <Pressable
+          accessibilityRole="button"
+          accessibilityHint={t('Tell the people who oversee you about a hazard, a near miss or an injury.')}
+          onPress={() => router.push({ pathname: '/report-incident', params: { orgId: org.org_id } })}
+          style={({ pressed }) => [ui.card, ui.row, pressed && { opacity: 0.8 }]}
+        >
+          <View style={styles.rowIcon}>
+            <Text allowFontScaling={false} style={styles.rowEmoji}>⚠️</Text>
+          </View>
+          <Text style={[ui.rowTitle, { flex: 1 }]}>{t('Report a hazard or incident')}</Text>
+          <Text style={styles.chevron}>›</Text>
+        </Pressable>
+
         <Card>
           <SectionTitle>{t("Who's looked at you")}</SectionTitle>
           {looks.length === 0 ? (
@@ -474,6 +487,19 @@ export default function WorkScreen() {
             title={t('Job sites')}
             caption={t('Clock-in reminders')}
             onPress={() => router.push({ pathname: '/job-sites', params: { orgId: org.org_id } })}
+          />
+          <ActionTile
+            icon="⚠️"
+            title={t('Incidents')}
+            caption={t('Hazards and injuries')}
+            onPress={() => router.push({ pathname: '/incidents', params: { orgId: org.org_id, orgName: org.name } })}
+          />
+          <ActionTile
+            icon="📝"
+            title={t('Report')}
+            caption={t('A hazard you saw')}
+            accessibilityLabel={t('Report a hazard or incident')}
+            onPress={() => router.push({ pathname: '/report-incident', params: { orgId: org.org_id } })}
           />
           {isAdmin && (
             <ActionTile

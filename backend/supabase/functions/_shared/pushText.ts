@@ -42,6 +42,11 @@ const TITLES: Rule[] = [
   [/^🚌 (.+) is on the bus$/, (n) => `🚌 ${n} va en autobús`],
   [/^🚆 (.+) is on the train$/, (n) => `🚆 ${n} va en tren`],
   [/^✈️ (.+) is flying$/, (n) => `✈️ ${n} está volando`],
+  [
+    /^⚠️ (Hazard|Near miss|Injury|Incident) reported by (.+)$/,
+    (kind, n) =>
+      `⚠️ ${{ Hazard: "Peligro reportado", "Near miss": "Casi accidente reportado", Injury: "Lesión reportada", Incident: "Incidente reportado" }[kind]} por ${n}`,
+  ],
   [/^(.+) closed$/, (o) => `${o} cerró`], // last: the most general shape
 ];
 
@@ -109,8 +114,7 @@ function translate(text: string, rules: Rule[]): string {
   return text;
 }
 
-// An alert written by the database (send_alert_push), for one recipient. A
-// pin's body is the label its dropper typed, so it's left alone.
+// An alert written by the database (send_alert_push), for one recipient.
 export function localizePush(
   language: PushLanguage,
   title: string,
@@ -118,7 +122,9 @@ export function localizePush(
   type?: unknown,
 ): { title: string; body: string } {
   if (language !== "es") return { title, body };
-  return { title: translate(title, TITLES), body: type === "pin" ? body : translate(body, BODIES) };
+  // a pin's label and an incident's note are what someone typed
+  const typed = type === "pin" || type === "incident";
+  return { title: translate(title, TITLES), body: typed ? body : translate(body, BODIES) };
 }
 
 // An automatic SOS carries an English message (the database's for an overdue

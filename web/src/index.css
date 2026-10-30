@@ -1241,3 +1241,26 @@ button:active:not(:disabled) {
   font-weight: 600;
   text-decoration: none;
 }
+
+/* Incident reports */
+.incident-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 640px;
+}
+.incident-card h3 {
+  margin: 0;
+}
+.incident-card p {
+  margin: 0;
+}
+.incident-injury {
+  border-color: var(--danger);
+}
+.incident-photo {
+  width: 100%;
+  max-width: 480px;
+  border-radius: 12px;
+  display: block;
+}

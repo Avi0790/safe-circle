@@ -195,6 +195,17 @@ database in the backend's rolled-back transaction tests. Logic is unit tested
 in `src/lib/__tests__/crew.test.ts` (crew split and flags, team and permission
 rules, CSV escaping).
 
+## Safety report and incidents
+
+Two tabs in the work view. **Safety report** (`OrgSafety.tsx`,
+`org_safety_report`): the last eight weeks of hours, SOS alerts and the
+median time to an answer, missed check-ins, phones that went quiet on shift,
+incident reports and location views, as tiles, a weekly hours chart and a
+week-by-week table. **Incidents** (`OrgIncidents.tsx`, `org_incidents`):
+open and resolved reports with photos (short-lived links) and "Mark
+resolved". Both follow the usual scope: owners and admins see everyone, a
+manager their teams.
+
 ## Español
 
 The dashboard follows the browser's language, English or Spanish, and the

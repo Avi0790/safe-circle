@@ -976,6 +976,33 @@ rather than hardcoding styles per-screen, and keep the palette in sync
 with the web dashboard's (`web/src/index.css`) so the two clients feel
 related.
 
+## Incident reports
+
+Work tab → "Report a hazard or incident" (workers), or the Incidents and
+Report tiles (owners, admins, managers). A report is a kind (hazard, near
+miss, injury, other), a note, an optional photo from the camera or the
+library, and the position only while clocked in there. The database tells
+the people who oversee the reporter at once and decides who can read it
+(migration `...000072`); `app/(app)/incidents.tsx` lists them with photos
+and a "Mark resolved" button. Photos go to a private bucket, resized to
+1280 px, under `<org>/<you>/`.
+
+## Lock screen (Live Activities)
+
+Walk me home, Check on me and your shift appear on the lock screen and in the
+Dynamic Island as a countdown that runs with the app closed
+(`lib/liveActivity.ts`, `components/LockScreenSync.tsx`, the
+`expo-live-activity` package). It needs a widget extension, which is left
+out of normal builds so a working phone build stays as it is. To include it:
+
+```bash
+SAFECIRCLE_LIVE_ACTIVITY=1 npx expo prebuild --platform ios --clean
+SAFECIRCLE_LIVE_ACTIVITY=1 npx expo run:ios --device <udid> --configuration Release
+```
+
+`plugins/withLiveActivity.js` gives the extension the app's signing team, so
+a free Personal Team can sign it. In a build without it, nothing happens.
+
 ## Fall detection ("man-down")
 
 Settings → Fall detection (off by default, per phone). For someone working
