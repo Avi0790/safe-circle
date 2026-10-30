@@ -22,3 +22,23 @@ generous limit:
 It runs on every push in CI (`tests/run_all.sh` against the fresh local
 database), and locally with `supabase start` then `tests/run_all.sh load`.
 `--linked` skips it: it isn't something to do to the live project.
+
+## Results (CI, 2026-10-30)
+
+112,800 positions for 302 people, built in 10 s. Best of 3 runs:
+
+| Query | Rows | Time |
+|---|---|---|
+| Owner's live crew map (200 on shift) | 200 | 31 ms |
+| Manager's live crew map (team of 40) | 40 | 24 ms |
+| A worker's shift track | 60 | 0.4 ms |
+| Family map, latest positions | 4 | 36 ms |
+| A circle-mate's trail (latest 100) | 100 | 12 ms |
+| A worker asking for everyone else's positions | 0 | 1,285 ms |
+| One location upload (average of 100) | 1 | 0.6 ms |
+
+Every query the apps make stays in tens of milliseconds. The slow one is not
+a query the apps make: it is someone asking for the whole table, which
+row-level security answers with nothing after checking each row. It's the
+cost of refusing, and it's the first thing to index if the table grows by
+orders of magnitude.
