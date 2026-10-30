@@ -16,7 +16,6 @@ appId: com.surendrabk.safecircle
 - assertVisible: "Family & friends"
 - assertVisible: "Work crew"
 - tapOn: "Work crew"
-- hideKeyboard
 - scrollUntilVisible:          # below the form on smaller phones
     element: "Sign in"
     direction: DOWN

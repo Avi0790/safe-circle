@@ -39,12 +39,15 @@ else:
 
 echo
 echo "— Migrations —"
-supabase migration list --linked 2>/dev/null | python3 -c '
+supabase migration list --linked --output-format json 2>&1 | python3 -c '
 import json, sys
+raw = sys.stdin.read()
 try:
-    rows = json.load(sys.stdin)["migrations"]
+    rows = json.loads(raw[raw.find("{"):raw.rfind("}") + 1])["migrations"]
 except Exception:
-    print("FAIL could not list migrations  → is the project linked? supabase link"); sys.exit()
+    lines = [l for l in raw.splitlines() if l.strip() and "new version" not in l.lower() and "recommend updating" not in l.lower()]
+    print("FAIL could not list migrations: " + (lines[-1] if lines else "no answer") + "  → supabase link, or supabase login")
+    sys.exit()
 pending = [r["local"] for r in rows if r["local"] and not r["remote"]]
 extra = [r["remote"] for r in rows if r["remote"] and not r["local"]]
 if pending:
@@ -58,12 +61,16 @@ if extra:
 echo
 echo "— Edge Functions —"
 LOCAL=$(ls supabase/functions | grep -v '^_' | tr '\n' ' ')
-supabase functions list 2>/dev/null | NOT_DEPLOYED="$NOT_DEPLOYED" LOCAL="$LOCAL" python3 -c '
+supabase functions list --output-format json 2>&1 | NOT_DEPLOYED="$NOT_DEPLOYED" LOCAL="$LOCAL" python3 -c '
 import json, os, sys
+raw = sys.stdin.read()
 try:
-    live = {f["slug"]: f["status"] for f in json.load(sys.stdin)["functions"]}
+    live = {f["slug"]: f["status"] for f in json.loads(raw[raw.find("{"):raw.rfind("}") + 1])["functions"]}
 except Exception:
-    print("FAIL could not list Edge Functions  → supabase login"); sys.exit()
+    # show what the CLI actually said rather than guessing
+    lines = [l for l in raw.splitlines() if l.strip() and "new version" not in l.lower() and "recommend updating" not in l.lower()]
+    print("FAIL could not list Edge Functions: " + (lines[-1] if lines else "no answer") + "  → supabase login, then try again")
+    sys.exit()
 skip = os.environ["NOT_DEPLOYED"].split()
 for name in os.environ["LOCAL"].split():
     if name in skip:

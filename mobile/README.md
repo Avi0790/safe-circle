@@ -818,7 +818,7 @@ Add `MAESTRO_CLI_NO_ANALYTICS=1` to turn off its usage statistics.
 
 ```bash
 maestro test .maestro/signed-out                     # no account needed
-maestro test -e EMAIL=test@example.com -e PASSWORD=... .maestro/signed-in
+maestro test --device <id> -e EMAIL=test@example.com -e PASSWORD=... .maestro/signed-in
 ```
 
 - `signed-out/01_sign_in_screens`: sign-in, the three account types on
@@ -830,7 +830,9 @@ maestro test -e EMAIL=test@example.com -e PASSWORD=... .maestro/signed-in
 
 The signed-in flows act for real (a check-in message, a shift), so run them
 with a test account, not one with your family on it. Each starts with
-`clearState`, which signs the app out first. Tabs are matched by their
+`clearState`, which signs the app out first. With both the simulator and an
+emulator open, pass `--device` (`xcrun simctl list devices booted`, or
+`adb devices`) so Maestro doesn't pick one for you. Tabs are matched by their
 accessible names ("Settings, tab, 5 of 5"), so `"Settings, tab.*"`.
 
 ### Environment variables

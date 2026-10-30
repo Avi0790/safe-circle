@@ -10,10 +10,8 @@ appId: com.surendrabk.safecircle
 - inputText: ${EMAIL}
 - tapOn: "Password"
 - inputText: ${PASSWORD}
-- hideKeyboard
-- tapOn:
-    text: "Sign in"
-    index: 1          # the button, not the screen title
+- tapOn: "Welcome back"     # closes the keyboard (hideKeyboard means Back on Android)
+- tapOn: "Sign in"    # the button (the screen's title is "Welcome back")
 - extendedWaitUntil:
     visible: "Map, tab.*"
     timeout: 20000
