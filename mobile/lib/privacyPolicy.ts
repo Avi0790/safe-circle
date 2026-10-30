@@ -7,7 +7,7 @@
 
 export const POLICY_UPDATED = '2026-10-30';
 
-export const POLICY_FILL = { contact: '[contact email]', age: '[minimum age]' };
+export const POLICY_FILL = { contact: 'surendrasunar507@gmail.com', age: '[minimum age]' };
 
 export const POLICY: { title: string; items: string[] }[] = [
   {
