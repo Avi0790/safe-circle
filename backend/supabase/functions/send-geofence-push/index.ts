@@ -4,6 +4,7 @@
 // traveler's circle, grabs their push tokens, and sends an Expo push
 // notification.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { PUSH, recipientLanguages } from "../_shared/pushText.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -59,19 +60,18 @@ Deno.serve(async (req) => {
 
   const { data: tokens } = await supabase
     .from("push_tokens")
-    .select("token")
+    .select("token, user_id")
     .in("user_id", memberIds);
 
   if (!tokens || tokens.length === 0) {
     return new Response("no push tokens", { status: 200 });
   }
 
-  const verb = event.event_type === "arrived" ? "arrived at" : "left";
+  const languages = await recipientLanguages(supabase, memberIds);
   const messages = tokens.map((t) => ({
     to: t.token,
     sound: "default",
-    title: "Safe Circle",
-    body: `${traveler.full_name} ${verb} ${place.name}`,
+    ...PUSH.place(languages.get(t.user_id) ?? "en", traveler.full_name, event.event_type === "arrived", place.name),
   }));
 
   const expoRes = await fetch("https://exp.host/--/api/v2/push/send", {

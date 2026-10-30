@@ -31,6 +31,14 @@ jobs:
       # database. Each rolls itself back; any FAIL fails the build.
       - run: tests/run_all.sh
 
+      # Notifications in each recipient's language: every alert the database
+      # sends is translated for Spanish speakers (functions/_shared). Node
+      # runs the TypeScript as is.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: node --test supabase/functions/_shared/
+
   web:
     name: Web dashboard
     runs-on: ubuntu-latest

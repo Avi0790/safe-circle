@@ -7,6 +7,7 @@ import { AppLockProvider } from '@/contexts/AppLockContext';
 import { CircleProvider, useCircles } from '@/contexts/CircleContext';
 import { CircleMembersProvider } from '@/contexts/CircleMembersContext';
 import { ShakeSettingsProvider, useShakeSettings } from '@/contexts/ShakeSettingsContext';
+import { useProfileLanguage } from '@/hooks/useProfileLanguage';
 import { useShakeToSos } from '@/hooks/useShakeToSos';
 import { CarPlayBridge } from '@/components/CarPlayBridge';
 import { canEnterApp } from '@/lib/accountType';
@@ -15,6 +16,7 @@ import { useThemeVersion } from '@/lib/theme';
 
 export default function AppLayout() {
   useThemeVersion(); // redraw on a theme switch (lib/theme.ts)
+  useProfileLanguage(); // notifications in the language you read the app in
   return (
     <AppLockProvider>
       <AccountProvider>

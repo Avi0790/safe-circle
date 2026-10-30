@@ -3,6 +3,7 @@
 // just came within range. Unlike the other push functions the trigger has
 // already decided who to notify, so the payload names the recipient.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { PUSH, recipientLanguages } from "../_shared/pushText.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -32,7 +33,7 @@ Deno.serve(async (req) => {
   if (!tokens || tokens.length === 0) return new Response("no push tokens", { status: 200 });
 
   const miles = meters / 1609.344;
-  const distance = miles < 0.1 ? "right next to you" : `${miles.toFixed(1)} mi away`;
+  const language = (await recipientLanguages(supabase, [recipient_id])).get(recipient_id) ?? "en";
 
   const expoRes = await fetch("https://exp.host/--/api/v2/push/send", {
     method: "POST",
@@ -41,8 +42,7 @@ Deno.serve(async (req) => {
       tokens.map((t) => ({
         to: t.token,
         sound: "default",
-        title: "Nearby",
-        body: `${other.full_name} is nearby — ${distance}`,
+        ...PUSH.nearby(language, other.full_name, miles),
         data: { type: "nearby", userId: other_id },
       })),
     ),

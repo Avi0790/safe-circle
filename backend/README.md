@@ -667,6 +667,23 @@ signature for `STRIPE_WEBHOOK_SECRET` can change a plan, through
 same 7-day grace as the demo, and SOS, clocking out and running shifts are
 never affected by billing.
 
+## Notifications in each person's language
+
+Alerts are written once, in English, by the database (`send_alert_push`'s
+24 callers) and by the push Edge Functions. Each person's `profiles.language`
+(`en` or `es`, migration `...000071`) is set by the app to the language it's
+showing, and the Edge Functions translate each message for its recipient just
+before delivery (`functions/_shared/pushText.ts`): SQL alerts by matching
+their fixed shapes ("⏰ {name} missed curfew"), the functions' own messages
+built directly in either language. Names, places and anything a person typed
+(a pin's label, an SOS message) pass through unchanged, and a message no rule
+knows is sent in English rather than garbled.
+
+`node --test supabase/functions/_shared/` checks every alert the database
+sends, worded exactly as the SQL writes it (CI runs it on every push). A new
+alert in SQL needs a rule in `pushText.ts` and a line in its test, or it
+reaches Spanish speakers in English.
+
 ## Before a demo
 
 Sample data for presenting, and a check that the live project is ready:

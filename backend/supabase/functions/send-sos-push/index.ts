@@ -4,6 +4,7 @@
 // scoped to one circle, since sos_events isn't circle-scoped either —
 // same pattern as `locations`).
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { PUSH, recipientLanguages } from "../_shared/pushText.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -68,19 +69,19 @@ Deno.serve(async (req) => {
 
   const { data: tokens } = await supabase
     .from("push_tokens")
-    .select("token")
+    .select("token, user_id")
     .in("user_id", memberIds);
 
   if (!tokens || tokens.length === 0) {
     return new Response("no push tokens", { status: 200 });
   }
 
+  const languages = await recipientLanguages(supabase, memberIds);
   const messages = tokens.map((t) => ({
     to: t.token,
     sound: "default",
     priority: "high",
-    title: "🆘 SOS",
-    body: `${traveler.full_name} needs help!${event.message ? ` "${event.message}"` : ""}`,
+    ...PUSH.sos(languages.get(t.user_id) ?? "en", traveler.full_name, event.message),
     data: { type: "sos", sosEventId: event.id, latitude: event.latitude, longitude: event.longitude },
   }));
 

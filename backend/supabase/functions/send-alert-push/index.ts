@@ -1,8 +1,10 @@
 // Called by public.send_alert_push() (via pg_net) — see migration
 // ...000024_alert_push_helper.sql. The SQL side has already decided who to
 // notify and what to say; this only turns user ids into Expo push tokens
-// and delivers. Same shared-secret check as the other push functions.
+// and delivers, in each recipient's language (_shared/pushText.ts). Same
+// shared-secret check as the other push functions.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { localizePush, recipientLanguages } from "../_shared/pushText.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -31,18 +33,18 @@ Deno.serve(async (req) => {
   const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
   const { data: tokens } = await supabase
     .from("push_tokens")
-    .select("token")
+    .select("token, user_id")
     .in("user_id", payload.recipient_ids);
 
   if (!tokens || tokens.length === 0) {
     return new Response("no push tokens", { status: 200 });
   }
 
+  const languages = await recipientLanguages(supabase, payload.recipient_ids);
   const messages = tokens.map((t) => ({
     to: t.token,
     sound: "default",
-    title: payload.title,
-    body: payload.body,
+    ...localizePush(languages.get(t.user_id) ?? "en", payload.title, payload.body, payload.data?.type),
     data: payload.data ?? {},
   }));
 
