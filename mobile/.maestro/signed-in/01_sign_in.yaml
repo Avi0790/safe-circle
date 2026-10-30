@@ -12,6 +12,8 @@ appId: com.surendrabk.safecircle
 - inputText: ${PASSWORD}
 - tapOn: "Welcome back"     # closes the keyboard (hideKeyboard means Back on Android)
 - tapOn: "Sign in"    # the button (the screen's title is "Welcome back")
+# a wrong EMAIL or PASSWORD stops here, and the label says why
 - extendedWaitUntil:
     visible: "Map, tab.*"
     timeout: 20000
+    label: "Signed in (if this fails: is EMAIL / PASSWORD a real test account?)"
