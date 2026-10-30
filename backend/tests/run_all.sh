@@ -4,7 +4,7 @@
 # (see tests/organizations/README.md), so this is safe against any database.
 #
 #   tests/run_all.sh            the local database (supabase start) — what CI runs
-#   tests/run_all.sh --linked   the live project
+#   tests/run_all.sh --linked   the live project (skips tests/load)
 #   tests/run_all.sh --linked organizations/07   only files matching a pattern
 set -uo pipefail
 cd "$(dirname "$0")/.."
@@ -17,6 +17,10 @@ fi
 pattern="${1:-}"
 
 files=$(ls tests/*/*.sql | grep -- "$pattern" || true)
+# The load test writes ~115,000 rows (then rolls back): local databases only.
+if [ "$target" = "--linked" ]; then
+  files=$(printf '%s\n' $files | grep -v '^tests/load/' || true)
+fi
 if [ -z "$files" ]; then
   echo "No tests match '$pattern'."
   exit 1
