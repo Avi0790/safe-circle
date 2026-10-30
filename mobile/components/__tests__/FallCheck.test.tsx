@@ -24,7 +24,11 @@ describe('FallCheck: "Are you OK?" after a possible fall', () => {
     cancel = jest.spyOn(Vibration, 'cancel').mockImplementation(() => {});
     jest.spyOn(AccessibilityInfo, 'announceForAccessibility').mockImplementation(() => {});
   });
-  afterEach(() => {
+  let mounted: ReactTestRenderer | null = null;
+  afterEach(async () => {
+    // close the screen (its timer and vibration) before the fakes go away
+    if (mounted) await act(async () => mounted!.unmount());
+    mounted = null;
     jest.useRealTimers();
     jest.restoreAllMocks();
   });
@@ -34,6 +38,7 @@ describe('FallCheck: "Are you OK?" after a possible fall', () => {
     await act(async () => {
       r = create(<FallCheck visible onDismiss={onDismiss} onSend={onSend} />);
     });
+    mounted = r;
     return { r, onDismiss, onSend };
   }
 
