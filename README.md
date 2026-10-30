@@ -199,4 +199,6 @@ SafeCircle/
 **Surendra B K** — creator and developer of Safe Circle: the backend, the mobile app, the web dashboard, the tests and the CI.
 GitHub: [@surendr7a](https://github.com/surendr7a)
 
-CS capstone project, Fall 2026. Released under the [MIT License](LICENSE).
+CS capstone project, Fall 2026 (Team Beacon). Proposal team: Avi (mobile & UI), AJ (location engine), Surendra (backend & data), Thi (web client & QA).
+
+Released under the [MIT License](LICENSE).
