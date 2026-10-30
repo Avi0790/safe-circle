@@ -604,7 +604,7 @@ export default function DriveScreen() {
     );
     if (!result.ok) {
       setSaveNotice(
-        result.reason === 'full' ? 'You have the most places you can save. Remove one first.' : 'Give the place a name.',
+        result.reason === 'full' ? t('You have the most places you can save. Remove one first.') : t('Give the place a name.'),
       );
       return;
     }
@@ -1003,7 +1003,7 @@ export default function DriveScreen() {
           {(searching || routing) && (
             <View style={styles.inline}>
               <ActivityIndicator />
-              <Text style={typography.caption}>{routing ? 'Planning your route…' : 'Searching…'}</Text>
+              <Text style={typography.caption}>{routing ? t('Planning your route…') : t('Searching…')}</Text>
             </View>
           )}
         </View>
@@ -1155,8 +1155,7 @@ export default function DriveScreen() {
           )}
           <Text style={styles.footnote}>
             {walking
-              ? 'Walking routes come from OpenStreetMap data and can be wrong, or use paths that are dark or crossings without signals. Use your own judgment.'
-              : 'Routes come from OpenStreetMap-based services and can be wrong. Follow road signs and local laws.'}
+              ? t('Walking routes come from OpenStreetMap data and can be wrong, or use paths that are dark or crossings without signals. Use your own judgment.') : t('Routes come from OpenStreetMap-based services and can be wrong. Follow road signs and local laws.')}
           </Text>
           {selectedCircle && (
             <View style={styles.shareRow}>

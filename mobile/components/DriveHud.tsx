@@ -104,7 +104,7 @@ export function DriveHud(p: DriveHudProps) {
             style={styles.round}
             onPress={p.onCompass}
             accessibilityRole="button"
-            accessibilityLabel={p.cameraMode === 'north' ? 'North up' : 'Heading up'}
+            accessibilityLabel={p.cameraMode === 'north' ? t('North up') : t('Heading up')}
           >
             <View style={[styles.needle, p.cameraMode === 'north' && styles.needleNorth]}>
               <View style={styles.needleRed} />
@@ -121,7 +121,7 @@ export function DriveHud(p: DriveHudProps) {
           style={styles.round}
           onPress={p.onToggleMute}
           accessibilityRole="button"
-          accessibilityLabel={p.muted ? 'Unmute voice' : 'Mute voice'}
+          accessibilityLabel={p.muted ? t('Unmute voice') : t('Mute voice')}
         >
           <Text allowFontScaling={false} style={styles.roundIcon}>{p.muted ? '🔇' : p.voiceMode === 'alerts' ? '🔉' : '🔊'}</Text>
         </Pressable>
@@ -130,7 +130,7 @@ export function DriveHud(p: DriveHudProps) {
             style={[styles.round, overview && styles.roundOn]}
             onPress={p.onOverview}
             accessibilityRole="button"
-            accessibilityLabel={overview ? 'Re-center' : 'Route overview'}
+            accessibilityLabel={overview ? t('Re-center') : t('Route overview')}
           >
             <Text allowFontScaling={false} style={styles.roundIcon}>{overview ? '◎' : '🗺️'}</Text>
           </Pressable>
@@ -154,7 +154,7 @@ export function DriveHud(p: DriveHudProps) {
         ) : null}
         <View
           style={[styles.speed, p.overLimit && styles.speedOver]}
-          accessibilityLabel={`${p.mode === 'walk' ? 'Walking speed' : 'Speed'} ${p.speedMph ?? 0} miles per hour${p.overLimit ? ', over the limit' : ''}`}
+          accessibilityLabel={`${p.mode === 'walk' ? t('Walking speed') : t('Speed')} ${p.speedMph ?? 0} miles per hour${p.overLimit ? ', over the limit' : ''}`}
         >
           <Text style={[styles.speedValue, p.overLimit && styles.speedValueOver]}>
             {p.speedMph == null ? '—' : p.mode === 'walk' ? p.speedMph.toFixed(1) : p.speedMph}

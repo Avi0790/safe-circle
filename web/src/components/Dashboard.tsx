@@ -24,6 +24,7 @@ import { TripBanner } from './TripBanner'
 import { reportsForCircle, type RoadReport } from '../lib/roadReports'
 import type { SharedTrip } from '../lib/sharedTrips'
 import { fetchWeather, type Weather } from '../lib/weather'
+import { t } from '../lib/i18n'
 
 const MESSAGE_LIMIT = 50
 
@@ -540,15 +541,15 @@ export function Dashboard({ myUserId }: { myUserId: string }) {
   }
 
   if (loading) {
-    return <div className="centered">Loading your circles…</div>
+    return <div className="centered">{t('Loading your circles…')}</div>
   }
 
   if (circles.length === 0) {
     return (
       <div className="centered">
-        <p>You're not in any circles yet.</p>
-        <p className="hint">Join or create one from the Safe Circle mobile app first.</p>
-        <button onClick={handleSignOut}>Sign out</button>
+        <p>{t("You're not in any circles yet.")}</p>
+        <p className="hint">{t('Join or create one from the Safe Circle mobile app first.')}</p>
+        <button onClick={handleSignOut}>{t('Sign out')}</button>
       </div>
     )
   }
@@ -557,9 +558,9 @@ export function Dashboard({ myUserId }: { myUserId: string }) {
     <div className="dashboard">
       <aside className="sidebar">
         <div className="sidebar-header">
-          <h1>Safe Circle</h1>
+          <h1>{t('Safe Circle')}</h1>
           <button className="link-button" onClick={handleSignOut}>
-            Sign out
+            {t('Sign out')}
           </button>
         </div>
 
@@ -568,7 +569,7 @@ export function Dashboard({ myUserId }: { myUserId: string }) {
             value={selectedCircleId ?? ''}
             onChange={(e) => setSelectedCircleId(e.target.value)}
             className="circle-select"
-            aria-label="Circle"
+            aria-label={t('Circle')}
           >
             {circles.map((c) => (
               <option key={c.id} value={c.id}>
@@ -597,7 +598,7 @@ export function Dashboard({ myUserId }: { myUserId: string }) {
         <p className="credit credit-sidebar">
           Safe Circle — created and developed by{' '}
           <a href="https://github.com/surendr7a/SafeCircle" target="_blank" rel="noopener noreferrer">
-            Surendra B K
+            {t('Surendra B K')}
           </a>
         </p>
       </aside>

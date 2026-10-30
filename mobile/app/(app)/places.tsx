@@ -299,7 +299,7 @@ export default function PlacesScreen() {
                     hitSlop={8}
                   >
                     <Text style={styles.removeLink}>
-                      {deletingId === item.id ? 'Removing…' : 'Remove'}
+                      {deletingId === item.id ? t('Removing…') : t('Remove')}
                     </Text>
                   </Pressable>
                 </View>

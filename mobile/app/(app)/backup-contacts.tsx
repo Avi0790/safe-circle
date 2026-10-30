@@ -103,7 +103,7 @@ export default function BackupContactsScreen() {
               disabled={deletingId === item.id}
               hitSlop={8}
             >
-              <Text style={styles.removeText}>{deletingId === item.id ? 'Removing…' : 'Remove'}</Text>
+              <Text style={styles.removeText}>{deletingId === item.id ? t('Removing…') : t('Remove')}</Text>
             </Pressable>
           </View>
         )}

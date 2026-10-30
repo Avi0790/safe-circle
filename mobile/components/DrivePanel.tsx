@@ -51,9 +51,9 @@ export function DrivePanel(p: DrivePanelProps) {
   return (
     <View style={[styles.sheet, { paddingBottom: p.bottomInset + spacing.md }]}>
       <View style={styles.header}>
-        <Text style={typography.heading}>{p.view === 'stops' ? 'Add a stop' : p.view === 'report' ? 'Report' : 'Options'}</Text>
+        <Text style={typography.heading}>{p.view === 'stops' ? 'Add a stop' : p.view === 'report' ? t('Report') : t('Options')}</Text>
         <Pressable onPress={p.view === 'stops' ? p.onBack : p.onClose} hitSlop={10} accessibilityRole="button">
-          <Text style={styles.close}>{p.view === 'stops' ? 'Back' : 'Done'}</Text>
+          <Text style={styles.close}>{p.view === 'stops' ? t('Back') : t('Done')}</Text>
         </Pressable>
       </View>
 
@@ -116,8 +116,7 @@ export function DrivePanel(p: DrivePanelProps) {
               {p.voiceMode === 'alerts'
                 ? 'Only incidents reported ahead and your arrival are spoken.'
                 : p.voiceMode === 'off'
-                  ? 'Nothing is spoken. Directions stay on screen.'
-                  : 'Turn-by-turn directions and alerts are spoken.'}
+                  ? t('Nothing is spoken. Directions stay on screen.') : t('Turn-by-turn directions and alerts are spoken.')}
             </Text>
 
             {p.circleName && (

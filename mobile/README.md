@@ -987,14 +987,16 @@ families the app is for.
   `t('Sign in')`, `t('Clocked in to {org}', { org: name })`. Spanish is
   looked up in `lib/translations/es.ts` by the English; anything not
   translated yet shows in English, never as a key.
-- Translated so far: signing in and up, the tab bar, the Map tab, SOS and
-  its alerts, Quick actions, walk and check-on-me banners, the Work tab
-  (clocking in and out, check-ins, the owner's crew card and demo billing),
-  **the work disclosure a worker agrees to**, Members, Chat and Settings.
-  Other screens (Directions, places, timesheets...) are still English.
+- Every screen is translated (601 phrases): signing in, the tabs, SOS,
+  Directions and the drive screen, walks, check-ins, trips and links,
+  curfew, the Work tab and crew screens, timesheets, privacy screens and
+  **the work disclosure a worker agrees to**. A few sentences built from
+  live values in code (some counts and times) are still English.
 - Quick statuses are stored in English and shown in each reader's language,
   so a Spanish speaker and an English speaker in one circle both read their
-  own. Push notifications are composed by the database, still in English.
+  own. Notifications arrive in each recipient's language too: the app saves
+  it to `profiles.language`, and the push Edge Functions translate each alert
+  (see backend/README.md).
 - `lib/__tests__/i18n.test.ts` fails if any `t('...')` has no Spanish, or a
   translation's `{placeholders}` don't match the English.
 - The Spanish is informal ("tú"), Latin American. Have a native speaker

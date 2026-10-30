@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import type { OrgMembership } from '../lib/org'
+import { t } from '../lib/i18n'
 
 interface Site {
   id: string
@@ -47,14 +48,14 @@ export function OrgJobSites({ org }: { org: OrgMembership }) {
         phone when they arrive without clocking in; nobody here is told they were there.
       </p>
       {sites.length === 0 ? (
-        <p className="org-note">No job sites yet.</p>
+        <p className="org-note">{t('No job sites yet.')}</p>
       ) : (
         <table className="org-table">
           <thead>
             <tr>
-              <th scope="col">Site</th>
-              <th scope="col">Radius</th>
-              <th scope="col"><span className="visually-hidden">Actions</span></th>
+              <th scope="col">{t('Site')}</th>
+              <th scope="col">{t('Radius')}</th>
+              <th scope="col"><span className="visually-hidden">{t('Actions')}</span></th>
             </tr>
           </thead>
           <tbody>
@@ -64,7 +65,7 @@ export function OrgJobSites({ org }: { org: OrgMembership }) {
                 <td>{s.radius_m} m</td>
                 <td className="org-actions">
                   <button className="org-small" onClick={() => remove(s)}>
-                    Remove
+                    {t('Remove')}
                   </button>
                 </td>
               </tr>

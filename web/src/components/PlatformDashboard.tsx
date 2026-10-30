@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { compact, money, plural, signupBars, sosAnswered, type PlatformStats } from '../lib/platform'
+import { t } from '../lib/i18n'
 
 // The platform owner's view of Safe Circle as a whole (migration ...000066).
 // Everything here comes from platform_stats(), which returns counts only: no
@@ -36,7 +37,7 @@ export function PlatformDashboard() {
       </div>
     )
   }
-  if (!stats) return <div className="centered">Loading…</div>
+  if (!stats) return <div className="centered">{t('Loading…')}</div>
 
   const { accounts, circles, work, safety, health } = stats
   const bars = signupBars(stats)
@@ -44,19 +45,19 @@ export function PlatformDashboard() {
   return (
     <div className="org-page">
       <div className="org-inline">
-        <h2 className="org-title">Safe Circle at a glance</h2>
+        <h2 className="org-title">{t('Safe Circle at a glance')}</h2>
         <span className="shell-spacer" />
         <span className="org-note">Updated {new Date(stats.generated_at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</span>
         <button className="org-small" onClick={() => setReloads((n) => n + 1)}>
-          Refresh
+          {t('Refresh')}
         </button>
       </div>
       <p className="org-note">
-        Totals only. This page never receives anyone&apos;s name, location or messages.
+        {t("Totals only. This page never receives anyone's name, location or messages.")}
       </p>
 
       <section className="org-block">
-        <h3>People</h3>
+        <h3>{t('People')}</h3>
         <div className="pf-tiles">
           <Tile label="Accounts" value={compact(accounts.total)} sub={`${compact(accounts.new_7d)} new this week`} />
           <Tile label="Active in the last 24 hours" value={compact(accounts.active_24h)} sub="sent a location" />
@@ -65,7 +66,7 @@ export function PlatformDashboard() {
       </section>
 
       <section className="org-block">
-        <h3>Sign-ups, last 14 days</h3>
+        <h3>{t('Sign-ups, last 14 days')}</h3>
         {bars.length > 0 && (
           <>
             <div className="pf-chart" role="img" aria-label={`Sign-ups per day for the last 14 days, ${bars.reduce((t, b) => t + b.count, 0)} in total`}>
@@ -80,19 +81,19 @@ export function PlatformDashboard() {
             </div>
             <div className="pf-axis">
               <span>{bars[0].label}</span>
-              <span>Today</span>
+              <span>{t('Today')}</span>
             </div>
           </>
         )}
         <button className="link-button org-small" onClick={() => setShowTable((v) => !v)}>
-          {showTable ? 'Hide table' : 'Show as table'}
+          {showTable ? t('Hide table') : t('Show as table')}
         </button>
         {showTable && (
           <table className="org-table ts-table">
             <thead>
               <tr>
-                <th scope="col">Day</th>
-                <th scope="col" className="ts-num">Sign-ups</th>
+                <th scope="col">{t('Day')}</th>
+                <th scope="col" className="ts-num">{t('Sign-ups')}</th>
               </tr>
             </thead>
             <tbody>
@@ -108,7 +109,7 @@ export function PlatformDashboard() {
       </section>
 
       <section className="org-block">
-        <h3>Work organizations</h3>
+        <h3>{t('Work organizations')}</h3>
         <div className="pf-tiles">
           <Tile
             label="Estimated monthly revenue"
@@ -125,7 +126,7 @@ export function PlatformDashboard() {
       </section>
 
       <section className="org-block">
-        <h3>Safety and health</h3>
+        <h3>{t('Safety and health')}</h3>
         <div className="pf-tiles">
           <Tile label="SOS alerts this week" value={compact(safety.sos_7d)} sub={sosAnswered(safety)} />
           <Tile

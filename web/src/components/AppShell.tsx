@@ -4,6 +4,7 @@ import { overseerOrgs, type OrgMembership } from '../lib/org'
 import { Dashboard } from './Dashboard'
 import { OrgDashboard } from './OrgDashboard'
 import { PlatformDashboard } from './PlatformDashboard'
+import { chooseLanguage, language, t, type Language } from '../lib/i18n'
 
 type View = 'work' | 'circles' | 'platform'
 
@@ -37,7 +38,7 @@ export function AppShell({ myUserId }: { myUserId: string }) {
     setOrgs((data as OrgMembership[] | null) ?? [])
   }
 
-  if (orgs === null) return <div className="centered">Loading…</div>
+  if (orgs === null) return <div className="centered">{t('Loading…')}</div>
 
   const overseen = overseerOrgs(orgs)
   if (overseen.length === 0 && !platformAdmin) return <Dashboard myUserId={myUserId} />
@@ -56,15 +57,29 @@ export function AppShell({ myUserId }: { myUserId: string }) {
   return (
     <div className="shell">
       <a className="skip-link" href="#content">
-        Skip to content
+        {t('Skip to content')}
       </a>
-      <nav className="shell-bar" aria-label="Sections">
+      <nav className="shell-bar" aria-label={t('Sections')}>
         {overseen.length > 0 && tab('work', 'Work')}
         {tab('circles', 'Circles')}
         {platformAdmin && tab('platform', 'Platform')}
         <span className="shell-spacer" />
+        <select
+          className="lang-select"
+          aria-label={t('Language')}
+          value={language()}
+          onChange={(e) => chooseLanguage(e.target.value as Language)}
+        >
+          {/* each language named in itself, so its speakers can find it */}
+          <option value="en" lang="en">
+            English
+          </option>
+          <option value="es" lang="es">
+            Español
+          </option>
+        </select>
         <button className="link-button" onClick={() => supabase.auth.signOut()}>
-          Sign out
+          {t('Sign out')}
         </button>
       </nav>
       <div className="shell-body" id="content" tabIndex={-1}>

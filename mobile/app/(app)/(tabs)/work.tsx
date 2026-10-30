@@ -126,7 +126,7 @@ export default function WorkScreen() {
       setSiteNote(
         result.sites === 0
           ? t('On. Your organizations have no job sites yet; reminders start when they add some.')
-          : t(result.sites === 1 ? 'On. Watching 1 job site.' : 'On. Watching {n} job sites.', { n: result.sites }),
+          : t(result.sites === 1 ? t('On. Watching 1 job site.') : t('On. Watching {n} job sites.'), { n: result.sites }),
       );
     }
   }

@@ -87,7 +87,7 @@ export default function DeleteAccountScreen() {
           onPress={handleDelete}
           disabled={!ready || busy}
         >
-          <Text style={styles.buttonText}>{busy ? 'Deleting…' : 'Permanently delete my account'}</Text>
+          <Text style={styles.buttonText}>{busy ? t('Deleting…') : t('Permanently delete my account')}</Text>
         </Pressable>
         {error && <ErrorText style={styles.error}>{error}</ErrorText>}
       </ScrollView>

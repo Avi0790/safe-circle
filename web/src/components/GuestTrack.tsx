@@ -4,6 +4,7 @@ import 'leaflet/dist/leaflet.css'
 import { supabase } from '../lib/supabase'
 import { formatTimeLeft, isDriving, isLowBattery, speedToMph, timeAgo } from '../lib/format'
 import { guestTripSummary, type GuestTripFields } from '../lib/guestTrip'
+import { t } from '../lib/i18n'
 
 export interface SharedLocation extends GuestTripFields {
   first_name: string
@@ -61,14 +62,14 @@ export function GuestTrack({ token }: { token: string }) {
     }
   }, [token])
 
-  if (state === 'loading') return <div className="centered">Loading…</div>
+  if (state === 'loading') return <div className="centered">{t('Loading…')}</div>
 
   if (state === 'gone' || !data) {
     return (
       <div className="centered">
-        <h1>This link has ended</h1>
-        <p className="hint">It has expired or was turned off by the person who shared it.</p>
-        <p className="credit">Safe Circle — created and developed by Surendra B K</p>
+        <h1>{t('This link has ended')}</h1>
+        <p className="hint">{t('It has expired or was turned off by the person who shared it.')}</p>
+        <p className="credit">{t('Safe Circle — created and developed by Surendra B K')}</p>
       </div>
     )
   }
@@ -126,7 +127,7 @@ export function GuestTrackView({ data }: { data: SharedLocation }) {
         </div>
       )}
 
-      <p className="credit">Safe Circle — created and developed by Surendra B K</p>
+      <p className="credit">{t('Safe Circle — created and developed by Surendra B K')}</p>
     </div>
   )
 }

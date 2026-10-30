@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import type { OrgMembership } from '../lib/org'
 import { parseSeats, priceLine } from '../lib/billing'
 import { DEMO_SEAT_OPTIONS, planSummary, seatsFull } from '../lib/plan'
+import { t } from '../lib/i18n'
 
 // Stripe checkout is offered when the web app is built with
 // VITE_STRIPE_BILLING=on and the server has its keys (backend/README.md).
@@ -91,7 +92,7 @@ export function OrgPlan({
     else await onChanged()
   }
 
-  if (!summary) return <div className="org-page"><p className="org-note">Plans aren&apos;t set up on this server yet.</p></div>
+  if (!summary) return <div className="org-page"><p className="org-note">{t("Plans aren't set up on this server yet.")}</p></div>
 
   const seats = parseSeats(seatsInput)
 
@@ -103,11 +104,11 @@ export function OrgPlan({
         <p>{summary.detail}</p>
       </div>
       {seatsFull(org) && org.plan_state !== 'ended' && (
-        <p className="org-warn">Every seat is taken. Add seats before inviting more workers, or they won’t be able to join.</p>
+        <p className="org-warn">{t('Every seat is taken. Add seats before inviting more workers, or they won’t be able to join.')}</p>
       )}
 
       <div className="org-block">
-        <h3>How pricing works</h3>
+        <h3>{t('How pricing works')}</h3>
         <p className="org-note">
           Family circles are always free. Work organizations get a 14-day trial for up to 10 workers, then pay per
           worker seat; owners, admins and managers are free. If a plan ends, SOS, clocking out and shifts already
@@ -117,15 +118,14 @@ export function OrgPlan({
 
       {owner && STRIPE_ON && (
         <div className="org-block">
-          <h3>Pay by card</h3>
+          <h3>{t('Pay by card')}</h3>
           {onStripe ? (
             <>
               <p className="org-note">
-                This organization pays through Stripe. Change seats, update the card or cancel on Stripe&apos;s billing
-                page.
+                {t("This organization pays through Stripe. Change seats, update the card or cancel on Stripe's billing page.")}
               </p>
               <button onClick={() => stripe('portal')} disabled={busy}>
-                Manage billing
+                {t('Manage billing')}
               </button>
             </>
           ) : (
@@ -136,7 +136,7 @@ export function OrgPlan({
               </p>
               <div className="org-inline">
                 <label className="org-note" htmlFor="seats">
-                  Worker seats
+                  {t('Worker seats')}
                 </label>
                 <input id="seats" inputMode="numeric" value={seatsInput} onChange={(e) => setSeatsInput(e.target.value)} />
                 <button onClick={() => stripe('checkout')} disabled={busy || seats == null}>
@@ -150,8 +150,8 @@ export function OrgPlan({
 
       {owner && !onStripe ? (
         <div className="org-block">
-          <h3>Change the plan (demo)</h3>
-          <p className="org-note">Demo billing: no real money moves.</p>
+          <h3>{t('Change the plan (demo)')}</h3>
+          <p className="org-note">{t('Demo billing: no real money moves.')}</p>
           <div className="org-inline">
             {DEMO_SEAT_OPTIONS.map((n) => (
               <button
@@ -165,24 +165,24 @@ export function OrgPlan({
             ))}
             {org.plan_state === 'trial' && (
               <button onClick={() => bill('end_trial')} disabled={busy}>
-                End the trial now
+                {t('End the trial now')}
               </button>
             )}
             {org.plan_state === 'active' && (
               <button onClick={() => bill('payment_failed')} disabled={busy}>
-                Simulate a failed payment
+                {t('Simulate a failed payment')}
               </button>
             )}
             {(org.plan_state === 'active' || org.plan_state === 'grace') && (
               <button onClick={() => bill('cancel')} disabled={busy}>
-                Cancel plan
+                {t('Cancel plan')}
               </button>
             )}
           </div>
           {error && <p className="org-error" role="alert">{error}</p>}
         </div>
       ) : (
-        !owner && <p className="org-note">Only the owner can change the plan.</p>
+        !owner && <p className="org-note">{t('Only the owner can change the plan.')}</p>
       )}
     </div>
   )

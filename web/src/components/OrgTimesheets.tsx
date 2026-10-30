@@ -13,6 +13,7 @@ import {
   weekLabel,
   weekStart,
 } from '../lib/timesheet'
+import { t } from '../lib/i18n'
 
 // Weekly hours for payroll: a worker-by-day grid with totals and a CSV, the
 // same as the phone's Timesheets screen. Built on org_shifts(), so managers
@@ -62,35 +63,35 @@ export function OrgTimesheets({ org }: { org: OrgMembership }) {
     <div className="org-page">
       <div className="org-inline">
         <button onClick={() => setWeeksBack((w) => w + 1)} disabled={weeksBack >= MAX_WEEKS_BACK}>
-          ‹ Earlier
+          {t('‹ Earlier')}
         </button>
         <strong className="ts-week">{weekLabel(sheet)}</strong>
         <span className="org-note">
           {weeksBack === 0 ? 'This week' : weeksBack === 1 ? 'Last week' : `${weeksBack} weeks ago`}
         </span>
         <button onClick={() => setWeeksBack((w) => w - 1)} disabled={weeksBack === 0}>
-          Later ›
+          {t('Later ›')}
         </button>
         <span className="shell-spacer" />
         <button onClick={download} disabled={sheet.rows.length === 0}>
-          Download timesheet (CSV)
+          {t('Download timesheet (CSV)')}
         </button>
       </div>
 
       {error && <p className="org-error" role="alert">{error}</p>}
-      {loaded && !error && sheet.rows.length === 0 && <p className="org-note">No shifts this week.</p>}
+      {loaded && !error && sheet.rows.length === 0 && <p className="org-note">{t('No shifts this week.')}</p>}
 
       {sheet.rows.length > 0 && (
         <table className="org-table ts-table">
           <thead>
             <tr>
-              <th scope="col">Worker</th>
+              <th scope="col">{t('Worker')}</th>
               {DAY_LABELS.map((d) => (
                 <th key={d} scope="col" className="ts-num">
                   {d}
                 </th>
               ))}
-              <th scope="col" className="ts-num">Total</th>
+              <th scope="col" className="ts-num">{t('Total')}</th>
             </tr>
           </thead>
           <tbody>
@@ -115,7 +116,7 @@ export function OrgTimesheets({ org }: { org: OrgMembership }) {
           </tbody>
           <tfoot>
             <tr>
-              <td>All workers</td>
+              <td>{t('All workers')}</td>
               {DAY_LABELS.map((d, i) => (
                 <td key={d} className="ts-num">
                   {hours(sheet.rows.reduce((t, r) => t + r.days[i], 0))}

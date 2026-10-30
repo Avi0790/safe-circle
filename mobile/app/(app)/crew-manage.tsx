@@ -230,7 +230,7 @@ export default function CrewManageScreen() {
                       <View style={styles.rowButtons}>
                         {m.role === 'manager' && (
                           <Button
-                            title={m.is_lead ? 'Remove as lead' : 'Make lead'}
+                            title={m.is_lead ? t('Remove as lead') : t('Make lead')}
                             variant="secondary"
                             disabled={busy}
                             onPress={() =>

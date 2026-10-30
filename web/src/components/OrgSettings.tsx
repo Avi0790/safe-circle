@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import type { OrgMembership } from '../lib/org'
 import { confirmsName, DELETE_EFFECTS } from '../lib/orgSettings'
 import { OrgJobSites } from './OrgJobSites'
+import { t } from '../lib/i18n'
 
 // Rename the organization (owners and admins), manage its job sites, or
 // delete it (owners only, typing its name). The database checks each
@@ -48,11 +49,11 @@ export function OrgSettings({
   return (
     <div className="org-page">
       <div className="org-block">
-        <h3>Name</h3>
+        <h3>{t('Name')}</h3>
         <div className="org-inline">
-          <input value={name} maxLength={80} onChange={(e) => setName(e.target.value)} aria-label="Organization name" />
+          <input value={name} maxLength={80} onChange={(e) => setName(e.target.value)} aria-label={t('Organization name')} />
           <button onClick={rename} disabled={busy || name.trim() === '' || name.trim() === org.name}>
-            Save name
+            {t('Save name')}
           </button>
           {notice && <span className="org-note">{notice}</span>}
         </div>
@@ -71,7 +72,7 @@ export function OrgSettings({
           <p className="org-note">
             Need the hours for payroll?{' '}
             <button className="link-button" onClick={onOpenTimesheets}>
-              Download the timesheets first
+              {t('Download the timesheets first')}
             </button>
             .
           </p>
@@ -83,7 +84,7 @@ export function OrgSettings({
               aria-label={`Type ${org.name} to confirm`}
             />
             <button className="danger-button" onClick={remove} disabled={busy || !confirmsName(typed, org.name)}>
-              Delete organization
+              {t('Delete organization')}
             </button>
           </div>
         </div>

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { supabase } from '../lib/supabase'
+import { t } from '../lib/i18n'
 
 // Shown by App.tsx in place of the normal Login/Dashboard split once it
 // sees a PASSWORD_RECOVERY auth event — fired automatically when this page
@@ -28,11 +29,11 @@ export function ResetPasswordScreen({ onDone }: { onDone: () => void }) {
   return (
     <div className="login-screen">
       <form className="login-card" onSubmit={handleSubmit}>
-        <h1>Set a new password</h1>
-        <p className="subtitle">You followed a password reset link — choose a new password.</p>
+        <h1>{t('Set a new password')}</h1>
+        <p className="subtitle">{t('You followed a password reset link — choose a new password.')}</p>
 
         <label>
-          New password
+          {t('New password')}
           <input
             type="password"
             value={password}
@@ -46,7 +47,7 @@ export function ResetPasswordScreen({ onDone }: { onDone: () => void }) {
         {error && <p className="error" role="alert">{error}</p>}
 
         <button type="submit" disabled={loading}>
-          {loading ? 'Saving…' : 'Save password'}
+          {loading ? t('Saving…') : t('Save password')}
         </button>
       </form>
     </div>

@@ -4,6 +4,7 @@ import type { OrgMembership } from '../lib/org'
 import type { CrewShift } from '../lib/crew'
 import { durationMinutes, shiftsToCsv } from '../lib/csv'
 import { formatClockTime } from '../lib/format'
+import { t } from '../lib/i18n'
 
 const RANGES = [
   { label: 'Last 7 days', days: 7 },
@@ -54,7 +55,7 @@ export function OrgShifts({ org }: { org: OrgMembership }) {
   return (
     <div className="org-page">
       <div className="org-inline">
-        <select value={days} onChange={(e) => setDays(Number(e.target.value))} aria-label="Time range">
+        <select value={days} onChange={(e) => setDays(Number(e.target.value))} aria-label={t('Time range')}>
           {RANGES.map((r) => (
             <option key={r.days} value={r.days}>
               {r.label}
@@ -62,20 +63,20 @@ export function OrgShifts({ org }: { org: OrgMembership }) {
           ))}
         </select>
         <button onClick={download} disabled={shifts.length === 0}>
-          Download CSV
+          {t('Download CSV')}
         </button>
       </div>
       {error && <p className="org-error" role="alert">{error}</p>}
-      {loaded && !error && shifts.length === 0 && <p className="org-note">No shifts in this range.</p>}
+      {loaded && !error && shifts.length === 0 && <p className="org-note">{t('No shifts in this range.')}</p>}
       {shifts.length > 0 && (
         <table className="org-table">
           <thead>
             <tr>
-              <th scope="col">Worker</th>
-              <th scope="col">Date</th>
-              <th scope="col">Clock in</th>
-              <th scope="col">Clock out</th>
-              <th scope="col">Time</th>
+              <th scope="col">{t('Worker')}</th>
+              <th scope="col">{t('Date')}</th>
+              <th scope="col">{t('Clock in')}</th>
+              <th scope="col">{t('Clock out')}</th>
+              <th scope="col">{t('Time')}</th>
             </tr>
           </thead>
           <tbody>
@@ -85,7 +86,7 @@ export function OrgShifts({ org }: { org: OrgMembership }) {
                 <tr key={s.shift_id}>
                   <td>
                     {s.full_name}
-                    {s.is_current === false && <span className="org-note"> (has left)</span>}
+                    {s.is_current === false && <span className="org-note"> {t('(has left)')}</span>}
                   </td>
                   <td>{new Date(s.clocked_in_at).toLocaleDateString()}</td>
                   <td>{formatClockTime(s.clocked_in_at)}</td>

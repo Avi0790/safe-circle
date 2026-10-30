@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { supabase } from '../lib/supabase'
 import type { SosEvent } from '../lib/types'
 import { timeAgo } from '../lib/format'
+import { t } from '../lib/i18n'
 
 // Unlike the circle dashboard's read-only banner, the people who oversee a
 // crew are expected to respond from their desk: "on my way" tells the worker
@@ -57,10 +58,10 @@ export function OrgSosBanner({ events, onChanged }: { events: SosEvent[]; onChan
           </a>
           <span className="org-inline">
             <button className="org-small" disabled={busyId === event.id} onClick={() => acknowledge(event.id)}>
-              On my way
+              {t('On my way')}
             </button>
             <button className="org-small" disabled={busyId === event.id} onClick={() => resolve(event.id)}>
-              Resolve
+              {t('Resolve')}
             </button>
           </span>
         </div>

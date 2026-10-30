@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import type { OrgMembership, OrgRole } from '../lib/org'
 import type { RosterMember } from '../lib/crew'
 import { allowedMemberActions, buildTeams, type MemberAction, type TeamMemberRow, type TeamRow } from '../lib/teams'
+import { t } from '../lib/i18n'
 
 const ROLE_RANK: Record<OrgRole, number> = { owner: 0, admin: 1, manager: 2, worker: 3 }
 
@@ -84,30 +85,29 @@ export function OrgPeople({ org, myUserId }: { org: OrgMembership; myUserId: str
   return (
     <div className="org-page">
       <p className="org-note">
-        A manager sees the workers on teams they lead. Make someone a manager, add them to a team as
-        its lead, then add the workers they oversee.
+        {t('A manager sees the workers on teams they lead. Make someone a manager, add them to a team as its lead, then add the workers they oversee.')}
       </p>
       {error && <p className="org-error" role="alert">{error}</p>}
 
       <section className="org-block">
-        <h3>Invite your crew</h3>
+        <h3>{t('Invite your crew')}</h3>
         {inviteCode ? (
           <p className="org-code">{inviteCode}</p>
         ) : (
-          <p className="org-note">Codes expire after 48 hours and are shown once. A new one replaces the old.</p>
+          <p className="org-note">{t('Codes expire after 48 hours and are shown once. A new one replaces the old.')}</p>
         )}
-        <button onClick={newCode}>Get a new invite code</button>
+        <button onClick={newCode}>{t('Get a new invite code')}</button>
       </section>
 
       <section className="org-block">
-        <h3>People</h3>
+        <h3>{t('People')}</h3>
         <table className="org-table">
           <thead>
             <tr>
-              <th scope="col">Name</th>
-              <th scope="col">Role</th>
-              <th scope="col">Status</th>
-              <th scope="col"><span className="visually-hidden">Actions</span></th>
+              <th scope="col">{t('Name')}</th>
+              <th scope="col">{t('Role')}</th>
+              <th scope="col">{t('Status')}</th>
+              <th scope="col"><span className="visually-hidden">{t('Actions')}</span></th>
             </tr>
           </thead>
           <tbody>
@@ -138,7 +138,7 @@ export function OrgPeople({ org, myUserId }: { org: OrgMembership; myUserId: str
       </section>
 
       <section className="org-block">
-        <h3>Teams</h3>
+        <h3>{t('Teams')}</h3>
         <form
           className="org-inline"
           onSubmit={(e) => {
@@ -149,13 +149,13 @@ export function OrgPeople({ org, myUserId }: { org: OrgMembership; myUserId: str
             run(() => supabase.rpc('create_team', { p_org: org.org_id, p_name: name }))
           }}
         >
-          <input value={newTeam} onChange={(e) => setNewTeam(e.target.value)} placeholder="New team name" aria-label="New team name" maxLength={60} />
+          <input value={newTeam} onChange={(e) => setNewTeam(e.target.value)} placeholder={t('New team name')} aria-label={t('New team name')} maxLength={60} />
           <button type="submit" disabled={busy}>
-            Create team
+            {t('Create team')}
           </button>
         </form>
 
-        {teams.length === 0 && <p className="org-note">No teams yet.</p>}
+        {teams.length === 0 && <p className="org-note">{t('No teams yet.')}</p>}
         {teams.map((team) => (
           <div key={team.id} className="org-card">
             <strong>{team.name}</strong>
@@ -172,7 +172,7 @@ export function OrgPeople({ org, myUserId }: { org: OrgMembership; myUserId: str
                       run(() => supabase.rpc('set_team_member', { p_team: team.id, p_user: m.user_id, p_is_lead: !m.is_lead }))
                     }
                   >
-                    {m.is_lead ? 'Remove as lead' : 'Make lead'}
+                    {m.is_lead ? t('Remove as lead') : t('Make lead')}
                   </button>
                 )}
                 <button
@@ -195,7 +195,7 @@ export function OrgPeople({ org, myUserId }: { org: OrgMembership; myUserId: str
                     if (userId) run(() => supabase.rpc('set_team_member', { p_team: team.id, p_user: userId, p_is_lead: false }))
                   }}
                 >
-                  <option value="">Add to team…</option>
+                  <option value="">{t('Add to team…')}</option>
                   {team.candidates.map((c) => (
                     <option key={c.user_id} value={c.user_id}>
                       {c.full_name} ({c.role})

@@ -524,7 +524,7 @@ export default function SettingsTab() {
                   disabled={avatarBusy}
                   hitSlop={8}
                 >
-                  <Text style={styles.renameLinkText}>{avatarUrl ? 'Change photo' : 'Choose photo'}</Text>
+                  <Text style={styles.renameLinkText}>{avatarUrl ? t('Change photo') : t('Choose photo')}</Text>
                 </Pressable>
                 {avatarUrl && (
                   <Pressable

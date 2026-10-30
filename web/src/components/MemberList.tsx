@@ -13,6 +13,7 @@ import { formatDistanceMiles, haversineMeters } from '../lib/geo'
 import { activateOnKey } from '../lib/keyboard'
 import type { Weather } from '../lib/weather'
 import { Avatar } from './Avatar'
+import { t } from '../lib/i18n'
 
 export function MemberList({
   members,
@@ -96,7 +97,7 @@ export function MemberList({
                   <>
                     {driving
                       ? `🚗 Driving${mph != null ? ` ${Math.round(mph)} mph` : ''}`
-                      : `${stale ? 'Last seen' : 'Updated'} ${timeAgo(member.location.recorded_at)}`}
+                      : `${stale ? t('Last seen') : t('Updated')} ${timeAgo(member.location.recorded_at)}`}
                     {stale && !driving ? ' — may not be current' : ''}
                     {distanceMiles && ` · ${distanceMiles} away`}
                     {member.location.battery_level != null && (
@@ -116,7 +117,7 @@ export function MemberList({
           </li>
         )
       })}
-      {members.length === 0 && <li className="member-empty">No one in this circle yet.</li>}
+      {members.length === 0 && <li className="member-empty">{t('No one in this circle yet.')}</li>}
     </ul>
   )
 }

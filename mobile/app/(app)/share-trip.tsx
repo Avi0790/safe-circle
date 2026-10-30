@@ -248,7 +248,7 @@ export default function ShareTripScreen() {
             />
 
             <View style={styles.section}>
-              <Text style={styles.label}>{mode === 'flight' ? 'Landing in' : 'Arriving in'}</Text>
+              <Text style={styles.label}>{mode === 'flight' ? t('Landing in') : t('Arriving in')}</Text>
               <View style={styles.stepper}>
                 <Pressable
                   accessibilityRole="button"

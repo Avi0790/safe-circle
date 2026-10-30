@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { supabase } from '../lib/supabase'
+import { t } from '../lib/i18n'
 
 type Mode = 'signin' | 'forgot' | 'sent'
 
@@ -43,13 +44,13 @@ export function LoginScreen({ initialError = null }: { initialError?: string | n
     return (
       <div className="login-screen">
         <div className="login-card">
-          <h1>Check your email</h1>
+          <h1>{t('Check your email')}</h1>
           <p className="subtitle">
             We sent a password reset link to {email}. Open it on this device to set a new
             password.
           </p>
           <button type="button" onClick={() => setMode('signin')}>
-            Back to sign in
+            {t('Back to sign in')}
           </button>
         </div>
       </div>
@@ -60,11 +61,11 @@ export function LoginScreen({ initialError = null }: { initialError?: string | n
     return (
       <div className="login-screen">
         <form className="login-card" onSubmit={handleForgotPassword}>
-          <h1>Reset your password</h1>
-          <p className="subtitle">Enter your email and we'll send you a reset link.</p>
+          <h1>{t('Reset your password')}</h1>
+          <p className="subtitle">{t("Enter your email and we'll send you a reset link.")}</p>
 
           <label>
-            Email
+            {t('Email')}
             <input
               type="email"
               value={email}
@@ -77,10 +78,10 @@ export function LoginScreen({ initialError = null }: { initialError?: string | n
           {error && <p className="error" role="alert">{error}</p>}
 
           <button type="submit" disabled={loading}>
-            {loading ? 'Sending…' : 'Send reset link'}
+            {loading ? t('Sending…') : t('Send reset link')}
           </button>
           <button type="button" className="link-button" onClick={() => setMode('signin')}>
-            Back to sign in
+            {t('Back to sign in')}
           </button>
         </form>
       </div>
@@ -90,11 +91,11 @@ export function LoginScreen({ initialError = null }: { initialError?: string | n
   return (
     <div className="login-screen">
       <form className="login-card" onSubmit={handleSignIn}>
-        <h1>Safe Circle</h1>
-        <p className="subtitle">Web dashboard for your circle and crew</p>
+        <h1>{t('Safe Circle')}</h1>
+        <p className="subtitle">{t('Web dashboard for your circle and crew')}</p>
 
         <label>
-          Email
+          {t('Email')}
           <input
             type="email"
             value={email}
@@ -105,7 +106,7 @@ export function LoginScreen({ initialError = null }: { initialError?: string | n
         </label>
 
         <label>
-          Password
+          {t('Password')}
           <input
             type="password"
             value={password}
@@ -118,18 +119,18 @@ export function LoginScreen({ initialError = null }: { initialError?: string | n
         {error && <p className="error" role="alert">{error}</p>}
 
         <button type="submit" disabled={loading}>
-          {loading ? 'Signing in…' : 'Sign in'}
+          {loading ? t('Signing in…') : t('Sign in')}
         </button>
 
         <button type="button" className="link-button" onClick={() => setMode('forgot')}>
-          Forgot password?
+          {t('Forgot password?')}
         </button>
 
         <p className="hint">
-          Use the same account you signed up with in the Safe Circle mobile app.
+          {t('Use the same account you signed up with in the Safe Circle mobile app.')}
         </p>
       </form>
-      <p className="credit">Created and developed by Surendra B K</p>
+      <p className="credit">{t('Created and developed by Surendra B K')}</p>
     </div>
   )
 }

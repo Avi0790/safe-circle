@@ -12,6 +12,7 @@ import { OrgShifts } from './OrgShifts'
 import { OrgSettings } from './OrgSettings'
 import { OrgSosBanner } from './OrgSosBanner'
 import { OrgTimesheets } from './OrgTimesheets'
+import { t } from '../lib/i18n'
 
 type Tab = 'live' | 'people' | 'shifts' | 'timesheets' | 'plan' | 'settings'
 
@@ -93,7 +94,7 @@ export function OrgDashboard({
     <div className="org-dashboard">
       <header className="org-header">
         {orgs.length > 1 ? (
-          <select value={orgId} onChange={(e) => setOrgId(e.target.value)} aria-label="Organization">
+          <select value={orgId} onChange={(e) => setOrgId(e.target.value)} aria-label={t('Organization')}>
             {orgs.map((o) => (
               <option key={o.org_id} value={o.org_id}>
                 {o.name}
@@ -109,7 +110,7 @@ export function OrgDashboard({
             {plan.title}
           </button>
         )}
-        <nav className="org-tabs" aria-label="Organization">
+        <nav className="org-tabs" aria-label={t('Organization')}>
           {tabButton('live', 'Live crew')}
           {admin && tabButton('people', 'People & teams')}
           {tabButton('shifts', 'Shifts')}

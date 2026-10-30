@@ -6,6 +6,7 @@ import { AppShell } from './components/AppShell'
 import { ResetPasswordScreen } from './components/ResetPasswordScreen'
 import { GuestTrack } from './components/GuestTrack'
 import { parseTrackToken } from './lib/track'
+import { t } from './lib/i18n'
 
 function AuthenticatedApp() {
   const [session, setSession] = useState<Session | null>(null)
@@ -46,7 +47,7 @@ function AuthenticatedApp() {
   }, [])
 
   if (checkingSession) {
-    return <div className="centered">Loading…</div>
+    return <div className="centered">{t('Loading…')}</div>
   }
 
   if (recoveryMode) {

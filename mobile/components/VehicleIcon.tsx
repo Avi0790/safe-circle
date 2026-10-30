@@ -58,7 +58,7 @@ export function VehicleIcon({
   if (walking || style === 'arrow') {
     const fill = walking ? '#16a34a' : color === 'white' ? '#1a8cff' : hex;
     return (
-      <Svg width={56 * size} height={56 * size} viewBox="0 0 56 56" accessibilityLabel={walking ? 'You (walking)' : 'You'}>
+      <Svg width={56 * size} height={56 * size} viewBox="0 0 56 56" accessibilityLabel={walking ? t('You (walking)') : t('You')}>
         <Defs>
           <RadialGradient id={id('halo')} cx="50%" cy="50%" r="50%">
             <Stop offset="0.55" stopColor={fill} stopOpacity="0.35" />

@@ -1,6 +1,7 @@
 import type { Message } from '../lib/types'
 import { timeAgo } from '../lib/format'
 import { Avatar } from './Avatar'
+import { t } from '../lib/i18n'
 
 // Read-only, matching this dashboard's design (Dashboard.tsx never inserts
 // or updates): sending a message is mobile-only
@@ -9,7 +10,7 @@ import { Avatar } from './Avatar'
 export function ChatFeed({ messages }: { messages: Message[] }) {
   return (
     <div className="chat-feed">
-      <h2 className="sidebar-section-title">Chat</h2>
+      <h2 className="sidebar-section-title">{t('Chat')}</h2>
       <ul className="chat-list">
         {messages.map((message) => (
           <li key={message.id} className="chat-row">
@@ -38,7 +39,7 @@ export function ChatFeed({ messages }: { messages: Message[] }) {
             </div>
           </li>
         ))}
-        {messages.length === 0 && <li className="activity-empty">No messages yet.</li>}
+        {messages.length === 0 && <li className="activity-empty">{t('No messages yet.')}</li>}
       </ul>
     </div>
   )

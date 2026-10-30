@@ -7,6 +7,7 @@ import { formatTimeLeft, isDriving, isLowBattery, speedToMph, timeAgo } from '..
 import { getAvatarColor, getInitials, isSafeAvatarUrl } from '../lib/avatar'
 import { placeIcon } from '../lib/places'
 import { reportDetails, reportInfo, type RoadReport } from '../lib/roadReports'
+import { t } from '../lib/i18n'
 
 // Vite bundles Leaflet's default marker images at hashed URLs, which breaks
 // the library's hardcoded relative paths. Point at the CDN copies instead.
@@ -142,12 +143,12 @@ export function MapView({
         />
       )}
       {history.length > 0 && (
-        <Marker position={[history[0].latitude, history[0].longitude]} title="Oldest position" alt="Oldest position">
+        <Marker position={[history[0].latitude, history[0].longitude]} title="Oldest position" alt={t('Oldest position')}>
           <Popup>Oldest · {timeAgo(history[0].recorded_at)}</Popup>
         </Marker>
       )}
       {history.length > 1 && (
-        <Marker position={[history[history.length - 1].latitude, history[history.length - 1].longitude]} title="Most recent position" alt="Most recent position">
+        <Marker position={[history[history.length - 1].latitude, history[history.length - 1].longitude]} title="Most recent position" alt={t('Most recent position')}>
           <Popup>Most recent · {timeAgo(history[history.length - 1].recorded_at)}</Popup>
         </Marker>
       )}

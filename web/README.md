@@ -195,6 +195,14 @@ database in the backend's rolled-back transaction tests. Logic is unit tested
 in `src/lib/__tests__/crew.test.ts` (crew split and flags, team and permission
 rules, CSV escaping).
 
+## Español
+
+The dashboard follows the browser's language, English or Spanish, and the
+top bar has a language picker (kept in this browser). Text is wrapped in
+`t()` (`src/lib/i18n.ts`) and looked up in `src/lib/translations/es.ts`; the
+page's `lang` is set too, so screen readers pronounce it right.
+`src/lib/__tests__/i18n.test.ts` fails on any phrase without Spanish.
+
 ## Accessibility
 
 The dashboard works from the keyboard and with a screen reader, and meets

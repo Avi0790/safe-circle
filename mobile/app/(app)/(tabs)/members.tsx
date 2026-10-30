@@ -208,7 +208,7 @@ function MemberRow({
                   ? mph != null
                     ? t('🚗 Driving {mph} mph', { mph: Math.round(mph) })
                     : t('🚗 Driving')
-                  : t(stale ? 'Last seen {ago}' : 'Updated {ago}', { ago: timeAgo(member.location.recorded_at) })}
+                  : t(stale ? t('Last seen {ago}') : t('Updated {ago}'), { ago: timeAgo(member.location.recorded_at) })}
                 {stale && !driving ? t(' — may not be current') : ''}
                 {distanceMiles && t(' · {distance} away', { distance: distanceMiles })}
                 {member.location.battery_level != null && (

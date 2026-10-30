@@ -14,6 +14,7 @@ import {
 import { formatClockTime, timeAgo } from '../lib/format'
 import { activateOnKey } from '../lib/keyboard'
 import { OrgMap } from './OrgMap'
+import { t } from '../lib/i18n'
 
 const POLL_MS = 30_000
 
@@ -89,8 +90,7 @@ export function OrgLive({ org }: { org: OrgMembership }) {
         <div className="org-side-head">
           <h2>{loaded ? crewSummary(split) : 'Loading…'}</h2>
           <p className="org-note">
-            Workers can see when you look at their location, in their Work tab. You only ever see
-            people while they're clocked in.
+            {t("Workers can see when you look at their location, in their Work tab. You only ever see people while they're clocked in.")}
           </p>
           {error && <p className="org-error" role="alert">{error}</p>}
         </div>
@@ -98,18 +98,18 @@ export function OrgLive({ org }: { org: OrgMembership }) {
         {selected && (
           <div className="org-detail">
             <button className="link-button" onClick={() => select(null)}>
-              ← All crew
+              {t('← All crew')}
             </button>
             <h3>{selected.full_name}</h3>
             <p className="org-note">
               Last 24 hours, and only time spent on shift. Nothing before they clocked in or after
               they clocked out is ever shown. {selected.full_name} can see that you looked.
             </p>
-            {detailLoading && <p className="org-note">Loading…</p>}
-            {!detailLoading && track.length === 0 && <p className="org-note">No on-shift positions in the last 24 hours.</p>}
+            {detailLoading && <p className="org-note">{t('Loading…')}</p>}
+            {!detailLoading && track.length === 0 && <p className="org-note">{t('No on-shift positions in the last 24 hours.')}</p>}
             {track.length > 0 && <p>{track.length} positions recorded on shift.</p>}
-            <h4>Recent shifts</h4>
-            {!detailLoading && shifts.length === 0 && <p className="org-note">No shifts in the last 7 days.</p>}
+            <h4>{t('Recent shifts')}</h4>
+            {!detailLoading && shifts.length === 0 && <p className="org-note">{t('No shifts in the last 7 days.')}</p>}
             {shifts.map((s) => (
               <p key={s.shift_id} className="org-shift">
                 {new Date(s.clocked_in_at).toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })}
@@ -123,7 +123,7 @@ export function OrgLive({ org }: { org: OrgMembership }) {
 
         {!selected && (
           <>
-            {split.onShift.length > 0 && <h3 className="org-section">On shift</h3>}
+            {split.onShift.length > 0 && <h3 className="org-section">{t('On shift')}</h3>}
             {split.onShift.map((w) => {
               const f = workerFlags(w)
               return (
@@ -151,19 +151,19 @@ export function OrgLive({ org }: { org: OrgMembership }) {
               )
             })}
 
-            {split.offShift.length > 0 && <h3 className="org-section">Off shift</h3>}
+            {split.offShift.length > 0 && <h3 className="org-section">{t('Off shift')}</h3>}
             {split.offShift.map((m) => (
               <div key={m.user_id} className="org-card">
                 <strong>{m.full_name}</strong>
-                <span className="org-note">Off shift — no location is shown.</span>
+                <span className="org-note">{t('Off shift — no location is shown.')}</span>
               </div>
             ))}
 
-            {split.pending.length > 0 && <h3 className="org-section">Waiting to accept</h3>}
+            {split.pending.length > 0 && <h3 className="org-section">{t('Waiting to accept')}</h3>}
             {split.pending.map((m) => (
               <div key={m.user_id} className="org-card">
                 <strong>{m.full_name}</strong>
-                <span className="org-note">Joined with your code but hasn't accepted the disclosure yet.</span>
+                <span className="org-note">{t("Joined with your code but hasn't accepted the disclosure yet.")}</span>
               </div>
             ))}
 
@@ -181,7 +181,7 @@ export function OrgLive({ org }: { org: OrgMembership }) {
         {live.some(hasPosition) || track.length > 0 ? (
           <OrgMap workers={live} selectedId={selectedId} track={track} onSelect={select} />
         ) : (
-          <div className="org-map-empty">The map appears once someone on shift has a location.</div>
+          <div className="org-map-empty">{t('The map appears once someone on shift has a location.')}</div>
         )}
       </div>
     </div>
