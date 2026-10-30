@@ -9,6 +9,7 @@ import { AuthScreen, authStyles } from '@/components/ui/AuthScreen';
 import { DEFAULT_ACCOUNT_TYPE, type AccountType } from '@/lib/accountType';
 import { supabase } from '@/lib/supabase';
 import { useThemeVersion } from '@/lib/theme';
+import { t } from '@/lib/i18n';
 
 export default function SignupScreen() {
   useThemeVersion(); // redraw on a theme switch (lib/theme.ts)
@@ -23,7 +24,7 @@ export default function SignupScreen() {
   async function handleSignUp() {
     setError(null);
     if (!fullName.trim()) {
-      setError('Enter your name.');
+      setError(t('Enter your name.'));
       return;
     }
     setLoading(true);
@@ -49,8 +50,8 @@ export default function SignupScreen() {
   if (checkEmail) {
     return (
       <AuthScreen
-        title="Check your email"
-        subtitle={`We sent a confirmation link to ${email}. Open it, then come back and sign in.`}
+        title={t('Check your email')}
+        subtitle={t('We sent a confirmation link to {email}. Open it, then come back and sign in.', { email })}
       >
         <Link href="/(auth)/login" style={authStyles.cardLink}>
           Back to sign in
@@ -61,12 +62,12 @@ export default function SignupScreen() {
 
   return (
     <AuthScreen
-      title="Create your account"
+      title={t('Create your account')}
       footer={
         <>
-          <Text style={authStyles.footerText}>Already have an account?</Text>
+          <Text style={authStyles.footerText}>{t('Already have an account?')}</Text>
           <Link href="/(auth)/login" style={authStyles.footerLink}>
-            Sign in
+            {t('Sign in')}
           </Link>
         </>
       }
@@ -74,9 +75,9 @@ export default function SignupScreen() {
       <AccountTypePicker value={accountType} onChange={setAccountType} />
 
       <View style={authStyles.form}>
-        <TextField label="Name" value={fullName} onChangeText={setFullName} autoCapitalize="words" />
+        <TextField label={t('Name')} value={fullName} onChangeText={setFullName} autoCapitalize="words" />
         <TextField
-          label="Email"
+          label={t('Email')}
           value={email}
           onChangeText={setEmail}
           keyboardType="email-address"
@@ -84,7 +85,7 @@ export default function SignupScreen() {
           textContentType="emailAddress"
         />
         <TextField
-          label="Password"
+          label={t('Password')}
           value={password}
           onChangeText={setPassword}
           secureTextEntry
@@ -92,9 +93,9 @@ export default function SignupScreen() {
           textContentType="newPassword"
         />
 
-        {error && <ErrorText style={authStyles.error}>{error}</ErrorText>}
+        {error && <ErrorText style={authStyles.error}>{t(error)}</ErrorText>}
 
-        <Button title="Sign up" onPress={handleSignUp} loading={loading} />
+        <Button title={t('Sign up')} onPress={handleSignUp} loading={loading} />
       </View>
     </AuthScreen>
   );

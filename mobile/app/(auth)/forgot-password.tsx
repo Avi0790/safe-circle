@@ -7,6 +7,7 @@ import { ErrorText } from '@/components/ErrorText';
 import { AuthScreen, authStyles } from '@/components/ui/AuthScreen';
 import { supabase } from '@/lib/supabase';
 import { useThemeVersion } from '@/lib/theme';
+import { t } from '@/lib/i18n';
 
 export default function ForgotPasswordScreen() {
   useThemeVersion(); // redraw on a theme switch (lib/theme.ts)
@@ -18,7 +19,7 @@ export default function ForgotPasswordScreen() {
   async function handleSend() {
     setError(null);
     if (!email.trim()) {
-      setError('Enter your email.');
+      setError(t('Enter your email.'));
       return;
     }
     setLoading(true);
@@ -41,11 +42,11 @@ export default function ForgotPasswordScreen() {
   if (sent) {
     return (
       <AuthScreen
-        title="Check your email"
-        subtitle={`We sent a password reset link to ${email}. Open it on this device to set a new password.`}
+        title={t('Check your email')}
+        subtitle={t('We sent a password reset link to {email}. Open it on this device to set a new password.', { email })}
       >
         <Link href="/(auth)/login" style={authStyles.cardLink}>
-          Back to sign in
+          {t('Back to sign in')}
         </Link>
       </AuthScreen>
     );
@@ -53,25 +54,25 @@ export default function ForgotPasswordScreen() {
 
   return (
     <AuthScreen
-      title="Reset your password"
-      subtitle="Enter your email and we'll send you a reset link."
+      title={t('Reset your password')}
+      subtitle={t("Enter your email and we'll send you a reset link.")}
       footer={
         <Link href="/(auth)/login" style={authStyles.footerLink}>
-          Back to sign in
+          {t('Back to sign in')}
         </Link>
       }
     >
       <View style={authStyles.form}>
         <TextField
-          label="Email"
+          label={t('Email')}
           value={email}
           onChangeText={setEmail}
           keyboardType="email-address"
           autoComplete="email"
           textContentType="emailAddress"
         />
-        {error && <ErrorText style={authStyles.error}>{error}</ErrorText>}
-        <Button title="Send reset link" onPress={handleSend} loading={loading} />
+        {error && <ErrorText style={authStyles.error}>{t(error)}</ErrorText>}
+        <Button title={t('Send reset link')} onPress={handleSend} loading={loading} />
       </View>
     </AuthScreen>
   );

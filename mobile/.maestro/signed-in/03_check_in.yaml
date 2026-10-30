@@ -1,0 +1,10 @@
+# Sends a check-in to the circle from the Chat tab (a real message).
+appId: com.surendrabk.safecircle
+---
+- runFlow: 01_sign_in.yaml
+- tapOn: "Chat, tab.*"
+- waitForAnimationToEnd
+- tapOn: "Check in — share where you are with your circle"
+- extendedWaitUntil:
+    visible: ".*Checked in.*"   # the "📍 Checked in" message
+    timeout: 15000

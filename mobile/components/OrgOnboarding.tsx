@@ -7,6 +7,7 @@ import { useAccount } from '@/contexts/AccountContext';
 import { activeOrgs, ORG_DISCLOSURE } from '@/lib/orgInfo';
 import { supabase } from '@/lib/supabase';
 import { colors, spacing, themed, typography } from '@/lib/theme';
+import { t } from '@/lib/i18n';
 
 type Mode = 'choose' | 'create' | 'join' | 'created';
 
@@ -119,21 +120,21 @@ export function OrgOnboarding({
   if (pendingInvite) {
     return (
       <View style={styles.content}>
-        <Text maxFontSizeMultiplier={1.3} style={typography.title}>Join {pendingInvite.name}</Text>
+        <Text maxFontSizeMultiplier={1.3} style={typography.title}>{t('Join {org}', { org: pendingInvite.name })}</Text>
         <Text style={typography.body}>
-          Before you join, here is exactly what the people who run this organization can see:
+          {t('Before you join, here is exactly what the people who run this organization can see:')}
         </Text>
         <View style={styles.list}>
           {ORG_DISCLOSURE.map((line) => (
             <Text key={line} style={typography.body}>
-              • {line}
+              • {t(line)}
             </Text>
           ))}
         </View>
         {error && <ErrorText style={styles.error}>{error}</ErrorText>}
         <View style={styles.form}>
-          <Button title="I understand — join" onPress={handleAccept} loading={loading} />
-          <Button title="Decline" variant="secondary" onPress={handleDecline} disabled={loading} />
+          <Button title={t('I understand — join')} onPress={handleAccept} loading={loading} />
+          <Button title={t('Decline')} variant="secondary" onPress={handleDecline} disabled={loading} />
         </View>
       </View>
     );

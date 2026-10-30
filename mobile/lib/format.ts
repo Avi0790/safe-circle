@@ -1,11 +1,13 @@
+import { t } from '@/lib/i18n';
+
 export function timeAgo(iso: string): string {
   const seconds = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
-  if (seconds < 60) return 'just now';
+  if (seconds < 60) return t('just now');
   const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m ago`;
+  if (minutes < 60) return t('{n}m ago', { n: minutes });
   const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  return `${Math.floor(hours / 24)}d ago`;
+  if (hours < 24) return t('{n}h ago', { n: hours });
+  return t('{n}d ago', { n: Math.floor(hours / 24) });
 }
 
 // Pings land roughly every 60s while sharing is actually active (see
@@ -64,9 +66,9 @@ export function formatClockTime(iso: string): string {
 // ticking mm:ss that would need a per-second re-render.
 export function formatTimeLeft(deadlineIso: string, now = Date.now()): string {
   const ms = new Date(deadlineIso).getTime() - now;
-  if (ms <= 0) return 'now';
+  if (ms <= 0) return t('now');
   const totalMinutes = Math.ceil(ms / 60000);
-  if (totalMinutes <= 1) return 'less than a minute';
+  if (totalMinutes <= 1) return t('less than a minute');
   if (totalMinutes < 60) return `${totalMinutes} min`;
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;

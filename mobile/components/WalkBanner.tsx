@@ -9,6 +9,7 @@ import { cancelWalkReminder } from '@/lib/walkReminder';
 import { formatClockTime, formatTimeLeft } from '@/lib/format';
 import type { Walk } from '@/lib/types';
 import { colors, radius, spacing, themed } from '@/lib/theme';
+import { t } from '@/lib/i18n';
 
 // Shows who is on a walk. Your own tap-through to the walk screen; other
 // people's are informational. A circle-mate's overdue walk is deliberately
@@ -28,7 +29,7 @@ export function WalkBanner({ walks, onChanged }: { walks: Walk[]; onChanged: () 
     await supabase.rpc('end_walk', { p_walk_id: walk.id });
     await cancelWalkReminder();
     setEndingId(null);
-    announce('Marked safe');
+    announce(t('Marked safe'));
     onChanged();
   }
 
@@ -51,27 +52,30 @@ export function WalkBanner({ walks, onChanged }: { walks: Walk[]; onChanged: () 
               style={styles.text}
               accessible
               accessibilityRole={isMine ? 'button' : 'text'}
-              accessibilityHint={isMine ? 'Opens the details' : undefined}
+              accessibilityHint={isMine ? t('Opens the details') : undefined}
               onAccessibilityTap={isMine ? () => router.push('/walk') : undefined}
             >
               <Text style={styles.title}>
                 {overdue
-                  ? '⏰ Your walk timer ran out'
+                  ? t('⏰ Your walk timer ran out')
                   : isMine
-                    ? `🚶 Walking to ${walk.place_name}`
-                    : `🚶 ${walk.profiles?.full_name ?? 'Someone'} is walking to ${walk.place_name}`}
+                    ? t('🚶 Walking to {place}', { place: walk.place_name })
+                    : t('🚶 {name} is walking to {place}', {
+                        name: walk.profiles?.full_name ?? t('Someone'),
+                        place: walk.place_name,
+                      })}
               </Text>
               <Text style={styles.detail}>
                 {overdue
-                  ? 'Your circle was alerted. Tap "I\'m safe" if you\'re okay.'
-                  : `Due ${formatClockTime(walk.expected_by)} · ${formatTimeLeft(walk.expected_by, now)}`}
+                  ? t('Your circle was alerted. Tap "I\'m safe" if you\'re okay.')
+                  : t('Due {time} · {left}', { time: formatClockTime(walk.expected_by), left: formatTimeLeft(walk.expected_by, now) })}
               </Text>
             </View>
             {isMine && (
               <Pressable
                 style={styles.button}
                 accessibilityRole="button"
-                accessibilityLabel="I'm safe"
+                accessibilityLabel={t("I'm safe")}
                 accessibilityState={{ busy: endingId === walk.id }}
                 onPress={() => handleSafe(walk)}
                 disabled={endingId === walk.id}
@@ -79,7 +83,7 @@ export function WalkBanner({ walks, onChanged }: { walks: Walk[]; onChanged: () 
                 {endingId === walk.id ? (
                   <ActivityIndicator color="#fff" size="small" />
                 ) : (
-                  <Text style={styles.buttonText}>I'm safe</Text>
+                  <Text style={styles.buttonText}>{t("I'm safe")}</Text>
                 )}
               </Pressable>
             )}

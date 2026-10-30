@@ -1,0 +1,30 @@
+# Signed out: the sign-in, sign-up and reset screens, and moving between
+# them. Touches nothing on the server. Run: maestro test .maestro/signed-out
+appId: com.surendrabk.safecircle
+---
+- launchApp:
+    clearState: true
+- assertVisible: "Welcome back"
+- assertVisible: "Sign in to see your circle."
+- assertVisible: "Email"
+- assertVisible: "Password"
+
+# sign up: the three kinds of account
+- tapOn: "Sign up"
+- assertVisible: "Create your account"
+- assertVisible: "Just me"
+- assertVisible: "Family & friends"
+- assertVisible: "Work crew"
+- tapOn: "Work crew"
+- hideKeyboard
+- scrollUntilVisible:          # below the form on smaller phones
+    element: "Sign in"
+    direction: DOWN
+- tapOn: "Sign in"
+- assertVisible: "Welcome back"
+
+# forgot password, and back
+- tapOn: "Forgot password?"
+- assertVisible: "Reset your password"
+- tapOn: "Back to sign in"
+- assertVisible: "Welcome back"

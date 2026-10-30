@@ -6,6 +6,7 @@ import { timeAgo } from '@/lib/format';
 import { formatMedicalCard } from '@/lib/medicalCard';
 import type { SosEvent } from '@/lib/types';
 import { colors, radius, spacing, themed, typography } from '@/lib/theme';
+import { t } from '@/lib/i18n';
 
 export function SosBanner({ events, onChanged }: { events: SosEvent[]; onChanged: () => void }) {
   const { session } = useAuth();
@@ -32,10 +33,10 @@ export function SosBanner({ events, onChanged }: { events: SosEvent[]; onChanged
       .select('*')
       .eq('user_id', event.user_id)
       .maybeSingle();
-    const name = event.profiles?.full_name ?? 'They';
+    const name = event.profiles?.full_name ?? t('They');
     Alert.alert(
-      `🩺 ${name}'s medical card`,
-      formatMedicalCard(data) ?? `${name} hasn't added any medical information.`,
+      t("🩺 {name}'s medical card", { name }),
+      formatMedicalCard(data) ?? t("{name} hasn't added any medical information.", { name }),
     );
   }
 
@@ -55,13 +56,14 @@ export function SosBanner({ events, onChanged }: { events: SosEvent[]; onChanged
         return (
           <View key={event.id} style={styles.banner}>
             <Text style={styles.title}>
-              {isMine ? '🆘 Your SOS is active' : `🆘 ${event.profiles?.full_name ?? 'Someone'} needs help`}
+              {isMine ? t('🆘 Your SOS is active') : t('🆘 {name} needs help', { name: event.profiles?.full_name ?? t('Someone') })}
             </Text>
             {event.message && <Text style={styles.message}>"{event.message}"</Text>}
             {isMine && acks.length > 0 && (
               <Text style={styles.acks}>
-                👀 {acks.map((a) => a.profiles?.full_name ?? 'Someone').join(', ')}{' '}
-                {acks.length === 1 ? 'is' : 'are'} on it
+                {t(acks.length === 1 ? '👀 {names} is on it' : '👀 {names} are on it', {
+                  names: acks.map((a) => a.profiles?.full_name ?? t('Someone')).join(', '),
+                })}
               </Text>
             )}
             <View style={styles.footer}>
@@ -69,7 +71,7 @@ export function SosBanner({ events, onChanged }: { events: SosEvent[]; onChanged
               <View style={styles.buttonRow}>
                 {!isMine && (
                   <Pressable accessibilityRole="button" style={styles.button} onPress={() => handleMedical(event)}>
-                    <Text style={styles.buttonText}>🩺 Medical</Text>
+                    <Text style={styles.buttonText}>{t('🩺 Medical')}</Text>
                   </Pressable>
                 )}
                 {!isMine && (
@@ -83,7 +85,7 @@ export function SosBanner({ events, onChanged }: { events: SosEvent[]; onChanged
                       <ActivityIndicator color="#fff" size="small" />
                     ) : (
                       <Text style={styles.buttonText}>
-                        {iAcknowledged ? "✓ You're on it" : "I'm on my way"}
+                        {iAcknowledged ? t("✓ You're on it") : t("I'm on my way")}
                       </Text>
                     )}
                   </Pressable>
@@ -97,7 +99,7 @@ export function SosBanner({ events, onChanged }: { events: SosEvent[]; onChanged
                   {resolvingId === event.id ? (
                     <ActivityIndicator color="#fff" size="small" />
                   ) : (
-                    <Text style={styles.buttonText}>{isMine ? 'Cancel SOS' : 'Mark resolved'}</Text>
+                    <Text style={styles.buttonText}>{isMine ? t('Cancel SOS') : t('Mark resolved')}</Text>
                   )}
                 </Pressable>
               </View>

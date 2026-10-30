@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { announce } from '@/lib/announce';
 import { sendSos, offerTextForHelp } from '@/lib/sos';
 import { colors, spacing, themed } from '@/lib/theme';
+import { t } from '@/lib/i18n';
 
 // One-tap emergency alert (the proposal's last stretch goal, page 3).
 // Confirms first to avoid accidental fires, then shares current location
@@ -20,19 +21,19 @@ export function SosButton({ onSent }: { onSent?: () => void }) {
     // adds zero extra taps to the existing SOS flow rather than a separate
     // button/screen that would.
     Alert.alert(
-      'Send SOS?',
-      'This alerts everyone in your circle with your current location.',
+      t('Send SOS?'),
+      t('This alerts everyone in your circle with your current location.'),
       [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Call 911', onPress: callEmergencyServices },
-        { text: 'Send SOS', style: 'destructive', onPress: handleSendSos },
+        { text: t('Cancel'), style: 'cancel' },
+        { text: t('Call 911'), onPress: callEmergencyServices },
+        { text: t('Send SOS'), style: 'destructive', onPress: handleSendSos },
       ],
     );
   }
 
   function callEmergencyServices() {
     Linking.openURL('tel:911').catch(() => {
-      Alert.alert('Could not open the phone dialer.');
+      Alert.alert(t('Could not open the phone dialer.'));
     });
   }
 
@@ -44,7 +45,7 @@ export function SosButton({ onSent }: { onSent?: () => void }) {
       offerTextForHelp(result.message, () => router.push('/text-for-help'));
       return;
     }
-    announce('SOS sent. Your circle has your location.');
+    announce(t('SOS sent. Your circle has your location.'));
     onSent?.();
   }
 
@@ -54,8 +55,8 @@ export function SosButton({ onSent }: { onSent?: () => void }) {
       onPress={handlePress}
       disabled={sending}
       accessibilityRole="button"
-      accessibilityLabel="Send SOS"
-      accessibilityHint="Asks first, then alerts everyone in your circle with your location"
+      accessibilityLabel={t('Send SOS')}
+      accessibilityHint={t('Asks first, then alerts everyone in your circle with your location')}
       accessibilityState={{ busy: sending }}
     >
       {sending ? <ActivityIndicator color="#fff" /> : <Text style={styles.text} maxFontSizeMultiplier={1.3}>

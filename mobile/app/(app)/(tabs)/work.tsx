@@ -28,6 +28,7 @@ import { checkInNow, clockInTo, clockOutOf } from '@/lib/clockIn';
 import { formatClockTime, timeAgo } from '@/lib/format';
 import { jobSiteRemindersOn, setJobSiteReminders } from '@/lib/jobSiteReminders';
 import { activeOrgs, ORG_DISCLOSURE, type OrgMembership } from '@/lib/orgInfo';
+import { language, t } from '@/lib/i18n';
 import { DEMO_SEAT_OPTIONS, planSummary, seatsFull, workerPlanNotice } from '@/lib/orgPlan';
 import { describeOrgAudit, shiftAutoEndsAt } from '@/lib/shift';
 import { supabase } from '@/lib/supabase';
@@ -45,27 +46,39 @@ const CHECKIN_OPTIONS: { label: string; minutes: number | null }[] = [
 const ROLE_LABEL: Record<string, string> = { owner: 'Owner', admin: 'Admin', manager: 'Manager', worker: 'Worker' };
 
 function youAre(role: string): string {
-  return `You are ${role === 'admin' || role === 'owner' ? 'an' : 'a'} ${role}`;
+  // whole sentences per role, since the article and word order differ by language
+  switch (role) {
+    case 'owner':
+      return t('You are an owner');
+    case 'admin':
+      return t('You are an admin');
+    case 'manager':
+      return t('You are a manager');
+    default:
+      return t('You are a worker');
+  }
 }
 
 // The plan in a word or two, for the crew card's stat.
 function planWord(org: OrgMembership): string | null {
   switch (org.plan_state) {
     case 'trial':
-      return 'Trial';
+      return t('Trial');
     case 'active':
-      return 'Active';
+      return t('Active');
     case 'grace':
-      return 'Payment due';
+      return t('Payment due');
     case 'ended':
-      return 'Ended';
+      return t('Ended');
     default:
       return null;
   }
 }
 
 function todayLabel(now: number): string {
-  return new Date(now).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }).toUpperCase();
+  return new Date(now)
+    .toLocaleDateString(language() === 'es' ? 'es-US' : 'en-US', { weekday: 'long', month: 'long', day: 'numeric' })
+    .toUpperCase();
 }
 
 interface ViewRow {
@@ -112,8 +125,8 @@ export default function WorkScreen() {
     if (on) {
       setSiteNote(
         result.sites === 0
-          ? 'On. Your organizations have no job sites yet; reminders start when they add some.'
-          : `On. Watching ${result.sites} job ${result.sites === 1 ? 'site' : 'sites'}.`,
+          ? t('On. Your organizations have no job sites yet; reminders start when they add some.')
+          : t(result.sites === 1 ? 'On. Watching 1 job site.' : 'On. Watching {n} job sites.', { n: result.sites }),
       );
     }
   }
@@ -155,10 +168,10 @@ export default function WorkScreen() {
       setError(result.reason);
       return;
     }
-    announce(`Clocked in to ${org.name}`);
+    announce(t('Clocked in to {org}', { org: org.name }));
     if (!result.background) {
       setNotice(
-        'Your location is sent only while Safe Circle is open on this phone. Keep it open during your shift.',
+        t('Your location is sent only while Safe Circle is open on this phone. Keep it open during your shift.'),
       );
     }
     await refresh();
@@ -166,14 +179,14 @@ export default function WorkScreen() {
 
   function handleClockIn(org: OrgMembership) {
     Alert.alert(
-      `Clock in to ${org.name}?`,
-      'Your admins and managers can see your location until you clock out. Nobody can see you off shift.' +
+      t('Clock in to {org}?', { org: org.name }),
+      t('Your admins and managers can see your location until you clock out. Nobody can see you off shift.') +
         (checkinChoice != null
-          ? ` If you miss a check-in (every ${checkinChoice} min), they're alerted with your last location.`
+          ? ' ' + t("If you miss a check-in (every {n} min), they're alerted with your last location.", { n: checkinChoice })
           : ''),
       [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Clock in', onPress: () => doClockIn(org) },
+        { text: t('Cancel'), style: 'cancel' },
+        { text: t('Clock in'), onPress: () => doClockIn(org) },
       ],
     );
   }
@@ -187,10 +200,10 @@ export default function WorkScreen() {
     setBusyOrg(null);
     if (!result.ok) {
       setError(
-        `Your location has stopped sending, but we couldn't record your clock-out (${result.reason}). Tap Clock out again when you have a connection.`,
+        t("Your location has stopped sending, but we couldn't record your clock-out ({reason}). Tap Clock out again when you have a connection.", { reason: result.reason }),
       );
     } else {
-      announce(`Clocked out of ${org.name}`);
+      announce(t('Clocked out of {org}', { org: org.name }));
     }
     await refresh();
     loadViews();
@@ -216,7 +229,7 @@ export default function WorkScreen() {
     if (!result.ok) {
       setError(result.reason);
     } else {
-      announce('Checked in');
+      announce(t('Checked in'));
     }
     await refresh();
     refreshSos();
@@ -242,11 +255,11 @@ export default function WorkScreen() {
 
   function confirmBilling(org: OrgMembership, action: 'cancel' | 'end_trial') {
     Alert.alert(
-      action === 'cancel' ? `Cancel ${org.name}'s plan?` : 'End the trial now?',
-      "Workers won't be able to start new shifts and nobody new can join. Shifts already running, clocking out and SOS keep working.",
+      action === 'cancel' ? t("Cancel {org}'s plan?", { org: org.name }) : t('End the trial now?'),
+      t("Workers won't be able to start new shifts and nobody new can join. Shifts already running, clocking out and SOS keep working."),
       [
-        { text: 'Keep it', style: 'cancel' },
-        { text: action === 'cancel' ? 'Cancel plan' : 'End trial', style: 'destructive', onPress: () => doBilling(org, action) },
+        { text: t('Keep it'), style: 'cancel' },
+        { text: action === 'cancel' ? t('Cancel plan') : t('End trial'), style: 'destructive', onPress: () => doBilling(org, action) },
       ],
     );
   }
@@ -278,17 +291,16 @@ export default function WorkScreen() {
           <Card tone="warn">
             <Text style={ui.rowTitle}>{org.name}</Text>
             <Text style={styles.body}>
-              What {org.name} can see about you has changed. Until you review and accept it, you can't clock in and
-              nobody at work can see you.
+              {t("What {org} can see about you has changed. Until you review and accept it, you can't clock in and nobody at work can see you.", { org: org.name })}
             </Text>
             <View style={styles.list}>
               {ORG_DISCLOSURE.map((line) => (
                 <Text key={line} style={styles.body}>
-                  •  {line}
+                  •  {t(line)}
                 </Text>
               ))}
             </View>
-            <Button title="I understand — keep working here" onPress={() => handleAcceptUpdate(org)} loading={busy} />
+            <Button title={t('I understand — keep working here')} onPress={() => handleAcceptUpdate(org)} loading={busy} />
           </Card>
         </View>
       );
@@ -301,7 +313,7 @@ export default function WorkScreen() {
             <Text maxFontSizeMultiplier={1.5} style={ui.heroOrg} numberOfLines={2}>
               {org.name}
             </Text>
-            <Pill>{org.on_shift ? '🟢 On shift' : '⚪ Off shift'}</Pill>
+            <Pill>{org.on_shift ? t('🟢 On shift') : t('⚪ Off shift')}</Pill>
           </View>
           <Text style={ui.heroRole}>{youAre(org.role)}</Text>
 
@@ -309,24 +321,26 @@ export default function WorkScreen() {
             <>
               <LiveElapsed since={org.shift_started_at} style={ui.heroBig} />
               <Text style={ui.heroBody}>
-                Since {formatClockTime(org.shift_started_at)} · this shift ends by itself at{' '}
-                {formatClockTime(shiftAutoEndsAt(org.shift_started_at))}
+                {t('Since {start} · this shift ends by itself at {end}', {
+                  start: formatClockTime(org.shift_started_at),
+                  end: formatClockTime(shiftAutoEndsAt(org.shift_started_at)),
+                })}
               </Text>
-              <Text style={ui.heroSmall}>Your admins and managers can see your location until you clock out.</Text>
+              <Text style={ui.heroSmall}>{t('Your admins and managers can see your location until you clock out.')}</Text>
             </>
           ) : (
             <>
-              <Text maxFontSizeMultiplier={1.3} style={[ui.heroBig, styles.heroWords]}>{ended ? 'Plan ended' : 'Off the clock'}</Text>
-              <Text style={ui.heroBody}>Nobody at work can see your location.</Text>
+              <Text maxFontSizeMultiplier={1.3} style={[ui.heroBig, styles.heroWords]}>{ended ? t('Plan ended') : t('Off the clock')}</Text>
+              <Text style={ui.heroBody}>{t('Nobody at work can see your location.')}</Text>
               {ended && <Text style={ui.heroSmall}>{workerPlanNotice(org)}</Text>}
             </>
           )}
 
           {org.on_shift ? (
-            <HeroButton title="Clock out" icon="⏹" outline tint={tint} onPress={() => handleClockOut(org)} loading={busy} />
+            <HeroButton title={t('Clock out')} icon="⏹" outline tint={tint} onPress={() => handleClockOut(org)} loading={busy} />
           ) : (
             <HeroButton
-              title={ended ? 'Plan ended — ask your owner' : elsewhere ? 'Clock out of your other job first' : 'Clock in'}
+              title={ended ? t('Plan ended — ask your owner') : elsewhere ? t('Clock out of your other job first') : t('Clock in')}
               icon={ended || elsewhere ? undefined : '⏱'}
               tint={tint}
               onPress={() => handleClockIn(org)}
@@ -342,35 +356,36 @@ export default function WorkScreen() {
               <Text allowFontScaling={false} style={styles.bigEmoji}>{overdue ? '⏰' : '✅'}</Text>
               <View style={{ flex: 1 }}>
                 <Text style={[ui.rowTitle, overdue && { color: colors.danger }]}>
-                  {overdue ? "Check-in overdue — tap I'm OK now." : `Next check-in due at ${formatClockTime(org.next_checkin_due)}.`}
+                  {overdue
+                    ? t("Check-in overdue — tap I'm OK now.")
+                    : t('Next check-in due at {time}.', { time: formatClockTime(org.next_checkin_due) })}
                 </Text>
-                <Text style={ui.rowSub}>Every {org.checkin_minutes} min while you're on shift</Text>
+                <Text style={ui.rowSub}>{t("Every {n} min while you're on shift", { n: org.checkin_minutes })}</Text>
               </View>
             </View>
-            <Button title="I'm OK" onPress={() => handleCheckIn(org)} loading={busy} />
+            <Button title={t("I'm OK")} onPress={() => handleCheckIn(org)} loading={busy} />
           </Card>
         )}
 
         {!org.on_shift && !ended && (
           <Card>
-            <SectionTitle>Check-in reminders</SectionTitle>
+            <SectionTitle>{t('Check-in reminders')}</SectionTitle>
             <Text style={styles.caption}>
-              Working alone? Choose how often to check in. Miss one and your admins and managers are alerted with your
-              last location.
+              {t('Working alone? Choose how often to check in. Miss one and your admins and managers are alerted with your last location.')}
             </Text>
             <View style={ui.chips}>
               {CHECKIN_OPTIONS.map((o) => (
-                <Chip key={o.label} label={o.label} selected={checkinChoice === o.minutes} onPress={() => setCheckinChoice(o.minutes)} />
+                <Chip key={o.label} label={t(o.label)} selected={checkinChoice === o.minutes} onPress={() => setCheckinChoice(o.minutes)} />
               ))}
             </View>
           </Card>
         )}
 
         <Card>
-          <SectionTitle>Who's looked at you</SectionTitle>
+          <SectionTitle>{t("Who's looked at you")}</SectionTitle>
           {looks.length === 0 ? (
             <Text style={styles.caption}>
-              No one yet. Every time a manager or admin looks at your location, it shows up here.
+              {t('No one yet. Every time a manager or admin looks at your location, it shows up here.')}
             </Text>
           ) : (
             looks.map((v, i) => (
@@ -381,10 +396,10 @@ export default function WorkScreen() {
                   <View style={{ flex: 1 }}>
                     <Text style={ui.rowTitle}>
                       {v.viewer_name}
-                      {v.viewer_role ? ` (${v.viewer_role})` : ''}
+                      {v.viewer_role ? ` (${t(v.viewer_role)})` : ''}
                     </Text>
                     <Text style={ui.rowSub}>
-                      {describeOrgAudit(v.action)} · {timeAgo(v.created_at)}
+                      {t(describeOrgAudit(v.action))} · {timeAgo(v.created_at)}
                     </Text>
                   </View>
                 </View>
@@ -409,38 +424,38 @@ export default function WorkScreen() {
             <Text maxFontSizeMultiplier={1.5} style={ui.heroOrg} numberOfLines={2}>
               {org.name}
             </Text>
-            <Pill>{ROLE_LABEL[org.role] ?? org.role}</Pill>
+            <Pill>{t(ROLE_LABEL[org.role] ?? org.role)}</Pill>
           </View>
           <Text style={ui.heroRole}>{youAre(org.role)}</Text>
           {isAdmin && (
             <View style={styles.stats}>
               <View style={ui.stat}>
                 <Text maxFontSizeMultiplier={1.4} style={ui.statValue}>{org.seats_used ?? '–'}</Text>
-                <Text maxFontSizeMultiplier={1.4} style={ui.statLabel}>{org.seats_used === 1 ? 'Worker' : 'Workers'}</Text>
+                <Text maxFontSizeMultiplier={1.4} style={ui.statLabel}>{org.seats_used === 1 ? t('Worker') : t('Workers')}</Text>
               </View>
               <View style={ui.stat}>
                 <Text maxFontSizeMultiplier={1.4} style={ui.statValue}>
                   {org.seats_used != null && org.seat_limit != null ? `${org.seats_used}/${org.seat_limit}` : '–'}
                 </Text>
-                <Text maxFontSizeMultiplier={1.4} style={ui.statLabel}>Seats</Text>
+                <Text maxFontSizeMultiplier={1.4} style={ui.statLabel}>{t('Seats')}</Text>
               </View>
               {word && (
                 <View style={ui.stat}>
                   <Text maxFontSizeMultiplier={1.4} style={ui.statValue} numberOfLines={1} adjustsFontSizeToFit>
                     {word}
                   </Text>
-                  <Text maxFontSizeMultiplier={1.4} style={ui.statLabel}>Plan</Text>
+                  <Text maxFontSizeMultiplier={1.4} style={ui.statLabel}>{t('Plan')}</Text>
                 </View>
               )}
             </View>
           )}
           <Text style={ui.heroBody}>
             {isAdmin
-              ? 'See everyone on your crew who is clocked in.'
-              : 'See the workers on the teams you lead who are clocked in.'}
+              ? t('See everyone on your crew who is clocked in.')
+              : t('See the workers on the teams you lead who are clocked in.')}
           </Text>
           <HeroButton
-            title="Open crew view"
+            title={t('Open crew view')}
             icon="🗺"
             tint={appColors.crew[1]}
             onPress={() => router.push({ pathname: '/crew', params: { orgId: org.org_id, orgName: org.name } })}
@@ -450,31 +465,31 @@ export default function WorkScreen() {
         <View style={ui.tiles}>
           <ActionTile
             icon="🕒"
-            title="Timesheets"
-            caption="Hours and payroll CSV"
+            title={t('Timesheets')}
+            caption={t('Hours and payroll CSV')}
             onPress={() => router.push({ pathname: '/timesheets', params: { orgId: org.org_id, orgName: org.name } })}
           />
           <ActionTile
             icon="📍"
-            title="Job sites"
-            caption="Clock-in reminders"
+            title={t('Job sites')}
+            caption={t('Clock-in reminders')}
             onPress={() => router.push({ pathname: '/job-sites', params: { orgId: org.org_id } })}
           />
           {isAdmin && (
             <ActionTile
               icon="👥"
-              title="People & teams"
-              caption="Roles, teams and leads"
-              accessibilityLabel="Manage people & teams"
+              title={t('People & teams')}
+              caption={t('Roles, teams and leads')}
+              accessibilityLabel={t('Manage people & teams')}
               onPress={() => router.push({ pathname: '/crew-manage', params: { orgId: org.org_id, orgName: org.name } })}
             />
           )}
           {isAdmin && (
             <ActionTile
               icon="⚙️"
-              title="Settings"
-              caption="Rename or delete"
-              accessibilityLabel="Organization settings"
+              title={t('Settings')}
+              caption={t('Rename or delete')}
+              accessibilityLabel={t('Organization settings')}
               onPress={() => router.push({ pathname: '/org-settings', params: { orgId: org.org_id } })}
             />
           )}
@@ -483,7 +498,7 @@ export default function WorkScreen() {
         {/* plan_state is missing from a server without migration ...000064 */}
         {isAdmin && summary && (
           <Card tone={summary.tone === 'warn' ? 'warn' : summary.tone === 'ended' ? 'danger' : undefined}>
-            <SectionTitle>Plan</SectionTitle>
+            <SectionTitle>{t('Plan')}</SectionTitle>
             <Text style={[styles.planTitle, summary.tone === 'ended' && { color: colors.danger }]}>{summary.title}</Text>
             {org.seats_used != null && org.seat_limit != null && org.seat_limit > 0 && (
               <SeatMeter used={org.seats_used} limit={org.seat_limit} />
@@ -492,16 +507,15 @@ export default function WorkScreen() {
             {org.role === 'owner' ? (
               <>
                 <Text style={styles.caption}>
-                  Demo billing: no real money moves. Family circles are always free; work organizations are paid per
-                  worker seat.
+                  {t('Demo billing: no real money moves. Family circles are always free; work organizations are paid per worker seat.')}
                 </Text>
-                <Text style={styles.subLabel}>Pay for seats</Text>
+                <Text style={styles.subLabel}>{t('Pay for seats')}</Text>
                 <View style={ui.chips}>
                   {DEMO_SEAT_OPTIONS.map((n) => (
                     <Chip
                       key={n}
-                      label={`${n} seats`}
-                      accessibilityLabel={`Pay for ${n} seats (demo)`}
+                      label={t('{n} seats', { n })}
+                      accessibilityLabel={t('Pay for {n} seats (demo)', { n })}
                       selected={org.plan_state === 'active' && org.seat_limit === n}
                       onPress={() => doBilling(org, 'activate', n)}
                       disabled={busy}
@@ -511,39 +525,39 @@ export default function WorkScreen() {
                 <View style={ui.chips}>
                   {org.plan_state === 'trial' && (
                     <Chip
-                      label="End trial"
-                      accessibilityLabel="End the trial now (demo)"
+                      label={t('End trial')}
+                      accessibilityLabel={t('End the trial now (demo)')}
                       onPress={() => confirmBilling(org, 'end_trial')}
                       disabled={busy}
                     />
                   )}
                   {org.plan_state === 'active' && (
                     <Chip
-                      label="Fail a payment"
-                      accessibilityLabel="Simulate a failed payment (demo)"
+                      label={t('Fail a payment')}
+                      accessibilityLabel={t('Simulate a failed payment (demo)')}
                       onPress={() => doBilling(org, 'payment_failed')}
                       disabled={busy}
                     />
                   )}
                   {(org.plan_state === 'active' || org.plan_state === 'grace') && (
-                    <Chip label="Cancel plan" onPress={() => confirmBilling(org, 'cancel')} disabled={busy} />
+                    <Chip label={t('Cancel plan')} onPress={() => confirmBilling(org, 'cancel')} disabled={busy} />
                   )}
                 </View>
               </>
             ) : (
-              <Text style={styles.caption}>Only the owner can change the plan.</Text>
+              <Text style={styles.caption}>{t('Only the owner can change the plan.')}</Text>
             )}
           </Card>
         )}
 
         {isAdmin && (
           <Card>
-            <SectionTitle>Invite your crew</SectionTitle>
+            <SectionTitle>{t('Invite your crew')}</SectionTitle>
             {seatsFull(org) && (
               <Text style={styles.warnText}>
                 {org.plan_state === 'ended'
-                  ? 'The plan has ended, so nobody new can join.'
-                  : 'Every seat is taken. Add seats before inviting more workers, or they won’t be able to join.'}
+                  ? t('The plan has ended, so nobody new can join.')
+                  : t('Every seat is taken. Add seats before inviting more workers, or they won’t be able to join.')}
               </Text>
             )}
             {newCode[org.org_id] ? (
@@ -551,14 +565,14 @@ export default function WorkScreen() {
                 <Text selectable style={styles.code}>
                   {newCode[org.org_id]}
                 </Text>
-                <Text style={styles.caption}>Shown once · expires in 48 hours</Text>
+                <Text style={styles.caption}>{t('Shown once · expires in 48 hours')}</Text>
               </View>
             ) : (
               <Text style={styles.caption}>
-                Codes expire after 48 hours and are shown once. Making a new one replaces the old one.
+                {t('Codes expire after 48 hours and are shown once. Making a new one replaces the old one.')}
               </Text>
             )}
-            <Button title="Get a new invite code" variant="secondary" onPress={() => handleNewCode(org)} />
+            <Button title={t('Get a new invite code')} variant="secondary" onPress={() => handleNewCode(org)} />
           </Card>
         )}
       </View>
@@ -573,7 +587,7 @@ export default function WorkScreen() {
       <ScrollView contentContainerStyle={[styles.content, hasWorker && { paddingBottom: 120 }]}>
         <View>
           <Text style={styles.date}>{todayLabel(now)}</Text>
-          <Text maxFontSizeMultiplier={1.3} style={styles.title} accessibilityRole="header">Work</Text>
+          <Text maxFontSizeMultiplier={1.3} style={styles.title} accessibilityRole="header">{t('Work')}</Text>
         </View>
 
         {mine.map((org) => (org.role === 'worker' ? renderWorker(org) : renderOverseer(org)))}
@@ -584,19 +598,18 @@ export default function WorkScreen() {
               <View style={styles.rowIcon}>
                 <Text allowFontScaling={false} style={styles.rowEmoji}>📍</Text>
               </View>
-              <Text style={[ui.rowTitle, { flex: 1 }]}>Job site reminders</Text>
+              <Text style={[ui.rowTitle, { flex: 1 }]}>{t('Job site reminders')}</Text>
               <Switch
                 value={siteReminders}
                 onValueChange={toggleSiteReminders}
-                accessibilityLabel="Job site reminders"
+                accessibilityLabel={t('Job site reminders')}
                 trackColor={{ true: colors.accentFill, false: colors.chip }}
               />
             </View>
             <Text style={styles.caption}>
-              When you arrive at one of your organization&apos;s job sites and aren&apos;t clocked in, your phone reminds
-              you. Only your phone knows: nobody at work is told you were there.
+              {t("When you arrive at one of your organization's job sites and aren't clocked in, your phone reminds you. Only your phone knows: nobody at work is told you were there.")}
             </Text>
-            {siteNote && <Text style={styles.noteText}>{siteNote}</Text>}
+            {siteNote && <Text style={styles.noteText}>{t(siteNote)}</Text>}
           </Card>
         )}
 
@@ -605,7 +618,7 @@ export default function WorkScreen() {
           {notice}
         </Text>
       )}
-        {error && <ErrorText style={styles.error}>{error}</ErrorText>}
+        {error && <ErrorText style={styles.error}>{t(error)}</ErrorText>}
 
         <Pressable
           accessibilityRole="button"
@@ -615,7 +628,7 @@ export default function WorkScreen() {
           <View style={styles.rowIcon}>
             <Text allowFontScaling={false} style={styles.rowEmoji}>🔒</Text>
           </View>
-          <Text style={[ui.rowTitle, { flex: 1 }]}>How your privacy works</Text>
+          <Text style={[ui.rowTitle, { flex: 1 }]}>{t('How your privacy works')}</Text>
           <Text style={styles.chevron}>›</Text>
         </Pressable>
       </ScrollView>

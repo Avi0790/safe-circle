@@ -1,6 +1,7 @@
 import { Alert } from 'react-native';
 import * as Location from 'expo-location';
 import { supabase } from '@/lib/supabase';
+import { t } from '@/lib/i18n';
 
 export type SendSosResult =
   | { ok: true }
@@ -13,14 +14,14 @@ export type SendSosResult =
 export async function sendSos(): Promise<SendSosResult> {
   const { status } = await Location.requestForegroundPermissionsAsync();
   if (status !== 'granted') {
-    return { ok: false, reason: 'permission-denied', message: "Can't send your location with the SOS." };
+    return { ok: false, reason: 'permission-denied', message: t("Can't send your location with the SOS.") };
   }
 
   let position;
   try {
     position = await Location.getCurrentPositionAsync({});
   } catch {
-    return { ok: false, reason: 'location-failed', message: 'Could not get your location.' };
+    return { ok: false, reason: 'location-failed', message: t('Could not get your location.') };
   }
 
   const { error } = await supabase.from('sos_events').insert({
@@ -37,8 +38,8 @@ export async function sendSos(): Promise<SendSosResult> {
 // exact moment an app that depends on it fails — don't just show an error:
 // offer the text-message fallback, which can go through where data can't.
 export function offerTextForHelp(reason: string, openTextForHelp: () => void): void {
-  Alert.alert('Could not send SOS', `${reason}\n\nNo internet? You can text your circle instead.`, [
-    { text: 'Close', style: 'cancel' },
-    { text: 'Text for help', onPress: openTextForHelp },
+  Alert.alert(t('Could not send SOS'), `${reason}\n\n${t('No internet? You can text your circle instead.')}`, [
+    { text: t('Close'), style: 'cancel' },
+    { text: t('Text for help'), onPress: openTextForHelp },
   ]);
 }

@@ -7,6 +7,7 @@ import { ErrorText } from '@/components/ErrorText';
 import { AuthScreen, authStyles } from '@/components/ui/AuthScreen';
 import { supabase } from '@/lib/supabase';
 import { useThemeVersion } from '@/lib/theme';
+import { t } from '@/lib/i18n';
 
 export default function LoginScreen() {
   useThemeVersion(); // redraw on a theme switch (lib/theme.ts)
@@ -25,20 +26,20 @@ export default function LoginScreen() {
 
   return (
     <AuthScreen
-      title="Welcome back"
-      subtitle="Sign in to see your circle."
+      title={t('Welcome back')}
+      subtitle={t('Sign in to see your circle.')}
       footer={
         <>
-          <Text style={authStyles.footerText}>Don't have an account?</Text>
+          <Text style={authStyles.footerText}>{t("Don't have an account?")}</Text>
           <Link href="/(auth)/signup" style={authStyles.footerLink}>
-            Sign up
+            {t('Sign up')}
           </Link>
         </>
       }
     >
       <View style={authStyles.form}>
         <TextField
-          label="Email"
+          label={t('Email')}
           value={email}
           onChangeText={setEmail}
           keyboardType="email-address"
@@ -46,7 +47,7 @@ export default function LoginScreen() {
           textContentType="emailAddress"
         />
         <TextField
-          label="Password"
+          label={t('Password')}
           value={password}
           onChangeText={setPassword}
           secureTextEntry
@@ -54,12 +55,12 @@ export default function LoginScreen() {
           textContentType="password"
         />
 
-        {error && <ErrorText style={authStyles.error}>{error}</ErrorText>}
+        {error && <ErrorText style={authStyles.error}>{t(error)}</ErrorText>}
 
-        <Button title="Sign in" onPress={handleSignIn} loading={loading} />
+        <Button title={t('Sign in')} onPress={handleSignIn} loading={loading} />
 
         <Link href="/(auth)/forgot-password" style={authStyles.cardLink}>
-          Forgot password?
+          {t('Forgot password?')}
         </Link>
       </View>
     </AuthScreen>

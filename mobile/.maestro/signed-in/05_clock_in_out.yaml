@@ -1,0 +1,19 @@
+# Clocks in to the account's first organization and out again (a real,
+# very short shift). Needs the account to be a worker in an organization.
+appId: com.surendrabk.safecircle
+---
+- runFlow: 01_sign_in.yaml
+- tapOn: "Work, tab.*"
+- waitForAnimationToEnd
+- assertVisible: "Off the clock"
+- tapOn: "Clock in"
+- tapOn:
+    text: "Clock in"
+    index: 1          # the confirm button in the alert
+- extendedWaitUntil:
+    visible: ".*On shift.*"
+    timeout: 20000
+- tapOn: "Clock out"
+- extendedWaitUntil:
+    visible: "Off the clock"
+    timeout: 20000

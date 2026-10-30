@@ -96,6 +96,13 @@ export function applyColorScheme(scheme: Scheme): void {
   listeners.forEach((listener) => listener());
 }
 
+// Redraw every screen without changing the palette: after the language
+// changes (lib/i18n.ts), so text built while rendering is built again.
+export function redrawAll(): void {
+  version += 1;
+  listeners.forEach((listener) => listener());
+}
+
 function subscribe(listener: () => void) {
   listeners.add(listener);
   return () => {

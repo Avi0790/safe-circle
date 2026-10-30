@@ -4,6 +4,7 @@ import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, View } from 'rea
 import { useRouter } from 'expo-router';
 import { requestRide } from '@/lib/rides';
 import { colors, spacing, themed } from '@/lib/theme';
+import { t } from '@/lib/i18n';
 
 // The Safe Circle actions that go beyond sharing a dot on a map — five of
 // them now, too many to stack as separate pills without covering half the
@@ -22,11 +23,11 @@ export function QuickActions({ onRideRequested }: { onRideRequested: () => void 
   function confirmRide() {
     setOpen(false);
     Alert.alert(
-      'Need a ride?',
-      'This alerts circle-mates who are driving near you right now.',
+      t('Need a ride?'),
+      t('This alerts circle-mates who are driving near you right now.'),
       [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Request ride', onPress: () => send(false) },
+        { text: t('Cancel'), style: 'cancel' },
+        { text: t('Request ride'), onPress: () => send(false) },
       ],
     );
   }
@@ -36,17 +37,17 @@ export function QuickActions({ onRideRequested }: { onRideRequested: () => void 
     const result = await requestRide(everyone);
     setRequesting(false);
     if (!result.ok) {
-      Alert.alert("Couldn't request a ride", result.error);
+      Alert.alert(t("Couldn't request a ride"), t(result.error));
       return;
     }
     onRideRequested();
     if (!everyone && result.notified === 0) {
       Alert.alert(
-        "Nobody's driving nearby",
-        'No one in your circle is driving close to you right now. Ask everyone in the circle instead?',
+        t("Nobody's driving nearby"),
+        t('No one in your circle is driving close to you right now. Ask everyone in the circle instead?'),
         [
-          { text: 'Not now', style: 'cancel' },
-          { text: 'Ask everyone', onPress: () => send(true) },
+          { text: t('Not now'), style: 'cancel' },
+          { text: t('Ask everyone'), onPress: () => send(true) },
         ],
       );
     }
@@ -56,22 +57,22 @@ export function QuickActions({ onRideRequested }: { onRideRequested: () => void 
     <View style={styles.container}>
       {open && (
         <View style={styles.menu}>
-          <MenuRow label="🧭 Directions" onPress={() => go('/drive')} />
-          <MenuRow label="🚌 Share a bus, train or flight" onPress={() => go('/share-trip')} />
-          <MenuRow label="🚶 Walk me home" onPress={() => go('/walk')} />
-          <MenuRow label="⏱️ Check on me" onPress={() => go('/safety-timer')} />
+          <MenuRow label={t('🧭 Directions')} onPress={() => go('/drive')} />
+          <MenuRow label={t('🚌 Share a bus, train or flight')} onPress={() => go('/share-trip')} />
+          <MenuRow label={t('🚶 Walk me home')} onPress={() => go('/walk')} />
+          <MenuRow label={t('⏱️ Check on me')} onPress={() => go('/safety-timer')} />
           <MenuRow
-            label="🚗 Need a ride"
+            label={t('🚗 Need a ride')}
             onPress={confirmRide}
             right={requesting ? <ActivityIndicator size="small" color={colors.accent} /> : undefined}
           />
-          <MenuRow label="📍 Drop a pin" onPress={() => go('/drop-pin')} />
-          <MenuRow label="📲 Text for help" onPress={() => go('/text-for-help')} />
-          <MenuRow label="❓ Help" onPress={() => go('/ai-help')} last />
+          <MenuRow label={t('📍 Drop a pin')} onPress={() => go('/drop-pin')} />
+          <MenuRow label={t('📲 Text for help')} onPress={() => go('/text-for-help')} />
+          <MenuRow label={t('❓ Help')} onPress={() => go('/ai-help')} last />
         </View>
       )}
       <Pressable accessibilityRole="button" style={styles.pill} onPress={() => setOpen((v) => !v)}>
-        <Text style={styles.pillText} maxFontSizeMultiplier={1.5}>{open ? '✕ Close' : '⋯ Quick actions'}</Text>
+        <Text style={styles.pillText} maxFontSizeMultiplier={1.5}>{open ? t('✕ Close') : t('⋯ Quick actions')}</Text>
       </Pressable>
     </View>
   );

@@ -5,6 +5,7 @@ import { useAccount } from '@/contexts/AccountContext';
 import { useCircles } from '@/contexts/CircleContext';
 import { ChatReadProvider, useChatRead } from '@/contexts/ChatReadContext';
 import { colors, useThemeVersion } from '@/lib/theme';
+import { t } from '@/lib/i18n';
 
 // Emoji ignore the tint colour, so the tab you're not on is faded instead.
 function TabIcon({ symbol, color, focused }: { symbol: string; color: ColorValue; focused: boolean }) {
@@ -43,14 +44,14 @@ function TabsWithChatBadge() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Map',
+          title: t('Map'),
           tabBarIcon: ({ color, focused }) => <TabIcon focused={focused} symbol="📍" color={color} />,
         }}
       />
       <Tabs.Screen
         name="work"
         options={{
-          title: 'Work',
+          title: t('Work'),
           // Only for people who belong to an organization.
           href: hasActiveOrg ? undefined : null,
           tabBarIcon: ({ color, focused }) => <TabIcon focused={focused} symbol="🦺" color={color} />,
@@ -59,14 +60,14 @@ function TabsWithChatBadge() {
       <Tabs.Screen
         name="members"
         options={{
-          title: 'Members',
+          title: t('Members'),
           tabBarIcon: ({ color, focused }) => <TabIcon focused={focused} symbol="👥" color={color} />,
         }}
       />
       <Tabs.Screen
         name="chat"
         options={{
-          title: 'Chat',
+          title: t('Chat'),
           tabBarIcon: ({ color, focused }) => <TabIcon focused={focused} symbol="💬" color={color} />,
           tabBarBadge: unreadCount > 0 ? unreadCount : undefined,
         }}
@@ -74,7 +75,7 @@ function TabsWithChatBadge() {
       <Tabs.Screen
         name="settings"
         options={{
-          title: 'Settings',
+          title: t('Settings'),
           tabBarIcon: ({ color, focused }) => <TabIcon focused={focused} symbol="⚙️" color={color} />,
         }}
       />

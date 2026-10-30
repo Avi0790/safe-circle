@@ -21,6 +21,7 @@ import {
 import { formatDistanceMiles, haversineMeters } from '@/lib/geo';
 import type { MemberWithLocation } from '@/lib/types';
 import { colors, spacing, themed, typography, useThemeVersion } from '@/lib/theme';
+import { t } from '@/lib/i18n';
 
 export default function MembersTab() {
   useThemeVersion(); // redraw on a theme switch (lib/theme.ts)
@@ -36,12 +37,12 @@ export default function MembersTab() {
   function confirmRemoveMember(member: MemberWithLocation) {
     if (!selectedCircle) return;
     Alert.alert(
-      `Remove ${member.full_name}?`,
-      "They'll stop seeing this circle and its members, and it'll stop seeing them.",
+      t('Remove {name}?', { name: member.full_name }),
+      t("They'll stop seeing this circle and its members, and it'll stop seeing them."),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('Cancel'), style: 'cancel' },
         {
-          text: 'Remove',
+          text: t('Remove'),
           style: 'destructive',
           onPress: () => handleRemoveMember(selectedCircle.id, member.id),
         },
@@ -52,19 +53,19 @@ export default function MembersTab() {
   function confirmMakeOwner(member: MemberWithLocation) {
     if (!selectedCircle) return;
     Alert.alert(
-      `Make ${member.full_name} the owner?`,
-      `They'll be able to rename ${selectedCircle.name}, remove members and approve new ones. You'll become an ordinary member and can leave the circle.`,
+      t('Make {name} the owner?', { name: member.full_name }),
+      t("They'll be able to rename {circle}, remove members and approve new ones. You'll become an ordinary member and can leave the circle.", { circle: selectedCircle.name }),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('Cancel'), style: 'cancel' },
         {
-          text: 'Make owner',
+          text: t('Make owner'),
           onPress: async () => {
             const { error } = await supabase.rpc('transfer_circle_ownership', {
               p_circle_id: selectedCircle.id,
               p_new_owner: member.id,
             });
             if (error) {
-              Alert.alert("Couldn't transfer ownership", error.message);
+              Alert.alert(t("Couldn't transfer ownership"), t(error.message));
               return;
             }
             await refreshCircles();
@@ -86,7 +87,7 @@ export default function MembersTab() {
       .eq('user_id', userId);
     setRemovingId(null);
     if (error) {
-      Alert.alert('Could not remove member', error.message);
+      Alert.alert(t('Could not remove member'), t(error.message));
       return;
     }
     await refresh();
@@ -106,20 +107,20 @@ export default function MembersTab() {
         refreshControl={<RefreshControl refreshing={isLoading} onRefresh={refresh} />}
         ListHeaderComponent={
           <View style={styles.headerWrap}>
-            <Text style={styles.kicker}>YOUR CIRCLE</Text>
+            <Text style={styles.kicker}>{t('YOUR CIRCLE')}</Text>
             <HeroCard colors={appColors.crew}>
-              <Text style={ui.heroOrg}>{selectedCircle?.name ?? 'Circle'}</Text>
+              <Text style={ui.heroOrg}>{selectedCircle?.name ?? t('Circle')}</Text>
               <Text style={ui.heroRole}>
-                {members.length} {members.length === 1 ? 'member' : 'members'}
+                {t(members.length === 1 ? '1 member' : '{n} members', { n: members.length })}
               </Text>
               <View style={styles.stats}>
                 <View style={ui.stat}>
                   <Text maxFontSizeMultiplier={1.4} style={ui.statValue}>{sharingNow}</Text>
-                  <Text maxFontSizeMultiplier={1.4} style={ui.statLabel}>Sharing now</Text>
+                  <Text maxFontSizeMultiplier={1.4} style={ui.statLabel}>{t('Sharing now')}</Text>
                 </View>
                 <View style={ui.stat}>
                   <Text maxFontSizeMultiplier={1.4} style={ui.statValue}>{drivingNow}</Text>
-                  <Text maxFontSizeMultiplier={1.4} style={ui.statLabel}>Driving</Text>
+                  <Text maxFontSizeMultiplier={1.4} style={ui.statLabel}>{t('Driving')}</Text>
                 </View>
               </View>
             </HeroCard>
@@ -137,7 +138,7 @@ export default function MembersTab() {
           />
         )}
         ListEmptyComponent={
-          !isLoading ? <Text style={[typography.body, styles.empty]}>No one in this circle yet.</Text> : null
+          !isLoading ? <Text style={[typography.body, styles.empty]}>{t('No one in this circle yet.')}</Text> : null
         }
       />
     </SafeAreaView>
@@ -194,33 +195,35 @@ function MemberRow({
             {isStatusActive(member.status_expires_at) && member.status_emoji && (
               <Text style={styles.statusChip}>
                 {member.status_emoji}
-                {member.status_text ? ` ${member.status_text}` : ''}
+                {member.status_text ? ` ${t(member.status_text)}` : ''}
               </Text>
             )}
           </View>
           <Text style={typography.caption}>
             {shareStatus === 'ended' ? (
-              'Stopped sharing'
+              t('Stopped sharing')
             ) : member.location ? (
               <>
                 {driving
-                  ? `🚗 Driving${mph != null ? ` ${Math.round(mph)} mph` : ''}`
-                  : `${stale ? 'Last seen' : 'Updated'} ${timeAgo(member.location.recorded_at)}`}
-                {stale && !driving ? ' — may not be current' : ''}
-                {distanceMiles && ` · ${distanceMiles} away`}
+                  ? mph != null
+                    ? t('🚗 Driving {mph} mph', { mph: Math.round(mph) })
+                    : t('🚗 Driving')
+                  : t(stale ? 'Last seen {ago}' : 'Updated {ago}', { ago: timeAgo(member.location.recorded_at) })}
+                {stale && !driving ? t(' — may not be current') : ''}
+                {distanceMiles && t(' · {distance} away', { distance: distanceMiles })}
                 {member.location.battery_level != null && (
                   <Text style={lowBattery && styles.lowBattery}>
                     {' · '}
-                    {Math.round(member.location.battery_level * 100)}% battery
+                    {t('{pct}% battery', { pct: Math.round(member.location.battery_level * 100) })}
                     {lowBattery ? ' ⚠️' : ''}
                   </Text>
                 )}
                 {shareStatus === 'window' && member.share_until
-                  ? ` · sharing until ${formatClockTime(member.share_until)}`
+                  ? ` · ${t('sharing until {time}', { time: formatClockTime(member.share_until) })}`
                   : ''}
               </>
             ) : (
-              'No location shared yet'
+              t('No location shared yet')
             )}
           </Text>
         </View>
@@ -230,24 +233,24 @@ function MemberRow({
         <View style={styles.actions}>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={`Make ${member.full_name} the owner`}
+            accessibilityLabel={t('Make {name} the owner', { name: member.full_name })}
             onPress={onMakeOwner}
             disabled={removing}
             hitSlop={8}
             style={styles.actionChip}
           >
-            <Text style={styles.ownerLinkText}>Make owner</Text>
+            <Text style={styles.ownerLinkText}>{t('Make owner')}</Text>
           </Pressable>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={`Remove ${member.full_name}`}
+            accessibilityLabel={t('Remove {name}', { name: member.full_name })}
             accessibilityState={{ busy: removing }}
             onPress={onRemove}
             disabled={removing}
             hitSlop={8}
             style={[styles.actionChip, styles.actionChipDanger]}
           >
-            <Text style={styles.removeLinkText}>{removing ? 'Removing…' : 'Remove'}</Text>
+            <Text style={styles.removeLinkText}>{removing ? t('Removing…') : t('Remove')}</Text>
           </Pressable>
         </View>
       )}

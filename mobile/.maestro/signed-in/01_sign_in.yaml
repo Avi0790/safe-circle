@@ -1,0 +1,19 @@
+# Signs in with a test account. Every signed-in flow starts with this.
+#   maestro test -e EMAIL=you@example.com -e PASSWORD=... .maestro/signed-in
+# Use a test account, not one with real family on it: these flows send a
+# check-in to its circle and clock it in and out.
+appId: com.surendrabk.safecircle
+---
+- launchApp:
+    clearState: true
+- tapOn: "Email"
+- inputText: ${EMAIL}
+- tapOn: "Password"
+- inputText: ${PASSWORD}
+- hideKeyboard
+- tapOn:
+    text: "Sign in"
+    index: 1          # the button, not the screen title
+- extendedWaitUntil:
+    visible: "Map, tab.*"
+    timeout: 20000

@@ -808,6 +808,31 @@ working on Android: the map needs a Google Maps API key
 (`android.config.googleMaps.apiKey` in `app.config.js`), push needs a
 Firebase project (`google-services.json`), and CarPlay is iPhone-only.
 
+### Tap-through tests (Maestro)
+
+`.maestro/` holds flows that drive the real app the way a person would, on
+the iOS simulator or an Android emulator. Install once with
+`brew install mobile-dev-inc/tap/maestro`; it needs Java 17
+(`JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk-17.jdk/Contents/Home`).
+Add `MAESTRO_CLI_NO_ANALYTICS=1` to turn off its usage statistics.
+
+```bash
+maestro test .maestro/signed-out                     # no account needed
+maestro test -e EMAIL=test@example.com -e PASSWORD=... .maestro/signed-in
+```
+
+- `signed-out/01_sign_in_screens`: sign-in, the three account types on
+  sign-up, forgot password, and back. Touches nothing on the server.
+- `signed-in/02_tabs`: every tab opens. `03_check_in`: sends a check-in from
+  Chat. `04_spanish`: Settings → Language → Español redraws the app in
+  Spanish, then back (iPhone only). `05_clock_in_out`: a very short real
+  shift (the account must be a worker in an organization).
+
+The signed-in flows act for real (a check-in message, a shift), so run them
+with a test account, not one with your family on it. Each starts with
+`clearState`, which signs the app out first. Tabs are matched by their
+accessible names ("Settings, tab, 5 of 5"), so `"Settings, tab.*"`.
+
 ### Environment variables
 
 Needs `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_ANON_KEY`.
@@ -946,6 +971,31 @@ and two primitives in `components/` (`Button`, `TextField`) — extend these
 rather than hardcoding styles per-screen, and keep the palette in sync
 with the web dashboard's (`web/src/index.css`) so the two clients feel
 related.
+
+## Español (Spanish)
+
+The app follows the phone's language, English or Spanish, and Settings →
+Language can pick one; switching redraws every screen at once (like
+Appearance). Written for the many Spanish-speaking field workers and
+families the app is for.
+
+- Text is written in English and wrapped in `t()` (`lib/i18n.ts`):
+  `t('Sign in')`, `t('Clocked in to {org}', { org: name })`. Spanish is
+  looked up in `lib/translations/es.ts` by the English; anything not
+  translated yet shows in English, never as a key.
+- Translated so far: signing in and up, the tab bar, the Map tab, SOS and
+  its alerts, Quick actions, walk and check-on-me banners, the Work tab
+  (clocking in and out, check-ins, the owner's crew card and demo billing),
+  **the work disclosure a worker agrees to**, Members, Chat and Settings.
+  Other screens (Directions, places, timesheets...) are still English.
+- Quick statuses are stored in English and shown in each reader's language,
+  so a Spanish speaker and an English speaker in one circle both read their
+  own. Push notifications are composed by the database, still in English.
+- `lib/__tests__/i18n.test.ts` fails if any `t('...')` has no Spanish, or a
+  translation's `{placeholders}` don't match the English.
+- The Spanish is informal ("tú"), Latin American. Have a native speaker
+  review it before relying on it, the work disclosure above all: it's what
+  a worker consents to.
 
 ## Accessibility
 

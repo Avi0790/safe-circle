@@ -32,6 +32,7 @@ import { Avatar } from '@/components/Avatar';
 import { formatClockTime, formatTimeLeft, getShareStatus, isDriving, isStale, isStatusActive, speedToMph } from '@/lib/format';
 import type { LatestLocation, MapPin, MemberWithLocation } from '@/lib/types';
 import { colors, isDark, radius, spacing, themed, useThemeVersion } from '@/lib/theme';
+import { t } from '@/lib/i18n';
 
 const DEFAULT_REGION = {
   latitude: 37.7749,
@@ -49,17 +50,17 @@ function markerDescription(
 ): string | undefined {
   const parts: string[] = [];
   if (isStatusActive(statusExpiresAt) && statusEmoji) {
-    parts.push(`${statusEmoji}${statusText ? ` ${statusText}` : ''}`);
+    parts.push(`${statusEmoji}${statusText ? ` ${t(statusText)}` : ''}`);
   }
   if (isDriving(location.speed)) {
     const mph = speedToMph(location.speed);
-    parts.push(`🚗 Driving${mph != null ? ` ${Math.round(mph)} mph` : ''}`);
+    parts.push(mph != null ? t('🚗 Driving {mph} mph', { mph: Math.round(mph) }) : t('🚗 Driving'));
   }
   if (location.battery_level != null) {
-    parts.push(`${Math.round(location.battery_level * 100)}% battery`);
+    parts.push(t('{pct}% battery', { pct: Math.round(location.battery_level * 100) }));
   }
   if (getShareStatus(shareUntil) === 'window' && shareUntil) {
-    parts.push(`sharing until ${formatClockTime(shareUntil)}`);
+    parts.push(t('sharing until {time}', { time: formatClockTime(shareUntil) }));
   }
   return parts.length > 0 ? parts.join(' · ') : undefined;
 }
@@ -110,11 +111,11 @@ function MemberMarker({ member }: { member: MemberWithLocation }) {
 function PinMarker({ pin, isMine, onRemoved }: { pin: MapPin; isMine: boolean; onRemoved: () => void }) {
   function handlePress() {
     const buttons: { text: string; style?: 'cancel' | 'destructive'; onPress?: () => void }[] = [
-      { text: 'Close', style: 'cancel' },
+      { text: t('Close'), style: 'cancel' },
     ];
     if (isMine) {
       buttons.push({
-        text: 'Remove pin',
+        text: t('Remove pin'),
         style: 'destructive',
         onPress: async () => {
           await supabase.rpc('remove_pin', { p_pin_id: pin.id });
@@ -124,7 +125,7 @@ function PinMarker({ pin, isMine, onRemoved }: { pin: MapPin; isMine: boolean; o
     }
     Alert.alert(
       `${pin.emoji} ${pin.label}`,
-      `Dropped by ${pin.profiles?.full_name ?? 'someone'} · expires in ${formatTimeLeft(pin.expires_at)}`,
+      t('Dropped by {name} · expires in {left}', { name: pin.profiles?.full_name ?? t('someone'), left: formatTimeLeft(pin.expires_at) }),
       buttons,
     );
   }
@@ -178,7 +179,7 @@ export default function MapTab() {
 
   async function handleAskEveryone() {
     const result = await requestRide(true);
-    if (!result.ok) Alert.alert("Couldn't request a ride", result.error);
+    if (!result.ok) Alert.alert(t("Couldn't request a ride"), t(result.error));
     refreshRides();
   }
 
@@ -276,15 +277,15 @@ export default function MapTab() {
       <View style={[styles.sosBannerWrap, { top: insets.top }]}>
         <View style={styles.circleCard}>
           <View style={styles.circleText}>
-            <Text style={styles.circleKicker}>YOUR CIRCLE</Text>
+            <Text style={styles.circleKicker}>{t('YOUR CIRCLE')}</Text>
             <Text maxFontSizeMultiplier={1.3} style={styles.circleName} numberOfLines={1}>
               {selectedCircle?.name ?? 'Safe Circle'}
             </Text>
             <Text style={styles.circleSub}>
-              {sharingNow} of {members.length} sharing now
+              {t('{n} of {total} sharing now', { n: sharingNow, total: members.length })}
             </Text>
           </View>
-          <Pressable accessibilityRole="button" style={styles.mapTypeButton} onPress={() => setModesOpen(true)} accessibilityLabel="Map modes">
+          <Pressable accessibilityRole="button" style={styles.mapTypeButton} onPress={() => setModesOpen(true)} accessibilityLabel={t('Map modes')}>
             <Text allowFontScaling={false} style={styles.mapTypeButtonText}>
               {mapMode.mode === 'satellite' || mapMode.mode === 'flyover' ? '🛰️' : '🗺️'}
             </Text>
@@ -298,14 +299,14 @@ export default function MapTab() {
         {locationIssue === 'denied' && (
           <Pressable accessibilityRole="button" style={styles.locationBanner} onPress={() => Linking.openSettings()}>
             <Text style={styles.locationBannerText}>
-              📍 Location access is off, so the map can't center on you. Tap to open Settings.
+              {t("📍 Location access is off, so the map can't center on you. Tap to open Settings.")}
             </Text>
           </Pressable>
         )}
         {locationIssue === 'unavailable' && (
           <View style={styles.locationBanner}>
             <Text style={styles.locationBannerText}>
-              📍 Couldn't get your location right now — try again outdoors or with a clearer signal.
+              {t("📍 Couldn't get your location right now — try again outdoors or with a clearer signal.")}
             </Text>
           </View>
         )}

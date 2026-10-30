@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Circle } from 'react-native-svg';
 import { GradientFill } from '@/components/ui/AppUI';
 import { colors, themed } from '@/lib/theme';
+import { t } from '@/lib/i18n';
 
 // The Safe Circle mark: you at the centre, your circle around you.
 export function LogoMark({ size = 72 }: { size?: number }) {
@@ -23,7 +24,7 @@ export function LogoMark({ size = 72 }: { size?: number }) {
 export function AuthScreen({
   title,
   subtitle,
-  tagline = 'Family location sharing that respects your battery and your privacy.',
+  tagline = t('Family location sharing that respects your battery and your privacy.'),
   children,
   footer,
 }: {

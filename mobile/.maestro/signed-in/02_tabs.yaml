@@ -1,0 +1,17 @@
+# Every tab opens.
+appId: com.surendrabk.safecircle
+---
+- runFlow: 01_sign_in.yaml
+- assertVisible: "YOUR CIRCLE"
+- tapOn: "Members, tab.*"
+- waitForAnimationToEnd
+- assertVisible: "Sharing now"
+- tapOn: "Chat, tab.*"
+- waitForAnimationToEnd
+- assertVisible: "CIRCLE CHAT"
+- tapOn: "Settings, tab.*"
+- waitForAnimationToEnd
+- assertVisible: "Profile photo"
+- tapOn: "Map, tab.*"
+- waitForAnimationToEnd
+- assertVisible: "SOS"

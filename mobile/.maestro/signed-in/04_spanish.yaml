@@ -1,0 +1,21 @@
+# Settings → Language → Español switches every screen at once, then back.
+appId: com.surendrabk.safecircle
+---
+- runFlow: 01_sign_in.yaml
+- tapOn: "Settings, tab.*"
+- waitForAnimationToEnd
+- scrollUntilVisible:
+    element: "Language"
+    direction: DOWN
+- tapOn: "Español"
+- waitForAnimationToEnd
+- assertVisible: "Idioma"
+- assertVisible: "Ajustes, tab.*"     # the tab bar, redrawn
+- assertVisible: "Mapa, tab.*"
+- scrollUntilVisible:
+    element: "English"
+    direction: DOWN
+- tapOn: "English"
+- waitForAnimationToEnd
+- assertVisible: "Language"
+- assertVisible: "Settings, tab.*"

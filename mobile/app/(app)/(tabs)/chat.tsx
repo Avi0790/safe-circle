@@ -25,6 +25,7 @@ import { announce } from '@/lib/announce';
 import { timeAgo } from '@/lib/format';
 import type { Message } from '@/lib/types';
 import { colors, spacing, themed, typography, useThemeVersion } from '@/lib/theme';
+import { t } from '@/lib/i18n';
 
 // In-circle chat — Life360's most-used feature, and one the proposal never
 // scoped in: circles could share location and alerts but had no way to
@@ -79,7 +80,7 @@ export default function ChatTab() {
     const result = await checkIn();
     setCheckingIn(false);
     if (!result.ok) setSendError(result.error);
-    else announce('Check-in sent to your circle');
+    else announce(t('Check-in sent to your circle'));
   }
 
   return (
@@ -90,14 +91,14 @@ export default function ChatTab() {
         keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
       >
         <View style={styles.header}>
-          <Text style={styles.kicker}>CIRCLE CHAT</Text>
-          <Text maxFontSizeMultiplier={1.3} style={styles.title} accessibilityRole="header">{selectedCircle?.name ?? 'Chat'}</Text>
+          <Text style={styles.kicker}>{t('CIRCLE CHAT')}</Text>
+          <Text maxFontSizeMultiplier={1.3} style={styles.title} accessibilityRole="header">{selectedCircle?.name ?? t('Chat')}</Text>
           <Text style={styles.subtitle}>
-            {members.length} {members.length === 1 ? 'person' : 'people'} · only your circle can read this
+            {t(members.length === 1 ? '1 person · only your circle can read this' : '{n} people · only your circle can read this', { n: members.length })}
           </Text>
         </View>
 
-        {error && <ErrorText style={styles.error}>{error}</ErrorText>}
+        {error && <ErrorText style={styles.error}>{t(error)}</ErrorText>}
 
         <FlatList
           ref={listRef}
@@ -119,7 +120,7 @@ export default function ChatTab() {
           renderItem={({ item }) => (
             <MessageRow
               message={item}
-              senderName={memberById.get(item.user_id)?.full_name ?? 'Someone'}
+              senderName={memberById.get(item.user_id)?.full_name ?? t('Someone')}
               senderAvatarUrl={memberById.get(item.user_id)?.avatar_url ?? null}
               isMine={item.user_id === session?.user.id}
             />
@@ -127,7 +128,7 @@ export default function ChatTab() {
           ListEmptyComponent={
             !isLoading ? (
               <Text style={[typography.caption, styles.emptyText]}>
-                No messages yet — say hi to your circle.
+                {t('No messages yet — say hi to your circle.')}
               </Text>
             ) : null
           }
@@ -139,7 +140,7 @@ export default function ChatTab() {
             style={[styles.checkInButton, checkingIn && styles.sendButtonDisabled]}
             onPress={handleCheckIn}
             disabled={checkingIn}
-            accessibilityLabel="Check in — share where you are with your circle"
+            accessibilityLabel={t('Check in — share where you are with your circle')}
           >
             {checkingIn ? (
               <ActivityIndicator size="small" color={colors.accent} />
@@ -151,8 +152,8 @@ export default function ChatTab() {
             style={styles.input}
             value={draft}
             onChangeText={setDraft}
-            accessibilityLabel="Message your circle"
-            placeholder="Message your circle…"
+            accessibilityLabel={t('Message your circle')}
+            placeholder={t('Message your circle…')}
             placeholderTextColor={colors.offline}
             multiline
             maxLength={2000}
@@ -162,7 +163,7 @@ export default function ChatTab() {
             onPress={handleSend}
             disabled={!draft.trim() || sending}
             accessibilityRole="button"
-            accessibilityLabel="Send"
+            accessibilityLabel={t('Send')}
           >
             {sending ? (
               <ActivityIndicator size="small" color="#fff" />
@@ -205,7 +206,7 @@ function MessageRow({
               ).catch(() => {})
             }
           >
-            <Text style={isMine ? styles.mapLinkMine : styles.mapLinkTheirs}>View on map ›</Text>
+            <Text style={isMine ? styles.mapLinkMine : styles.mapLinkTheirs}>{t('View on map ›')}</Text>
           </Pressable>
         )}
         <Text style={isMine ? styles.timeMine : styles.timeTheirs}>

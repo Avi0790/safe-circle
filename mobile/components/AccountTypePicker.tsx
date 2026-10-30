@@ -1,6 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { ACCOUNT_TYPES, type AccountType } from '@/lib/accountType';
 import { colors, spacing, themed, typography } from '@/lib/theme';
+import { t } from '@/lib/i18n';
 
 export function AccountTypePicker({
   value,
@@ -24,8 +25,8 @@ export function AccountTypePicker({
           >
             <Text allowFontScaling={false} style={styles.emoji}>{option.emoji}</Text>
             <View style={styles.text}>
-              <Text style={styles.title}>{option.title}</Text>
-              <Text style={typography.caption}>{option.description}</Text>
+              <Text style={styles.title}>{t(option.title)}</Text>
+              <Text style={typography.caption}>{t(option.description)}</Text>
             </View>
           </Pressable>
         );

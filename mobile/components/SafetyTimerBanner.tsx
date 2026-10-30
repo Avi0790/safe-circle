@@ -8,6 +8,7 @@ import { supabase } from '@/lib/supabase';
 import { formatClockTime, formatTimeLeft } from '@/lib/format';
 import type { SafetyTimer } from '@/lib/types';
 import { colors, radius, spacing, themed } from '@/lib/theme';
+import { t } from '@/lib/i18n';
 
 // Walk me home's WalkBanner, for a destination-less "check on me" timer.
 // A circle-mate's overdue timer isn't repeated here — it's already raised
@@ -32,7 +33,7 @@ export function SafetyTimerBanner({
     setEndingId(timer.id);
     await supabase.rpc('end_safety_timer', { p_id: timer.id });
     setEndingId(null);
-    announce('Marked safe');
+    announce(t('Marked safe'));
     onChanged();
   }
 
@@ -55,27 +56,27 @@ export function SafetyTimerBanner({
               style={styles.text}
               accessible
               accessibilityRole={isMine ? 'button' : 'text'}
-              accessibilityHint={isMine ? 'Opens the details' : undefined}
+              accessibilityHint={isMine ? t('Opens the details') : undefined}
               onAccessibilityTap={isMine ? () => router.push('/safety-timer') : undefined}
             >
               <Text style={styles.title}>
                 {overdue
-                  ? '⏰ Your check-on-me timer ran out'
+                  ? t('⏰ Your check-on-me timer ran out')
                   : isMine
-                    ? `⏱️ ${timer.label ?? 'Asked to be checked on'}`
-                    : `⏱️ ${timer.profiles?.full_name ?? 'Someone'} asked to be checked on`}
+                    ? `⏱️ ${timer.label ?? t('Asked to be checked on')}`
+                    : t('⏱️ {name} asked to be checked on', { name: timer.profiles?.full_name ?? t('Someone') })}
               </Text>
               <Text style={styles.detail}>
                 {overdue
-                  ? 'Your circle was alerted. Tap "I\'m safe" if you\'re okay.'
-                  : `Due ${formatClockTime(timer.expected_by)} · ${formatTimeLeft(timer.expected_by, now)}`}
+                  ? t('Your circle was alerted. Tap "I\'m safe" if you\'re okay.')
+                  : t('Due {time} · {left}', { time: formatClockTime(timer.expected_by), left: formatTimeLeft(timer.expected_by, now) })}
               </Text>
             </View>
             {isMine && (
               <Pressable
                 style={styles.button}
                 accessibilityRole="button"
-                accessibilityLabel="I'm safe"
+                accessibilityLabel={t("I'm safe")}
                 accessibilityState={{ busy: endingId === timer.id }}
                 onPress={() => handleSafe(timer)}
                 disabled={endingId === timer.id}
@@ -83,7 +84,7 @@ export function SafetyTimerBanner({
                 {endingId === timer.id ? (
                   <ActivityIndicator color="#fff" size="small" />
                 ) : (
-                  <Text style={styles.buttonText}>I'm safe</Text>
+                  <Text style={styles.buttonText}>{t("I'm safe")}</Text>
                 )}
               </Pressable>
             )}
