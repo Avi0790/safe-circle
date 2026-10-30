@@ -1,150 +1,202 @@
+<div align="center">
+
+<img src="mobile/assets/icon.png" alt="Safe Circle" width="96" height="96">
+
 # Safe Circle
 
-Family location sharing that respects your battery and your privacy.
+**Location sharing and safety for families and for people who work alone, built so your location is shared only with the people you choose, only for as long as you choose.**
 
-**Created, designed and developed by [Surendra B K](https://github.com/surendr7a)** —
-the whole stack: the Supabase backend (schema, row-level security, Edge
-Functions, scheduled jobs), the iOS/Android app, the web dashboard, the
-test suites and the CI pipeline, plus every feature beyond the original
-proposal.
+iPhone · Android · CarPlay · Web dashboard · English and Español
 
-CS capstone project, Fall 2026 (Team Beacon). Proposal team: Avi (mobile &
-UI), AJ (location engine), Surendra (backend & data), Thi (web client & QA).
+![Expo](https://img.shields.io/badge/Expo-React%20Native-000020?logo=expo)
+![Supabase](https://img.shields.io/badge/Supabase-Postgres%20%2B%20RLS-3ECF8E?logo=supabase&logoColor=white)
+![License: MIT](https://img.shields.io/badge/license-MIT-blue)
 
-## What it does
+Created, designed and developed by **[Surendra B K](https://github.com/surendr7a)**
 
-Create a private circle with a 6-character invite code, and everyone in it
-sees everyone else on a shared live map — no manual check-ins. Sharing is
-always visible and can be paused at any time; if you're not in someone's
-circle, you cannot see them. See [`backend/README.md`](backend/README.md)
-for the full pitch and how access control is enforced.
+</div>
 
-## Structure
+<p align="center">
+  <img src="docs/screenshots/sign-in.png" alt="Sign in" width="200">
+  <img src="docs/screenshots/sign-up.png" alt="Choosing family, just me or work crew at sign-up" width="200">
+  <img src="docs/screenshots/map-es.png" alt="The map, in Spanish and dark mode" width="200">
+  <img src="docs/screenshots/settings-es.png" alt="Settings, in Spanish" width="200">
+</p>
 
-| Package | Built by | What it is |
+---
+
+## Contents
+
+- [Why Safe Circle](#why-safe-circle)
+- [Features](#features)
+- [Privacy and security](#privacy-and-security)
+- [Accessibility and Spanish](#accessibility-and-spanish)
+- [How it's built](#how-its-built)
+- [Testing](#testing)
+- [Getting started](#getting-started)
+- [Demo day](#demo-day)
+- [Project structure](#project-structure)
+- [Known limits](#known-limits)
+- [Author and license](#author-and-license)
+
+## Why Safe Circle
+
+Most location apps are all-or-nothing: everyone sees you all the time, which feels like surveillance, so people turn it off, and then nobody knows when they need help. People who work alone have the opposite problem: their employer needs to know they're safe on shift, and nothing more.
+
+Safe Circle is one account with two kinds of circle:
+
+| | Family circles | Work organizations |
 |---|---|---|
-| [`backend/`](backend/README.md) | Surendra B K | Supabase: schema, row-level security, invite-code RPCs, geofencing + push notifications |
-| [`web/`](web/README.md) | Surendra B K | Read-only React + Leaflet live-map dashboard |
-| [`mobile/`](mobile/README.md) | Surendra B K | Expo/React Native app — auth, circles, live map, and the background location engine |
+| Who | People you choose | A crew, its managers and owner |
+| Who sees you | Your circle, while you share | Your managers, **only while you're clocked in** |
+| Cost | Always free | $4 per worker seat a month (demo and Stripe test billing) |
 
-Each package has its own README with setup and verification details.
+## Features
 
-**Status: the full proposal is built** — MVP (accounts/circles, live map,
-background location) and all three stretch goals (geofenced places with
-push alerts, location history, an SOS button), backend through UI,
-verified end-to-end against the real hosted project. Two security review
-passes caught and fixed three real issues (an unauthenticated webhook, no
-rate limiting on invite-code guesses, no rate limiting on SOS alerts) —
-see `backend/README.md`. Push notifications are registered with EAS
-(`@suren.7a/safecircle`).
+### Safety
 
-Beyond the proposal: a full audit of the backend's own RLS policies found
-several the UI never wired up (rename/delete a circle, rename/delete a
-place, edit your name, remove a member) — all closed. Also added
-forgot-password on both clients, a live "who's actually here right now"
-indicator per place, and several Life360-style additions: in-circle chat
-with push notifications and an unread badge (mobile sends, web reads),
-avatars everywhere including as map markers (a profile photo you choose
-from your library, or colored initials until you do), and a
-"driving" status + distance-to-member readout from GPS speed data that
-was already being collected but never captured. Also a "Call 911"
-option on the SOS confirm dialog, and Life360-style place icons
-(🏠/🏫/💼) inferred from each place's name.
+- **SOS**: one tap (or a hard shake) alerts your circle with your location, with **Call 911** on the same prompt. Circle-mates tap "I'm on my way"; an SOS nobody answers is pushed again automatically. No internet? It offers a **text message** with your location instead.
+- **Fall and crash detection**: a hard fall followed by stillness opens a 30-second, vibrating "Are you OK?"; no answer sends the SOS for you.
+- **Walk me home** and **Check on me**: timers that send an SOS on their own if you don't arrive or check in.
+- **Curfew**: your circle is alerted if you're not home by a set time, in your own time zone.
+- **Medical card**: readable by your circle only during an active SOS.
+- **Backup contacts**: people outside the app to text in an emergency.
 
-Three features that deliberately *aren't* Life360 — the theme is
-consent-based, time-limited safety rather than always-on tracking:
-**temporary sharing** (share for 1/2/8 hours, enforced in the database so
-it holds even if the app is force-quit), **Walk me home** (pick a place and
-a timer; your circle sees you're on your way, hears when you arrive, and an
-SOS fires *automatically* if you don't — protection for when you can't press
-the button), and **Need a ride** (one tap alerts only circle-mates who are
-driving near you right now). A second batch pushes further on the same
-theme, this time aimed at Life360's biggest privacy criticism — that it
-watches constantly with no accountability: **who's checked on me** (a log
-of when a circle-mate opened your location history), **auto-delete
-history** (pick 1/7/30 days or forever; enforced by a daily job, not just
-hidden in the UI), **SOS acknowledge + escalation** (circle-mates can tap
-"I'm on my way" so the sender knows they've been seen; an unacknowledged
-SOS re-pushes the whole circle automatically), and **quick status** chips
-("On my way", "Studying", "Don't disturb") that say more than a dot on a
-map and expire on their own. A third batch adds a few things that are
-just genuinely cool and unique rather than pure safety workflow:
-**auto status from places** (arriving at "Home" sets "🏠 Home" on its own,
-ties quick status and geofencing together for free), **shake for SOS**
-(a few hard shakes brings up the same SOS confirm dialog, for when the
-phone's buried in a pocket), and **weather where they are** (temperature
-and conditions at a member's location — no Life360-style app shows this).
-A fourth batch rounds out the privacy and "meet up" story: **ghost mode**
-(hide your location from one specific person, invisibly, while everyone
-else still sees you), **meetup pins** (drop a temporary "meet here" marker
-for a festival or trailhead, pushed to the circle, gone on its own), and
-**curfew** (set a place and a time once; your circle is alerted
-automatically if you're not there by then — no button to press). A fifth
-batch closes a real gap: every alert so far needs both this phone *and*
-Supabase to have internet — **text for help** composes an SMS with your
-location to circle-mates or personal backup contacts, a fallback that can
-get through when push can't, and **check on me** is Walk me home's sibling
-for when there's no destination (studying alone, a first date, a solo
-hike) — set a timer, and an SOS fires automatically if you don't check in.
-A sixth batch is about who gets in and who can see what: **join approval**
-(a leaked invite code only creates a request the creator can deny), a
-**medical card** that circle-mates can read only during your active SOS
-(enforced by row-level security), and **guest tracking links** — a
-time-limited link that shows your live location in any browser to someone who
-doesn't have the app, which Life360 can't do. A seventh batch covers what a real app owes its users: **download my data**,
-**delete my account** (safely — circles you created are handed to another
-member instead of vanishing for everyone), **transfer circle ownership**, an
-optional **Face ID lock**, and an **SOS fallback** that offers a text message
-when there's no internet. Details in `backend/README.md` and `mobile/README.md`.
+### Getting around
 
-Tested on a real iPhone via Expo Go: auth, circles, the map, SOS, and
-live location sharing all confirmed working on real hardware — including
-two real bugs caught only by that testing (a crash in the background
-permission request, and background location doing nothing at all in
-Expo Go) and fixed on the spot; see `mobile/README.md`'s Verification
-notes for both. The remaining gap: **true background tracking** (app
-closed or screen off) still needs a custom development build — a
-foreground fallback now covers sharing while the app is open, but not
-backgrounded/closed. Getting a development build onto a physical iPhone
-needs the paid Apple Developer Program ($99/yr), which this project
-hasn't enrolled in; an Android development build has no such requirement
-and would need testing whenever an Android device is available.
+- **Directions** with turn-by-turn voice, lane hints, speed limits, stops along the way and incident reports, on the phone and on **CarPlay**.
+- **Share your trip**: your circle sees where you're headed and when you'll arrive; works for drives, walks, buses, trains and flights.
+- **Live links**: share your location or ETA with someone who doesn't have the app, until you arrive or the link expires.
+- **Need a ride**: alerts only circle-mates who are driving near you right now.
 
-What's left isn't ordinary code: teammates joining, and (optionally) that
-Apple Developer enrollment or an Android device to verify true background
-tracking on real hardware.
+### Your circle
+
+- Live map with photos, battery, driving speed and weather where they are; **places** with arrive/leave alerts; **chat** and one-tap **check-ins**; meetup **pins**; **quick status** ("On my way", "Studying").
+
+### Work mode, for people who work alone
+
+- Workers **clock in** after reading a plain-language disclosure of exactly what their employer can see; any change has to be accepted again.
+- Managers see a **live crew map** only of people on shift, only of the teams they lead. Shifts end by themselves after 14 hours.
+- Optional **check-ins**: a missed one alerts the managers. A phone that goes **quiet** for about 20 minutes on shift alerts them too.
+- Every time a manager looks at a worker's location, the worker sees it in **"Who's looked at you"**.
+- **Job-site reminders** that never leave the worker's phone; **timesheets** with a payroll CSV (times only, never places).
+- A **web dashboard** for owners and managers, and a platform view that shows totals only.
+
+## Privacy and security
+
+The rules live in the database, not just the app: **row-level security on every table** decides who can read what, so they hold even for someone who builds their own client.
+
+- Share for 1, 2 or 8 hours, or until you stop; **ghost mode** hides you from one person.
+- **Location history** kept 1, 7 or 30 days or forever, your choice, deleted every night by the database.
+- **Who's checked on me**: every look at your history is logged and shown to you.
+- **App lock** with Face ID; **download all your data**; **delete your account** (circles you created pass to another member instead of vanishing).
+- Invite codes are hashed and rate-limited; new members can need the creator's approval.
+- A full [privacy policy](mobile/lib/privacyPolicy.ts), in English and Spanish, in the app and at the web dashboard's `/privacy`.
+
+No ads, no analytics or tracking SDKs, nothing sold.
+
+## Accessibility and Spanish
+
+- **VoiceOver / TalkBack**: every control is named; errors and events ("SOS sent", "Clocked in") are read aloud; headings for the rotor; nothing hidden inside another button.
+- **Large text** up to the biggest accessibility sizes; **dark mode** that follows the phone or a choice in Settings.
+- **Web**: works from the keyboard with a visible focus ring, screen-reader labels, and WCAG AA contrast, checked by tests.
+- **Español**: the whole app (729 phrases, turn-by-turn voice included) and the web dashboard follow the device's language or a choice in Settings. **Notifications arrive in each recipient's language.**
+
+## How it's built
+
+```mermaid
+flowchart LR
+    subgraph Clients
+        A["📱 Mobile app<br/>Expo / React Native<br/>iPhone · Android · CarPlay"]
+        W["💻 Web dashboard<br/>React + Vite"]
+    end
+    subgraph Supabase
+        DB[("Postgres<br/>row-level security<br/>71 migrations")]
+        AU["Auth + Realtime"]
+        CR["11 scheduled jobs<br/>SOS escalation, curfews, timers"]
+        EF["Edge Functions<br/>push, AI help, billing"]
+    end
+    A --> DB
+    W --> DB
+    A --> AU
+    W --> AU
+    CR --> DB
+    DB --> EF
+    EF --> P["Expo Push<br/>(Apple / Google)"]
+    EF --> S["Stripe<br/>(test mode)"]
+```
+
+| Part | Tech |
+|---|---|
+| [`mobile/`](mobile/README.md) | Expo SDK 57, React Native, expo-router, react-native-maps, a native CarPlay module |
+| [`web/`](web/README.md) | React, Vite, Leaflet |
+| [`backend/`](backend/README.md) | Supabase: Postgres + RLS, Auth, Realtime, pg_cron, Edge Functions (Deno) |
+| Maps and routes | Apple Maps / Google Maps, OpenStreetMap-based routing and search |
+
+## Testing
+
+Every push runs the whole suite on GitHub Actions, against a fresh database:
+
+| Suite | What it checks | Size |
+|---|---|---|
+| Database security tests | Who can see whose location, curfews, shifts, SOS, billing, as each kind of user | 24 files, ~480 checks |
+| Load test | 302 people and ~113,000 positions; the crew map answers in ~30 ms | 7 timed checks |
+| Mobile app | Screens, logic, accessibility rules, translations, fall detection | 605 tests |
+| Web dashboard | Logic, accessibility and contrast, translations, the privacy policy | 111 tests |
+| Notifications | Every alert translated correctly for Spanish speakers | Node tests |
+| Tap-through (Maestro) | Sign-in, tabs, check-in, Spanish, clocking in, on a simulator | 6 flows |
+
+```bash
+cd backend && tests/run_all.sh                 # database tests (local Supabase)
+cd mobile && npm test                          # app tests
+cd web && npm test                             # dashboard tests
+cd mobile && scripts/e2e.sh                    # tap-through tests on the simulator
+```
 
 ## Getting started
 
-1. **Backend first** — it's the foundation everything else talks to.
-   Follow [`backend/README.md`](backend/README.md) to get a local Supabase
-   stack running (`supabase start`) or link to the hosted project.
-2. **Shared client env** — copy [`.env.example`](.env.example) to `.env`
-   at this repo root and fill in the project's URL + anon key (Project
-   Settings → API on the Supabase dashboard). Both `web/` and `mobile/`
-   read from this one file — see each package's README for exactly how.
-3. **Web or mobile** — `npm install && npm run dev` in `web/`, or
-   `npm install && npx expo start` in `mobile/`.
+You need Node 22+, the [Supabase CLI](https://supabase.com/docs/guides/cli), and Xcode (iPhone) or Android Studio with Java 17 (Android).
 
-## Tooling
+1. **Backend**: `cd backend && supabase start` for a local stack, or `supabase link` to a hosted project and `supabase db push`. See [backend/README.md](backend/README.md).
+2. **Environment**: copy [`.env.example`](.env.example) to `.env` at the repo root and fill in the Supabase URL and anon key. Both apps read it.
+3. **Web dashboard**: `cd web && npm install && npm run dev`.
+4. **Mobile app**: `cd mobile && npm install`, then
+   ```bash
+   npx expo run:ios --configuration Release        # iPhone (simulator or a plugged-in phone)
+   npx expo run:android --variant release          # Android
+   ```
+   See [mobile/README.md](mobile/README.md) for signing, CarPlay and Android details.
 
-- Git + GitHub, pull-request reviews.
-- GitHub Actions CI (`.github/workflows/ci.yml`) — runs on every push/PR:
-  applies all backend migrations against a real Postgres instance
-  (`supabase db reset`, catching schema/RLS bugs before they reach the
-  hosted project), and typechecks + tests both `web/` and `mobile/`.
-- Jest for unit tests (`web/src/lib/__tests__`, `mobile/lib/__tests__`).
+## Demo day
 
-## Timeline
+```bash
+cd backend
+supabase db query --linked -f scripts/demo_seed.sql   # a demo crew with workers on shift
+scripts/demo_check.sh                                 # READY, or what to fix first
+supabase db query --linked -f scripts/demo_reset.sql  # remove the demo data afterwards
+```
 
-Fifteen weeks, five phases — see page 7 of the proposal for the full
-breakdown and checkpoints. Hard rule: whatever's unfinished at the end of
-week 13 gets cut; weeks 14–15 are for testing and the write-up only.
+## Project structure
 
-## Author
+```
+SafeCircle/
+├── mobile/      Expo app: app/ (screens), components/, lib/ (logic + tests), hooks/, .maestro/
+├── web/         React dashboard: src/components/, src/lib/
+├── backend/     supabase/migrations/, supabase/functions/, tests/, scripts/
+├── docs/        screenshots
+└── .github/     CI
+```
 
-**Surendra B K** — creator and lead developer of Safe Circle.
+## Known limits
+
+- Built with a free Apple developer account: a phone install has to be re-signed every 7 days, and push notifications to a phone need the paid program.
+- The Android map needs a Google Maps API key; Android push needs a Firebase project.
+- Fall detection works while the app is open (phones give apps motion data while they're open).
+- Card payments run in Stripe **test mode** only.
+
+## Author and license
+
+**Surendra B K** — creator and developer of Safe Circle: the backend, the mobile app, the web dashboard, the tests and the CI.
 GitHub: [@surendr7a](https://github.com/surendr7a)
 
-Licensed under the MIT License — see [LICENSE](LICENSE). Keep the copyright
-notice when you reuse it.
+CS capstone project, Fall 2026. Released under the [MIT License](LICENSE).
