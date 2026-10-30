@@ -116,7 +116,7 @@ export default function WalkScreen() {
             <Text style={typography.heading}>
               {myWalk.status === 'overdue'
                 ? '⏰ Your timer ran out'
-                : `🚶 Walking to ${myWalk.place_name}`}
+                : t('🚶 Walking to {place}', { place: myWalk.place_name })}
             </Text>
             {myWalk.status === 'overdue' ? (
               <Text style={typography.body}>

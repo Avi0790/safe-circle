@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View, type ViewStyle } from 'react-native';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { colors, themed } from '@/lib/theme';
+import { t } from '@/lib/i18n';
 
 // Safe Circle's shared look (first made for the Work tab): gradient hero cards, white grouped
 // cards, icon tiles, pills and a seat meter. Drawn with react-native-svg and
@@ -198,7 +199,7 @@ export function SeatMeter({ used, limit }: { used: number; limit: number }) {
   const share = limit > 0 ? Math.min(1, used / limit) : 1;
   const full = used >= limit;
   return (
-    <View style={ui.meterTrack} accessible accessibilityLabel={`${used} of ${limit} seats used`}>
+    <View style={ui.meterTrack} accessible accessibilityLabel={t('{used} of {limit} seats used', { used, limit })}>
       <View style={[ui.meterFill, { width: `${Math.max(share * 100, 4)}%` }, full && { backgroundColor: colors.dangerFill }]} />
     </View>
   );
@@ -231,7 +232,7 @@ export function LiveElapsed({ since, style }: { since: string; style?: object })
   const m = Math.floor((secs % 3600) / 60);
   const s = secs % 60;
   return (
-    <Text style={style} accessibilityLabel={`On shift for ${h} hours ${m} minutes`}>
+    <Text style={style} accessibilityLabel={t('On shift for {h} hours {m} minutes', { h, m })}>
       {h}:{String(m).padStart(2, '0')}:{String(s).padStart(2, '0')}
     </Text>
   );

@@ -72,7 +72,7 @@ export function DrivePanel(p: DrivePanelProps) {
                   accessibilityState={{ selected: p.stopCategory === c.key }}
                 >
                   <Text allowFontScaling={false} style={styles.tileEmoji}>{c.emoji}</Text>
-                  <Text style={[styles.tileText, p.stopCategory === c.key && styles.tileTextOn]}>{c.label}</Text>
+                  <Text style={[styles.tileText, p.stopCategory === c.key && styles.tileTextOn]}>{t(c.label)}</Text>
                 </Pressable>
               ))}
             </View>
@@ -90,7 +90,8 @@ export function DrivePanel(p: DrivePanelProps) {
               <Pressable accessibilityRole="button" key={s.id} style={styles.row} onPress={() => p.onPickStop(s)}>
                 <Text style={styles.rowTitle}>{s.title}</Text>
                 <Text style={typography.caption}>
-                  {formatNavDistance(s.aheadM)} ahead · {s.offRouteM < 50 ? 'on your route' : `${formatNavDistance(s.offRouteM)} off route`}
+                  {t('{distance} ahead', { distance: formatNavDistance(s.aheadM) })} ·{' '}
+                  {s.offRouteM < 50 ? t('on your route') : t('{distance} off route', { distance: formatNavDistance(s.offRouteM) })}
                 </Text>
               </Pressable>
             ))}
@@ -190,10 +191,10 @@ function ReportGrid(p: DrivePanelProps) {
             style={styles.tile}
             disabled={p.reporting}
             onPress={() => p.onReport(k.kind)}
-            accessibilityLabel={`Report ${k.label}`}
+            accessibilityLabel={t('Report {what}', { what: t(k.label) })}
           >
             <Text allowFontScaling={false} style={styles.tileEmoji}>{k.emoji}</Text>
-            <Text style={styles.tileText}>{k.label}</Text>
+            <Text style={styles.tileText}>{t(k.label)}</Text>
           </Pressable>
         ))}
       </View>

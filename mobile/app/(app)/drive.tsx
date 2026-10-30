@@ -63,7 +63,7 @@ import { getVoiceMode, setVoiceMode, shouldSpeak, type SpeechKind, type VoiceMod
 import { DEFAULT_VEHICLE, getVehicle, nextHeading, setVehicle, type VehiclePreference } from '@/lib/vehiclePreference';
 import { isOverLimit, lookUpSpeedLimit, shouldLookUpLimit } from '@/lib/speedLimit';
 import { colors, radius, spacing, themed, typography, useThemeVersion } from '@/lib/theme';
-import { t } from '@/lib/i18n';
+import { language, t } from '@/lib/i18n';
 
 type Phase = 'plan' | 'preview' | 'driving' | 'arrived';
 
@@ -196,7 +196,7 @@ export default function DriveScreen() {
   // Turn-by-turn is 'guidance'; an incident ahead or arriving is an 'alert',
   // still spoken in "Alerts only".
   const speak = useCallback((text: string, kind: SpeechKind = 'guidance') => {
-    if (shouldSpeak(voiceRef.current, kind)) Speech.speak(text, { language: 'en-US' });
+    if (shouldSpeak(voiceRef.current, kind)) Speech.speak(text, { language: language() === 'es' ? 'es-US' : 'en-US' });
   }, []);
 
   // Road reports from circle-mates, for the map and for alerts on the way.
@@ -276,7 +276,7 @@ export default function DriveScreen() {
     phaseRef.current = 'arrived';
     closeTrip(true);
     closeLink(true);
-    speak('You have arrived at your destination.', 'alert');
+    speak(t('You have arrived at your destination.'), 'alert');
   }, [speak, closeTrip, closeLink]);
 
   // Swap in a new route (reroute, stop added or removed) and start announcing
@@ -296,7 +296,7 @@ export default function DriveScreen() {
       reroutingRef.current = true;
       lastReroute.current = Date.now();
       setRerouting(true);
-      speak('Rerouting.');
+      speak(t('Rerouting.'));
       try {
         // Still on the way to a stop: go via it.
         const via = stopRef.current ? [stopRef.current] : [];
@@ -345,7 +345,7 @@ export default function DriveScreen() {
       if (st && haversineMeters(f.latitude, f.longitude, st.latitude, st.longitude) < STOP_REACHED_M) {
         stopRef.current = null;
         setStop(null);
-        speak(`You've reached ${st.title}.`, 'alert');
+        speak(t("You've reached {place}.", { place: st.title }), 'alert');
       }
 
       if (s.arrived) {
@@ -384,7 +384,7 @@ export default function DriveScreen() {
       const ahead = upcomingReport(prep, s.alongM, reportsRef.current, alertedReports.current);
       if (ahead) {
         alertedReports.current.add(ahead.report.id);
-        speak(reportInfo(ahead.report.kind).spoken, 'alert');
+        speak(t(reportInfo(ahead.report.kind).spoken), 'alert');
       }
     },
     [finishArrival, reroute, speak, applyRoute],
@@ -690,7 +690,7 @@ export default function DriveScreen() {
     setTripNotice(null);
     setPhase('driving');
     phaseRef.current = 'driving';
-    speak(`Starting route. ${prep.route.steps[0]?.instruction ?? ''}.`);
+    speak(`${t('Starting route.')} ${prep.route.steps[0]?.instruction ?? ''}.`);
 
     alertedReports.current = new Set();
     if (shareTrip) beginSharing(Date.now() + prep.route.durationS * 1000);
@@ -810,7 +810,7 @@ export default function DriveScreen() {
     const res = await reportIncident(kind, at);
     setReporting(false);
     setPanel(null);
-    setTripNotice(res.ok ? `${info.emoji} ${info.label} reported. Thanks.` : res.error);
+    setTripNotice(res.ok ? `${info.emoji} ${t('{what} reported. Thanks.', { what: t(info.label) })}` : t(res.error));
   }
 
   async function pickStopCategory(category: StopCategory) {
@@ -851,7 +851,7 @@ export default function DriveScreen() {
     stopRef.current = s;
     setStop({ ...s, emoji });
     setPanel(null);
-    speak(`Adding ${s.title} as a stop.`);
+    speak(t('Adding {place} as a stop.', { place: s.title }));
   }
 
   async function removeStop() {
@@ -897,7 +897,7 @@ export default function DriveScreen() {
   // The nearest incident on the road ahead, shown at the top while you approach it.
   const nextReport = prepared && nav ? upcomingReport(prepared, nav.alongM, othersReports, new Set()) : null;
   const alertAhead = nextReport
-    ? `${reportInfo(nextReport.report.kind).emoji} ${reportInfo(nextReport.report.kind).label} reported ${formatNavDistance(nextReport.aheadM)} ahead`
+    ? `${reportInfo(nextReport.report.kind).emoji} ${t('{what} reported {distance} ahead', { what: t(reportInfo(nextReport.report.kind).label), distance: formatNavDistance(nextReport.aheadM) })}`
     : null;
   const walking = mode === 'walk';
   // The "ask a passenger" lock is about someone typing while driving; it makes
@@ -1113,7 +1113,7 @@ export default function DriveScreen() {
             </Marker>
           )}
           {reports.map((r) => (
-            <Marker key={r.id} coordinate={r} title={`${reportInfo(r.kind).label} reported`}>
+            <Marker key={r.id} coordinate={r} title={t('{what} reported', { what: t(reportInfo(r.kind).label) })}>
               <Text allowFontScaling={false} style={styles.mapEmoji}>{reportInfo(r.kind).emoji}</Text>
             </Marker>
           ))}

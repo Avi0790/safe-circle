@@ -101,7 +101,7 @@ export default function CrewScreen() {
                 <Text style={f.stale || f.noFix ? styles.warn : typography.caption}>
                   {f.noFix
                     ? 'No location yet'
-                    : `Last heard from ${timeAgo(w.recorded_at as string)}${f.stale ? ' — may be offline' : ''}`}
+                    : t(f.stale ? 'Last heard from {ago} — may be offline' : 'Last heard from {ago}', { ago: timeAgo(w.recorded_at as string) })}
                   {f.driving && f.mph != null ? ` · 🚗 ${Math.round(f.mph)} mph` : ''}
                   {f.lowBattery ? ' · 🪫 low battery' : ''}
                 </Text>

@@ -1,4 +1,5 @@
 import { haversineMeters } from '@/lib/geo';
+import { language, t } from '@/lib/i18n';
 
 // Pure navigation maths and wording. No React, no network, no GPS: the Drive
 // screen feeds positions in and renders what comes out, which is what makes
@@ -84,6 +85,35 @@ function ordinal(n: number): string {
   return names[n] ?? `${n}th`;
 }
 
+// Spanish (when the app is in Spanish, lib/i18n.ts): the same shapes, said
+// the way Spanish speakers give directions.
+const MODIFIER_ES: Record<string, string> = {
+  uturn: 'da vuelta en U',
+  'sharp right': 'gira bruscamente a la derecha',
+  right: 'gira a la derecha',
+  'slight right': 'mantente a la derecha',
+  straight: 'sigue derecho',
+  'slight left': 'mantente a la izquierda',
+  left: 'gira a la izquierda',
+  'sharp left': 'gira bruscamente a la izquierda',
+};
+
+const HEADING_ES: Record<string, string> = {
+  uturn: 'en sentido contrario',
+  'sharp right': 'a la derecha',
+  right: 'a la derecha',
+  'slight right': 'a la derecha',
+  straight: 'derecho',
+  'slight left': 'a la izquierda',
+  left: 'a la izquierda',
+  'sharp left': 'a la izquierda',
+};
+
+function ordinalEs(n: number): string {
+  const names = ['', 'primera', 'segunda', 'tercera', 'cuarta', 'quinta', 'sexta', 'séptima', 'octava'];
+  return names[n] ?? `${n}.ª`;
+}
+
 function capitalise(text: string): string {
   return text.charAt(0).toUpperCase() + text.slice(1);
 }
@@ -96,6 +126,7 @@ export function instructionText(step: {
   name: string;
   exit?: number;
 }): string {
+  if (language() === 'es') return instructionTextEs(step);
   const onto = step.name ? ` onto ${step.name}` : '';
   const on = step.name ? ` on ${step.name}` : '';
   const turn = step.modifier ? MODIFIER_TEXT[step.modifier] : undefined;
@@ -129,6 +160,45 @@ export function instructionText(step: {
     case 'turn':
     default:
       return capitalise(`${turn ?? 'continue'}${turn === 'continue straight' || !turn ? on : onto}`);
+  }
+}
+
+function instructionTextEs(step: { type: string; modifier?: string; name: string; exit?: number }): string {
+  const onto = step.name ? ` hacia ${step.name}` : '';
+  const on = step.name ? ` por ${step.name}` : '';
+  const turn = step.modifier ? MODIFIER_ES[step.modifier] : undefined;
+
+  switch (step.type) {
+    case 'depart':
+      return `Sal ${step.modifier ? (HEADING_ES[step.modifier] ?? 'adelante') : 'adelante'}${on}`;
+    case 'arrive':
+      return 'Llegaste a tu destino';
+    case 'waypoint':
+      return 'Llegas a tu parada';
+    case 'roundabout':
+    case 'rotary':
+    case 'roundabout turn':
+      return step.exit ? `En la glorieta, toma la ${ordinalEs(step.exit)} salida${onto}` : 'Entra en la glorieta';
+    case 'merge':
+      return `Incorpórate${onto || ' adelante'}`;
+    case 'on ramp':
+      return `Toma la rampa${onto}`;
+    case 'off ramp':
+      return `Toma la salida${onto}`;
+    case 'fork':
+      return step.modifier?.includes('left')
+        ? `En la bifurcación, mantente a la izquierda${onto}`
+        : step.modifier?.includes('right')
+          ? `En la bifurcación, mantente a la derecha${onto}`
+          : `En la bifurcación, sigue derecho${onto}`;
+    case 'end of road':
+      return `Al final del camino, ${turn ?? 'gira'}${onto}`;
+    case 'continue':
+    case 'new name':
+      return `Continúa${on}`;
+    case 'turn':
+    default:
+      return capitalise(`${turn ?? 'continúa'}${turn === 'sigue derecho' || !turn ? on : onto}`);
   }
 }
 
@@ -192,6 +262,11 @@ export function laneHint(lanes: Lane[] | undefined): string | null {
   const last = valid.lastIndexOf(true);
   if (last - first + 1 !== count) return null; // not one block of lanes: too fiddly to say
   const which = first === 0 ? 'left' : last === lanes.length - 1 ? 'right' : 'middle';
+  if (language() === 'es') {
+    const side = { left: 'izquierd', right: 'derech', middle: 'central' }[which];
+    if (which === 'middle') return count === 1 ? 'Usa el carril central.' : `Usa los ${count} carriles centrales.`;
+    return count === 1 ? `Usa el carril ${side}o.` : `Usa los ${count} carriles de la ${side}a.`;
+  }
   return count === 1 ? `Use the ${which} lane.` : `Use the ${which} ${count} lanes.`;
 }
 
@@ -356,8 +431,8 @@ export function nextAnnouncement(
   if (distanceM <= nearM && !said.has(nearKey)) {
     // The arrival itself is announced by the screen when you actually get
     // there; saying "you have arrived" 90 m short would be wrong and twice.
-    if (step.type === 'arrive') return { key: nearKey, text: 'Your destination is just ahead.' };
-    if (step.type === 'waypoint') return { key: nearKey, text: 'Your stop is just ahead.' };
+    if (step.type === 'arrive') return { key: nearKey, text: t('Your destination is just ahead.') };
+    if (step.type === 'waypoint') return { key: nearKey, text: t('Your stop is just ahead.') };
     const lanes = walking ? null : laneHint(step.lanes);
     return { key: nearKey, text: lanes ? `${step.instruction}. ${lanes}` : `${step.instruction}.` };
   }
@@ -365,7 +440,7 @@ export function nextAnnouncement(
     const lower = step.instruction.charAt(0).toLowerCase() + step.instruction.slice(1);
     // Driving says a round "quarter mile"; a walker's next turn can be much
     // closer than any fixed phrase, so say the real distance.
-    const lead = walking ? `In ${formatNavDistance(distanceM)}` : 'In a quarter mile';
+    const lead = walking ? t('In {distance}', { distance: formatNavDistance(distanceM) }) : t('In a quarter mile');
     const lanes = walking ? null : laneHint(step.lanes);
     return { key: farKey, text: lanes ? `${lead}, ${lower}. ${lanes}` : `${lead}, ${lower}.` };
   }

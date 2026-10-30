@@ -61,26 +61,26 @@ export function RideBanner({
         let actions: { label: string; onPress: () => void }[] = [];
 
         if (isMine && r.status === 'open') {
-          title = '🚗 Looking for a ride…';
+          title = t('🚗 Looking for a ride…');
           detail =
             r.notified_count > 0
-              ? `Sent to ${r.notified_count} ${r.notified_count === 1 ? 'person' : 'people'} driving nearby.`
-              : "Nobody's driving near you right now.";
+              ? t(r.notified_count === 1 ? 'Sent to 1 person driving nearby.' : 'Sent to {n} people driving nearby.', { n: r.notified_count })
+              : t("Nobody's driving near you right now.");
           actions = [
-            ...(r.notified_count === 0 ? [{ label: 'Ask everyone', onPress: onAskEveryone }] : []),
-            { label: 'Cancel', onPress: () => run(r.id, () => supabase.rpc('cancel_ride', { p_request_id: r.id })) },
+            ...(r.notified_count === 0 ? [{ label: t('Ask everyone'), onPress: onAskEveryone }] : []),
+            { label: t('Cancel'), onPress: () => run(r.id, () => supabase.rpc('cancel_ride', { p_request_id: r.id })) },
           ];
         } else if (isMine) {
-          title = `🚗 ${r.driver?.full_name ?? 'Someone'} is on the way`;
+          title = t('🚗 {name} is on the way', { name: r.driver?.full_name ?? t('Someone') });
           actions = [
-            { label: 'Got my ride', onPress: () => run(r.id, () => supabase.rpc('cancel_ride', { p_request_id: r.id })) },
+            { label: t('Got my ride'), onPress: () => run(r.id, () => supabase.rpc('cancel_ride', { p_request_id: r.id })) },
           ];
         } else if (r.status === 'accepted') {
           // You're the driver.
-          title = `🚗 Picking up ${name}`;
+          title = t('🚗 Picking up {name}', { name });
           actions = [
             {
-              label: 'Directions',
+              label: t('Directions'),
               onPress: () =>
                 Linking.openURL(
                   `https://www.google.com/maps/dir/?api=1&destination=${r.latitude},${r.longitude}`,
@@ -88,11 +88,11 @@ export function RideBanner({
             },
           ];
         } else {
-          title = `🚗 ${name} needs a ride`;
-          detail = `Asked ${timeAgo(r.created_at)}`;
+          title = t('🚗 {name} needs a ride', { name });
+          detail = t('Asked {ago}', { ago: timeAgo(r.created_at) });
           actions = [
-            { label: "I'll go", onPress: () => run(r.id, () => supabase.rpc('accept_ride', { p_request_id: r.id })) },
-            { label: 'Not now', onPress: () => setDismissed((prev) => new Set(prev).add(r.id)) },
+            { label: t("I'll go"), onPress: () => run(r.id, () => supabase.rpc('accept_ride', { p_request_id: r.id })) },
+            { label: t('Not now'), onPress: () => setDismissed((prev) => new Set(prev).add(r.id)) },
           ];
         }
 

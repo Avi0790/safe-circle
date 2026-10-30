@@ -84,7 +84,7 @@ export default function TimesheetsScreen() {
           />
           <View style={styles.weekLabel}>
             <Text style={styles.weekText}>{weekLabel(sheet)}</Text>
-            <Text style={typography.caption}>{weeksBack === 0 ? 'This week' : weeksBack === 1 ? 'Last week' : `${weeksBack} weeks ago`}</Text>
+            <Text style={typography.caption}>{weeksBack === 0 ? t('This week') : weeksBack === 1 ? t('Last week') : t('{n} weeks ago', { n: weeksBack })}</Text>
           </View>
           <Button title={t('Later ›')} variant="secondary" onPress={() => setWeeksBack((w) => w - 1)} disabled={weeksBack === 0} />
         </View>
@@ -97,8 +97,8 @@ export default function TimesheetsScreen() {
               <Text maxFontSizeMultiplier={1.3} style={styles.totalHours}>{hours(sheet.totalMinutes)} h</Text>
               <Text style={typography.caption}>
                 {sheet.rows.length === 0
-                  ? 'No shifts this week.'
-                  : `worked by ${sheet.rows.length} ${sheet.rows.length === 1 ? 'worker' : 'workers'}`}
+                  ? t('No shifts this week.')
+                  : t(sheet.rows.length === 1 ? 'worked by 1 worker' : 'worked by {n} workers', { n: sheet.rows.length })}
               </Text>
             </View>
 

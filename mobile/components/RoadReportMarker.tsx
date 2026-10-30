@@ -39,12 +39,12 @@ export function RoadReportMarker({
   return (
     <Marker
       coordinate={{ latitude: report.latitude, longitude: report.longitude }}
-      title={`${info.label} reported`}
+      title={t('{what} reported', { what: t(info.label) })}
       tracksViewChanges={false}
       anchor={{ x: 0.5, y: 0.5 }}
       onPress={handlePress}
     >
-      <View style={styles.ring} accessibilityLabel={`${info.label} reported`}>
+      <View style={styles.ring} accessibilityLabel={t('{what} reported', { what: t(info.label) })}>
         <Text allowFontScaling={false} style={styles.emoji}>{info.emoji}</Text>
       </View>
     </Marker>

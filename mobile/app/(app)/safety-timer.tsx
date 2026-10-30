@@ -84,7 +84,7 @@ export default function SafetyTimerScreen() {
         {mine ? (
           <View style={styles.section}>
             <Text style={typography.heading}>
-              {mine.status === 'overdue' ? '⏰ Your timer ran out' : `⏱️ ${mine.label ?? 'Timer running'}`}
+              {mine.status === 'overdue' ? t('⏰ Your timer ran out') : `⏱️ ${mine.label ?? t('Timer running')}`}
             </Text>
             {mine.status === 'overdue' ? (
               <Text style={typography.body}>

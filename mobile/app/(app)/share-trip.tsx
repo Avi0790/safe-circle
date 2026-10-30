@@ -193,11 +193,13 @@ export default function ShareTripScreen() {
         {mine ? (
           <View style={styles.section}>
             <Text style={typography.heading}>
-              {LABEL[mine.mode as ManualMode]} to {mine.destination}
+              {t('{mode} to {destination}', { mode: t(LABEL[mine.mode as ManualMode]), destination: mine.destination })}
             </Text>
             <Text style={typography.body}>
-              {mineCircle ? `${mineCircle} can see` : 'Your circle can see'} that you're on your way,{' '}
-              {tripEtaText(mine.eta, now, mine.mode)}.
+              {t("{who} can see that you're on your way, {eta}.", {
+                who: mineCircle ?? t('Your circle'),
+                eta: tripEtaText(mine.eta, now, mine.mode),
+              })}
             </Text>
             <Button title={t("I've arrived")} onPress={() => handleDone(true)} loading={busy} />
             <Button title={t('Running late (+15 min)')} variant="secondary" onPress={handleLate} disabled={busy} />
@@ -233,7 +235,7 @@ export default function ShareTripScreen() {
                   style={[styles.modeBtn, mode === m && styles.chipSelected]}
                   onPress={() => chooseMode(m)}
                 >
-                  <Text style={[styles.modeText, mode === m && styles.chipTextSelected]}>{LABEL[m]}</Text>
+                  <Text style={[styles.modeText, mode === m && styles.chipTextSelected]}>{t(LABEL[m])}</Text>
                 </Pressable>
               ))}
             </View>

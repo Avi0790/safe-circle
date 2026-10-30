@@ -1,6 +1,7 @@
 import { formatClockTime } from '@/lib/format';
 import type { TravelMode } from '@/lib/navigation';
 import { supabase } from '@/lib/supabase';
+import { t } from '@/lib/i18n';
 
 // "Share my ETA": while driving or walking with in-app directions, a person can let their
 // circle see where they're headed and when they expect to arrive (backend:
@@ -69,10 +70,12 @@ export function tripEtaText(etaIso: string, nowMs: number = Date.now(), mode: Tr
   const minutes = Math.ceil((new Date(etaIso).getTime() - nowMs) / 60_000);
   if (minutes <= 0) {
     // A drive is nearly there; a late bus or flight is just late.
-    return isManualMode(mode) ? `was due at ${formatClockTime(etaIso)}` : 'arriving now';
+    return isManualMode(mode) ? t('was due at {time}', { time: formatClockTime(etaIso) }) : t('arriving now');
   }
-  const verb = mode === 'flight' ? 'landing' : 'arriving';
-  return `${verb} in about ${formatTripDuration(minutes)} (${formatClockTime(etaIso)})`;
+  return t(mode === 'flight' ? 'landing in about {duration} ({time})' : 'arriving in about {duration} ({time})', {
+    duration: formatTripDuration(minutes),
+    time: formatClockTime(etaIso),
+  });
 }
 
 // Is this trip still worth showing? A drive or walk must have reported in
