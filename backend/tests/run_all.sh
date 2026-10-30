@@ -27,14 +27,27 @@ total_fail=0
 broken=()
 failed=()
 
+# Locally, psql: the CLI's --local mode runs one statement at a time and
+# each test is several. The live project is only reachable through the CLI.
+local_db="${SUPABASE_DB_URL:-postgresql://postgres:postgres@127.0.0.1:54322/postgres}"
+if [ "$target" = "--local" ] && ! command -v psql >/dev/null; then
+  echo "Running locally needs psql (brew install libpq), or use --linked."
+  exit 1
+fi
+
 for file in $files; do
-  out=$(supabase db query "$target" -f "$file" 2>&1)
+  if [ "$target" = "--local" ]; then
+    out=$(psql "$local_db" -X -q -v ON_ERROR_STOP=1 -f "$file" 2>&1)
+  else
+    out=$(supabase db query --linked -f "$file" 2>&1)
+  fi
   # The report arrives as the text of the error, JSON-escaped inside the
   # CLI's own JSON. Pull out the lines between RESULT and CONTEXT.
   report=$(printf '%s' "$out" | python3 -c '
 import json, re, sys
 text = sys.stdin.read()
-for _ in range(3):
+# the CLI wraps the error in JSON (twice); psql prints it as is
+for _ in range(3 if text.lstrip().startswith(("{", "Initialising", "Connecting")) else 0):
     start = text.find("{")
     if start < 0:
         break
@@ -43,7 +56,7 @@ for _ in range(3):
     except Exception:
         break
     text = obj.get("error", {}).get("message") or obj.get("message") or text
-m = re.search(r"RESULT\n(.*?)(\nCONTEXT:|$)", text, re.S)
+m = re.search(r"RESULT\n(.*?)(\n(CONTEXT:|psql:)|$)", text, re.S)
 print(m.group(1).strip() if m else "")
 ')
   name=${file#tests/}
