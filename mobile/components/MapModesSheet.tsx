@@ -7,6 +7,7 @@ import {
   type MapMode,
   type MapModePreference,
 } from '@/lib/mapMode';
+import { t } from '@/lib/i18n';
 
 // "Map Modes", laid out like Apple Maps': a picture of each mode, the chosen
 // one ringed in blue, and the switches that apply to it. Changes take effect
@@ -26,8 +27,8 @@ export function MapModesSheet({
   return (
     <View style={[styles.sheet, { paddingBottom: bottomInset + 18 }]}>
       <View style={styles.header}>
-        <Text style={styles.title} accessibilityRole="header">Map Modes</Text>
-        <Pressable style={styles.close} onPress={onClose} accessibilityRole="button" accessibilityLabel="Close">
+        <Text style={styles.title} accessibilityRole="header">{t('Map Modes')}</Text>
+        <Pressable style={styles.close} onPress={onClose} accessibilityRole="button" accessibilityLabel={t('Close')}>
           <Text style={styles.closeText}>✕</Text>
         </Pressable>
       </View>
@@ -55,31 +56,31 @@ export function MapModesSheet({
 
       {modeHasLabelsSwitch(value.mode) && (
         <View style={styles.row}>
-          <Text style={styles.rowText}>Labels</Text>
+          <Text style={styles.rowText}>{t('Labels')}</Text>
           <Switch
             value={value.labels}
             onValueChange={(labels) => onChange({ ...value, labels })}
-            accessibilityLabel="Labels"
+            accessibilityLabel={t('Labels')}
           />
         </View>
       )}
       {modeHasTrafficSwitch(value.mode) ? (
         <View style={styles.row}>
-          <Text style={styles.rowText}>Traffic</Text>
+          <Text style={styles.rowText}>{t('Traffic')}</Text>
           <Switch
             value={value.traffic}
             onValueChange={(traffic) => onChange({ ...value, traffic })}
-            accessibilityLabel="Traffic"
+            accessibilityLabel={t('Traffic')}
           />
         </View>
       ) : (
-        <Text style={styles.note}>Driving shows live traffic, with calmer colours and fewer pins.</Text>
+        <Text style={styles.note}>{t('Driving shows live traffic, with calmer colours and fewer pins.')}</Text>
       )}
       {value.mode === 'flyover' && Platform.OS === 'ios' && (
-        <Text style={styles.note}>3D Flyover shows photo-realistic 3D in cities Apple has mapped that way; elsewhere it looks like Satellite.</Text>
+        <Text style={styles.note}>{t('3D Flyover shows photo-realistic 3D in cities Apple has mapped that way; elsewhere it looks like Satellite.')}</Text>
       )}
 
-      <Text style={styles.credit}>© Apple Maps / Google Maps and their data providers</Text>
+      <Text style={styles.credit}>{t('© Apple Maps / Google Maps and their data providers')}</Text>
     </View>
   );
 }

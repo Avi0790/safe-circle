@@ -60,7 +60,7 @@ export function SosButton({ onSent }: { onSent?: () => void }) {
       accessibilityState={{ busy: sending }}
     >
       {sending ? <ActivityIndicator color="#fff" /> : <Text style={styles.text} maxFontSizeMultiplier={1.3}>
-          SOS
+          {t('SOS')}
         </Text>}
     </Pressable>
   );

@@ -1,6 +1,7 @@
 import { useId } from 'react';
 import Svg, { Circle, Defs, Ellipse, G, LinearGradient, Path, Polygon, RadialGradient, Rect, Stop } from 'react-native-svg';
 import { shade, vehicleHex, type VehicleColor, type VehicleStyle } from '@/lib/vehiclePreference';
+import { t } from '@/lib/i18n';
 
 // The driving avatar seen from above, for the navigation map: shaded so the
 // body looks curved, tinted glass, headlight beams fading out ahead and red
@@ -83,7 +84,7 @@ export function VehicleIcon({
     const accent = shade(hex, -0.45);
     const y0 = CY - 28;
     return (
-      <Svg width={w} height={h} viewBox={`0 0 ${VW} ${VH}`} accessibilityLabel="You">
+      <Svg width={w} height={h} viewBox={`0 0 ${VW} ${VH}`} accessibilityLabel={t('You')}>
         <Defs>
           <LinearGradient id={id('beam')} x1="0" y1="1" x2="0" y2="0">
             <Stop offset="0" stopColor="#ffe08a" stopOpacity="0.5" />
@@ -133,7 +134,7 @@ export function VehicleIcon({
   const tyre = ext.fatTyres ? 5.5 : 4;
 
   return (
-    <Svg width={w} height={h} viewBox={`0 0 ${VW} ${VH}`} accessibilityLabel="You">
+    <Svg width={w} height={h} viewBox={`0 0 ${VW} ${VH}`} accessibilityLabel={t('You')}>
       <Defs>
         <LinearGradient id={id('body')} x1="0" y1="0" x2="1" y2="0">
           <Stop offset="0" stopColor={shade(hex, -0.4)} />

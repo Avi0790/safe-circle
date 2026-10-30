@@ -3,6 +3,7 @@ import { View } from 'react-native';
 import Svg, { Circle, Defs, Ellipse, G, Line, LinearGradient, Path, RadialGradient, Rect, Stop } from 'react-native-svg';
 import { VehicleIcon } from '@/components/VehicleIcon';
 import { shade, vehicleHex, type VehicleColor, type VehicleStyle } from '@/lib/vehiclePreference';
+import { t } from '@/lib/i18n';
 
 // The driving avatars as the picker shows them: a three-quarter view with a
 // shaded body, tinted glass, wheels with rims, lit headlights and a shadow on
@@ -50,7 +51,7 @@ export function AvatarArt({ style, color, width = 220 }: { style: VehicleStyle; 
 
   if (style === 'arrow') {
     return (
-      <View style={{ width, height, alignItems: 'center', justifyContent: 'center' }} accessibilityLabel="Navigation arrow">
+      <View style={{ width, height, alignItems: 'center', justifyContent: 'center' }} accessibilityLabel={t('Navigation arrow')}>
         <VehicleIcon style="arrow" color={color} size={(height / 56) * 0.85} lights={false} />
       </View>
     );
@@ -108,7 +109,7 @@ export function AvatarArt({ style, color, width = 220 }: { style: VehicleStyle; 
   if (style === 'race') {
     const accent = shade(hex, -0.5);
     return (
-      <Svg width={width} height={height} viewBox={`0 0 ${VB_W} ${VB_H}`} accessibilityLabel="Race car">
+      <Svg width={width} height={height} viewBox={`0 0 ${VB_W} ${VB_H}`} accessibilityLabel={t('Race car')}>
         {defs}
         <Ellipse cx="128" cy="129" rx="118" ry="8" fill="#000" opacity="0.5" />
         {/* rear wing */}
@@ -153,7 +154,7 @@ export function AvatarArt({ style, color, width = 220 }: { style: VehicleStyle; 
   const doorX = (b.cabinFront + b.cabinRear) / 2 + 6;
 
   return (
-    <Svg width={width} height={height} viewBox={`0 0 ${VB_W} ${VB_H}`} accessibilityLabel="Car">
+    <Svg width={width} height={height} viewBox={`0 0 ${VB_W} ${VB_H}`} accessibilityLabel={t('Car')}>
       {defs}
       <Ellipse cx={(b.x0 + b.x1) / 2} cy={GROUND + 1} rx={(b.x1 - b.x0) / 2 + 10} ry="8" fill="#000" opacity="0.5" />
       {b.roofLights && (

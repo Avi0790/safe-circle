@@ -8,6 +8,7 @@ import { ErrorText } from '@/components/ErrorText';
 import { supabase } from '@/lib/supabase';
 import type { BackupContact } from '@/lib/types';
 import { colors, spacing, themed, typography, useThemeVersion } from '@/lib/theme';
+import { t } from '@/lib/i18n';
 
 // People outside any circle to text in an emergency — a neighbor, a
 // grandparent, a family doctor. Kept separate from circle membership
@@ -71,9 +72,9 @@ export default function BackupContactsScreen() {
             <ActivityIndicator />
           ) : (
             <View style={styles.form}>
-              <TextField label="Name" value={name} onChangeText={setName} autoCapitalize="words" />
+              <TextField label={t('Name')} value={name} onChangeText={setName} autoCapitalize="words" />
               <TextField
-                label="Phone number"
+                label={t('Phone number')}
                 value={phone}
                 onChangeText={setPhone}
                 keyboardType="phone-pad"
@@ -81,7 +82,7 @@ export default function BackupContactsScreen() {
               />
               {error && <ErrorText style={styles.error}>{error}</ErrorText>}
               <Button
-                title="Add contact"
+                title={t('Add contact')}
                 onPress={handleAdd}
                 loading={saving}
                 disabled={!name.trim() || !phone.trim()}

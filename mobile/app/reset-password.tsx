@@ -9,6 +9,7 @@ import { ErrorText } from '@/components/ErrorText';
 import { supabase } from '@/lib/supabase';
 import { parseRecoveryTokensFromUrl } from '@/lib/passwordReset';
 import { colors, spacing, themed, typography, useThemeVersion } from '@/lib/theme';
+import { t } from '@/lib/i18n';
 
 type Status = 'checking' | 'ready' | 'invalid';
 
@@ -84,17 +85,16 @@ export default function ResetPasswordScreen() {
     return (
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.content}>
-          <Text maxFontSizeMultiplier={1.3} style={typography.title}>Link expired</Text>
+          <Text maxFontSizeMultiplier={1.3} style={typography.title}>{t('Link expired')}</Text>
           <Text style={typography.body}>
-            This password reset link is invalid or has expired. Request a new one from the
-            sign-in screen.
+            {t('This password reset link is invalid or has expired. Request a new one from the sign-in screen.')}
           </Text>
           {/* router.replace('/'), not '/(auth)/login' directly: if the
               tapper is already signed in elsewhere, (auth) is guarded
               closed for them (Stack.Protected guard={!session} in the root
               layout) and that route would silently fail to navigate. '/'
               lets the root layout route to wherever they actually belong. */}
-          <Button title="Back to sign in" onPress={() => router.replace('/')} />
+          <Button title={t('Back to sign in')} onPress={() => router.replace('/')} />
         </View>
       </SafeAreaView>
     );
@@ -107,10 +107,10 @@ export default function ResetPasswordScreen() {
         style={styles.flex}
       >
         <View style={styles.content}>
-          <Text maxFontSizeMultiplier={1.3} style={typography.title}>Set a new password</Text>
+          <Text maxFontSizeMultiplier={1.3} style={typography.title}>{t('Set a new password')}</Text>
           <View style={styles.form}>
             <TextField
-              label="New password"
+              label={t('New password')}
               value={password}
               onChangeText={setPassword}
               secureTextEntry
@@ -118,7 +118,7 @@ export default function ResetPasswordScreen() {
               textContentType="newPassword"
             />
             {error && <ErrorText style={styles.error}>{error}</ErrorText>}
-            <Button title="Save password" onPress={handleSave} loading={saving} />
+            <Button title={t('Save password')} onPress={handleSave} loading={saving} />
           </View>
         </View>
       </KeyboardAvoidingView>

@@ -37,7 +37,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-      - run: node --test supabase/functions/_shared/
+      - run: node --test supabase/functions/_shared/*.test.ts
 
   web:
     name: Web dashboard

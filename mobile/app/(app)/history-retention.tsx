@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { colors, radius, spacing, themed, typography, useThemeVersion } from '@/lib/theme';
 import { ErrorText } from '@/components/ErrorText';
+import { t } from '@/lib/i18n';
 
 interface RetentionOption {
   label: string;
@@ -59,9 +60,7 @@ export default function HistoryRetentionScreen() {
       <Stack.Screen options={{ title: 'Location history' }} />
       <View style={styles.content}>
         <Text style={typography.body}>
-          How long your location history (the trail on your circle-mates' member screens) is
-          kept before it's deleted for good. Your current location is always kept, no matter what
-          you choose.
+          {t("How long your location history (the trail on your circle-mates' member screens) is kept before it's deleted for good. Your current location is always kept, no matter what you choose.")}
         </Text>
         {days === undefined ? (
           <ActivityIndicator />

@@ -9,6 +9,7 @@ import { Avatar } from '@/components/Avatar';
 import { ErrorText } from '@/components/ErrorText';
 import { supabase } from '@/lib/supabase';
 import { colors, spacing, themed, typography, useThemeVersion } from '@/lib/theme';
+import { t } from '@/lib/i18n';
 
 // Ghost mode: hide your location from one specific circle-mate while
 // everyone else still sees you normally — Life360 has no per-person
@@ -62,8 +63,7 @@ export default function GhostModeScreen() {
       <Stack.Screen options={{ title: 'Ghost mode' }} />
       <View style={styles.content}>
         <Text style={typography.body}>
-          Hide your location from specific people without turning off sharing entirely — everyone
-          else in your circles still sees you as usual.
+          {t('Hide your location from specific people without turning off sharing entirely — everyone else in your circles still sees you as usual.')}
         </Text>
         {isLoading || membersLoading ? (
           <ActivityIndicator />
@@ -89,7 +89,7 @@ export default function GhostModeScreen() {
               );
             })}
             {others.length === 0 && (
-              <Text style={typography.body}>No one else in this circle yet.</Text>
+              <Text style={typography.body}>{t('No one else in this circle yet.')}</Text>
             )}
           </View>
         )}

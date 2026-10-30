@@ -8,6 +8,7 @@ import { formatDistanceMiles } from '@/lib/geo';
 import { fetchTrips, formatTripDate, formatTripDuration, type Trip } from '@/lib/trips';
 import { fetchWeather, type Weather } from '@/lib/weather';
 import { colors, radius, spacing, themed, typography } from '@/lib/theme';
+import { t } from '@/lib/i18n';
 
 interface HistoryPing {
   id: number;
@@ -99,7 +100,7 @@ export default function MemberHistoryScreenWeb() {
             )}
             {trips.length > 0 && (
               <View style={styles.trips}>
-                <Text style={styles.sectionLabel} accessibilityRole="header">🚗 Recent drives</Text>
+                <Text style={styles.sectionLabel} accessibilityRole="header">{t('🚗 Recent drives')}</Text>
                 {trips.map((trip) => (
                   <View key={trip.tripId} style={styles.tripCard}>
                     <Text style={typography.body}>{formatTripDate(trip.startedAt)}</Text>
@@ -128,7 +129,7 @@ export default function MemberHistoryScreenWeb() {
           </View>
         )}
         ListEmptyComponent={
-          !isLoading ? <Text style={typography.body}>No location history yet.</Text> : null
+          !isLoading ? <Text style={typography.body}>{t('No location history yet.')}</Text> : null
         }
       />
     </SafeAreaView>

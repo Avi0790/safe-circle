@@ -2,6 +2,7 @@ import { Alert, StyleSheet, Text, View } from 'react-native';
 import { Marker } from 'react-native-maps';
 import { clearReport, reportDetails, reportInfo, type RoadReport } from '@/lib/roadReports';
 import { colors, radius, themed } from '@/lib/theme';
+import { t } from '@/lib/i18n';
 
 // A crash, hazard, speed check or closed road someone in the circle reported
 // while driving (lib/roadReports.ts). Tapping says who and when; your own
@@ -20,11 +21,11 @@ export function RoadReportMarker({
   function handlePress() {
     const { title, body } = reportDetails(report, myUserId);
     const buttons: { text: string; style?: 'cancel' | 'destructive'; onPress?: () => void }[] = [
-      { text: 'OK', style: 'cancel' },
+      { text: t('OK'), style: 'cancel' },
     ];
     if (report.reporter_id === myUserId) {
       buttons.push({
-        text: 'Take back report',
+        text: t('Take back report'),
         style: 'destructive',
         onPress: async () => {
           await clearReport(report.id);

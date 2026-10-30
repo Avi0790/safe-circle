@@ -7,6 +7,7 @@ import { VOICE_MODES, type VoiceMode } from '@/lib/voicePreference';
 import { vehicleColorName, vehicleStyleName, type VehiclePreference } from '@/lib/vehiclePreference';
 import { AvatarArt } from '@/components/AvatarArt';
 import { ErrorText } from '@/components/ErrorText';
+import { t } from '@/lib/i18n';
 
 // The card that slides up over navigation, like Apple Maps': audio, Share
 // ETA, report an incident, add a stop, end the route. Everything is one or two
@@ -78,12 +79,12 @@ export function DrivePanel(p: DrivePanelProps) {
             {p.stopSearching && (
               <View style={styles.inline}>
                 <ActivityIndicator />
-                <Text style={typography.caption}>Looking along your route…</Text>
+                <Text style={typography.caption}>{t('Looking along your route…')}</Text>
               </View>
             )}
             {p.stopError && <ErrorText style={styles.error}>{p.stopError}</ErrorText>}
             {p.stopCategory && !p.stopSearching && p.stopResults.length === 0 && !p.stopError && (
-              <Text style={typography.caption}>Nothing found near the road ahead.</Text>
+              <Text style={typography.caption}>{t('Nothing found near the road ahead.')}</Text>
             )}
             {p.stopResults.map((s) => (
               <Pressable accessibilityRole="button" key={s.id} style={styles.row} onPress={() => p.onPickStop(s)}>
@@ -93,11 +94,11 @@ export function DrivePanel(p: DrivePanelProps) {
                 </Text>
               </Pressable>
             ))}
-            <Text style={styles.footnote}>Places come from OpenStreetMap and may be closed or missing.</Text>
+            <Text style={styles.footnote}>{t('Places come from OpenStreetMap and may be closed or missing.')}</Text>
           </>
         ) : (
           <>
-            <Text style={styles.label}>Audio</Text>
+            <Text style={styles.label}>{t('Audio')}</Text>
             <View style={styles.segment} accessibilityRole="tablist">
               {VOICE_MODES.map(({ mode, label }) => (
                 <Pressable
@@ -127,22 +128,22 @@ export function DrivePanel(p: DrivePanelProps) {
 
             {p.linkShared ? (
               <Pressable accessibilityRole="button" style={[styles.action, styles.actionOn]} onPress={p.onStopLink}>
-                <Text style={styles.actionText}>🔗 Stop the live ETA link</Text>
+                <Text style={styles.actionText}>{t('🔗 Stop the live ETA link')}</Text>
               </Pressable>
             ) : (
               <Pressable accessibilityRole="button" style={styles.action} onPress={p.onShareAnyone}>
-                <Text style={styles.actionText}>📤 Share ETA with anyone…</Text>
+                <Text style={styles.actionText}>{t('📤 Share ETA with anyone…')}</Text>
               </Pressable>
             )}
 
-            <Text style={styles.label}>Report an incident</Text>
+            <Text style={styles.label}>{t('Report an incident')}</Text>
             <ReportGrid {...p} />
 
             {p.vehicle && p.onOpenAvatar && (
-              <Pressable style={styles.avatarRow} onPress={p.onOpenAvatar} accessibilityRole="button" accessibilityLabel="Choose driving avatar">
+              <Pressable style={styles.avatarRow} onPress={p.onOpenAvatar} accessibilityRole="button" accessibilityLabel={t('Choose driving avatar')}>
                 <AvatarArt style={p.vehicle.style} color={p.vehicle.color} width={92} />
                 <View style={styles.avatarText}>
-                  <Text style={styles.actionText}>Driving avatar</Text>
+                  <Text style={styles.actionText}>{t('Driving avatar')}</Text>
                   <Text style={typography.caption}>
                     {vehicleStyleName(p.vehicle.style)} · {vehicleColorName(p.vehicle.color)}
                   </Text>
@@ -152,8 +153,8 @@ export function DrivePanel(p: DrivePanelProps) {
             )}
 
             {p.onOpenMapModes && (
-              <Pressable style={styles.action} onPress={p.onOpenMapModes} accessibilityRole="button" accessibilityLabel="Map mode">
-                <Text style={styles.actionText}>🗺️ Map mode ›</Text>
+              <Pressable style={styles.action} onPress={p.onOpenMapModes} accessibilityRole="button" accessibilityLabel={t('Map mode')}>
+                <Text style={styles.actionText}>{t('🗺️ Map mode ›')}</Text>
               </Pressable>
             )}
 
@@ -163,12 +164,12 @@ export function DrivePanel(p: DrivePanelProps) {
               </Pressable>
             ) : (
               <Pressable accessibilityRole="button" style={styles.action} onPress={p.onAddStop}>
-                <Text style={styles.actionText}>➕ Add a stop</Text>
+                <Text style={styles.actionText}>{t('➕ Add a stop')}</Text>
               </Pressable>
             )}
 
             <Pressable accessibilityRole="button" style={[styles.action, styles.endAction]} onPress={p.onEnd}>
-              <Text style={styles.endText}>End route</Text>
+              <Text style={styles.endText}>{t('End route')}</Text>
             </Pressable>
           </>
         )}
@@ -198,7 +199,7 @@ function ReportGrid(p: DrivePanelProps) {
         ))}
       </View>
       <Text style={typography.caption}>
-        Reported where you are now. Your circle sees it for an hour (3 for a closed road).
+        {t('Reported where you are now. Your circle sees it for an hour (3 for a closed road).')}
       </Text>
     </>
   );

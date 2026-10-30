@@ -63,6 +63,7 @@ import { getVoiceMode, setVoiceMode, shouldSpeak, type SpeechKind, type VoiceMod
 import { DEFAULT_VEHICLE, getVehicle, nextHeading, setVehicle, type VehiclePreference } from '@/lib/vehiclePreference';
 import { isOverLimit, lookUpSpeedLimit, shouldLookUpLimit } from '@/lib/speedLimit';
 import { colors, radius, spacing, themed, typography, useThemeVersion } from '@/lib/theme';
+import { t } from '@/lib/i18n';
 
 type Phase = 'plan' | 'preview' | 'driving' | 'arrived';
 
@@ -609,7 +610,7 @@ export default function DriveScreen() {
     }
     const written = await storeDestinations(userId, result.list);
     if (!written) {
-      setSaveNotice("Couldn't save that place on this phone.");
+      setSaveNotice(t("Couldn't save that place on this phone."));
       return;
     }
     setMine(result.list);
@@ -618,9 +619,9 @@ export default function DriveScreen() {
 
   function confirmRemove(place: SavedDestination) {
     Alert.alert(`Remove ${place.name}?`, 'It only removes it from this phone.', [
-      { text: 'Cancel', style: 'cancel' },
+      { text: t('Cancel'), style: 'cancel' },
       {
-        text: 'Remove',
+        text: t('Remove'),
         style: 'destructive',
         onPress: async () => {
           if (!userId) return;
@@ -703,7 +704,7 @@ export default function DriveScreen() {
     startSharedTrip(selectedCircle.id, target.title, etaMs, mode).then((res) => {
       sharePending.current = false;
       if (!res.ok) {
-        setTripNotice("Couldn't share this trip with your circle. Directions still work.");
+        setTripNotice(t("Couldn't share this trip with your circle. Directions still work."));
       } else if (phaseRef.current === 'driving') {
         tripId.current = res.id;
         lastEta.current = { at: Date.now(), eta: etaMs };
@@ -729,10 +730,10 @@ export default function DriveScreen() {
   // Share ETA with anyone, outside the app: just a message, or a live link
   // that keeps the ETA current and shows where you are until you arrive.
   function shareEtaWithAnyone() {
-    Alert.alert('Share your ETA', 'Send it to anyone, even if they don\'t have Safe Circle.', [
-      { text: 'Live link (until I arrive)', onPress: () => sendLiveLink() },
-      { text: 'Just the ETA as a message', onPress: () => sendEtaMessage() },
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t('Share your ETA'), t("Send it to anyone, even if they don't have Safe Circle."), [
+      { text: t('Live link (until I arrive)'), onPress: () => sendLiveLink() },
+      { text: t('Just the ETA as a message'), onPress: () => sendEtaMessage() },
+      { text: t('Cancel'), style: 'cancel' },
     ]);
   }
 
@@ -781,7 +782,7 @@ export default function DriveScreen() {
     lastLinkEta.current = { at: Date.now(), eta: etaMs };
     setLinkShared(true);
     if (isLocalUrl(getWebBaseUrl())) {
-      setTripNotice("The web page isn't deployed, so this link only opens on this network.");
+      setTripNotice(t("The web page isn't deployed, so this link only opens on this network."));
     }
     try {
       await Share.share({ message: tripShareMessage(target.title, etaMs, mode, res.url) });
@@ -802,7 +803,7 @@ export default function DriveScreen() {
     const at = fixRef.current;
     const info = reportInfo(kind);
     if (!at) {
-      setTripNotice("Couldn't tell where you are yet, so nothing was reported.");
+      setTripNotice(t("Couldn't tell where you are yet, so nothing was reported."));
       return;
     }
     setReporting(true);
@@ -856,7 +857,7 @@ export default function DriveScreen() {
   async function removeStop() {
     const ok = await replan(null);
     if (!ok) {
-      setTripNotice("Couldn't remove the stop right now.");
+      setTripNotice(t("Couldn't remove the stop right now."));
       return;
     }
     stopRef.current = null;
@@ -912,13 +913,12 @@ export default function DriveScreen() {
       <SafeAreaView style={styles.safeArea}>
         <Stack.Screen options={{ headerShown: false }} />
         <View style={styles.padded}>
-          <Text maxFontSizeMultiplier={1.3} style={typography.title}>Location is off</Text>
+          <Text maxFontSizeMultiplier={1.3} style={typography.title}>{t('Location is off')}</Text>
           <Text style={typography.body}>
-            Directions need your location to start from where you are. Turn it on for Safe Circle
-            in Settings.
+            {t('Directions need your location to start from where you are. Turn it on for Safe Circle in Settings.')}
           </Text>
-          <Button title="Open Settings" onPress={() => Linking.openSettings()} />
-          <Button title="Back" variant="secondary" onPress={() => router.back()} />
+          <Button title={t('Open Settings')} onPress={() => Linking.openSettings()} />
+          <Button title={t('Back')} variant="secondary" onPress={() => router.back()} />
         </View>
       </SafeAreaView>
     );
@@ -949,8 +949,8 @@ export default function DriveScreen() {
         <Stack.Screen options={{ headerShown: false, gestureEnabled: true }} />
         <View style={styles.padded}>
           <View style={styles.headerRow}>
-            <Text maxFontSizeMultiplier={1.3} style={typography.title}>Where to?</Text>
-            <Button title="Close" variant="secondary" onPress={() => router.back()} />
+            <Text maxFontSizeMultiplier={1.3} style={typography.title}>{t('Where to?')}</Text>
+            <Button title={t('Close')} variant="secondary" onPress={() => router.back()} />
           </View>
 
           <View style={styles.modeRow} accessibilityRole="tablist">
@@ -971,29 +971,28 @@ export default function DriveScreen() {
           </View>
           {plan === 'transit' && (
             <Text style={typography.caption}>
-              Safe Circle doesn't plan bus or train routes (that needs schedule data), so tapping a
-              place opens your Maps app with transit directions.
+              {t("Safe Circle doesn't plan bus or train routes (that needs schedule data), so tapping a place opens your Maps app with transit directions.")}
             </Text>
           )}
           <Pressable onPress={() => router.push('/share-trip')} accessibilityRole="link">
-            <Text style={styles.link}>On a bus, train or flight? Share your trip with your circle →</Text>
+            <Text style={styles.link}>{t('On a bus, train or flight? Share your trip with your circle →')}</Text>
           </Pressable>
 
           {moving && (
             <Text style={styles.warning}>
-              You're moving. Ask a passenger to set the destination, or pull over first.
+              {t("You're moving. Ask a passenger to set the destination, or pull over first.")}
             </Text>
           )}
           {!fix && permission === 'granted' && (
             <View style={styles.inline}>
               <ActivityIndicator />
-              <Text style={typography.caption}>Finding your location…</Text>
+              <Text style={typography.caption}>{t('Finding your location…')}</Text>
             </View>
           )}
 
           <TextField
-            label="Search for a place or address"
-            placeholder="Walmart, 123 Main St, campus library…"
+            label={t('Search for a place or address')}
+            placeholder={t('Walmart, 123 Main St, campus library…')}
             value={query}
             onChangeText={setQuery}
             editable={!moving && !routing}
@@ -1036,7 +1035,7 @@ export default function DriveScreen() {
                     style={styles.removeBtn}
                     onPress={() => confirmRemove(place)}
                   >
-                    <Text style={styles.removeText}>Remove</Text>
+                    <Text style={styles.removeText}>{t('Remove')}</Text>
                   </Pressable>
                 )}
               </View>
@@ -1044,18 +1043,16 @@ export default function DriveScreen() {
           }}
           ListEmptyComponent={
             showingResults && !searching ? (
-              <Text style={typography.caption}>No places found. Try a different name or add the town.</Text>
+              <Text style={typography.caption}>{t('No places found. Try a different name or add the town.')}</Text>
             ) : !showingResults && saved.length === 0 && mine.length === 0 ? (
               <Text style={typography.caption}>
-                Search for a place above, then save it as Home or Work to find it here next time.
-                Places saved in your circle also appear here.
+                {t('Search for a place above, then save it as Home or Work to find it here next time. Places saved in your circle also appear here.')}
               </Text>
             ) : null
           }
         />
         <Text style={styles.footnote}>
-          Routes and search come from OpenStreetMap-based services and can be wrong. Follow road
-          signs and local laws.
+          {t('Routes and search come from OpenStreetMap-based services and can be wrong. Follow road signs and local laws.')}
         </Text>
       </SafeAreaView>
     );
@@ -1138,7 +1135,7 @@ export default function DriveScreen() {
                 <Text style={typography.caption}>★ Saved as {savedAt(mine, dest)?.name} on this phone</Text>
               ) : (
                 <>
-                  <Text style={typography.caption}>Save this place on this phone (not shared):</Text>
+                  <Text style={typography.caption}>{t('Save this place on this phone (not shared):')}</Text>
                   <View style={styles.chipRow}>
                     {PINNED_NAMES.map((name) => (
                       <Pressable accessibilityRole="button" key={name} style={styles.chip} onPress={() => savePlace(name)}>
@@ -1166,20 +1163,19 @@ export default function DriveScreen() {
               <View style={styles.shareText}>
                 <Text style={styles.shareTitle}>Share this trip with {selectedCircle.name}</Text>
                 <Text style={typography.caption}>
-                  They'll see where you're headed and when you expect to arrive, and get a message
-                  when you arrive. Not your route. Off unless you turn it on.
+                  {t("They'll see where you're headed and when you expect to arrive, and get a message when you arrive. Not your route. Off unless you turn it on.")}
                 </Text>
               </View>
               <Switch accessibilityLabel={`Share this trip with ${selectedCircle.name}`} value={shareTrip} onValueChange={setShareTrip} trackColor={{ true: colors.accent }} />
             </View>
           )}
-          <Button title="Start" onPress={startDriving} />
+          <Button title={t('Start')} onPress={startDriving} />
           <Button
-            title="Open in Maps app instead"
+            title={t('Open in Maps app instead')}
             variant="secondary"
             onPress={() => Linking.openURL(externalMapsUrl(dest, Platform.OS, mode))}
           />
-          <Button title="Back" variant="secondary" onPress={endDriving} />
+          <Button title={t('Back')} variant="secondary" onPress={endDriving} />
         </View>
       )}
 
@@ -1281,9 +1277,9 @@ export default function DriveScreen() {
 
       {phase === 'arrived' && dest && (
         <View style={[styles.sheet, { paddingBottom: insets.bottom + spacing.md }]}>
-          <Text maxFontSizeMultiplier={1.3} style={typography.title}>You've arrived</Text>
+          <Text maxFontSizeMultiplier={1.3} style={typography.title}>{t("You've arrived")}</Text>
           <Text style={typography.body}>{dest.title}</Text>
-          <Button title="Done" onPress={() => router.back()} />
+          <Button title={t('Done')} onPress={() => router.back()} />
         </View>
       )}
     </View>

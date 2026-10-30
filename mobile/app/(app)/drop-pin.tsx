@@ -9,6 +9,7 @@ import { ErrorText } from '@/components/ErrorText';
 import { useCircles } from '@/contexts/CircleContext';
 import { supabase } from '@/lib/supabase';
 import { colors, radius, spacing, themed, typography, useThemeVersion } from '@/lib/theme';
+import { t } from '@/lib/i18n';
 
 const EMOJI_OPTIONS = ['📍', '🎪', '🍔', '🎉', '🅿️', '🚪', '⛺'];
 const DURATIONS = [
@@ -73,7 +74,7 @@ export default function DropPinScreen() {
         </Text>
 
         <View style={styles.section}>
-          <Text style={styles.label}>Icon</Text>
+          <Text style={styles.label}>{t('Icon')}</Text>
           <View style={styles.chipRow}>
             {EMOJI_OPTIONS.map((option) => {
               const selected = option === emoji;
@@ -93,11 +94,11 @@ export default function DropPinScreen() {
         </View>
 
         <View style={styles.section}>
-          <TextField label="Label" value={label} onChangeText={setLabel} maxLength={40} placeholder="Meet by the gate" />
+          <TextField label={t('Label')} value={label} onChangeText={setLabel} maxLength={40} placeholder={t('Meet by the gate')} />
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.label}>Keep it up for</Text>
+          <Text style={styles.label}>{t('Keep it up for')}</Text>
           <View style={styles.chipRow}>
             {DURATIONS.map((option) => {
               const selected = option.minutes === minutes;
@@ -116,7 +117,7 @@ export default function DropPinScreen() {
           </View>
         </View>
 
-        <Button title="Drop pin" onPress={handleDrop} loading={saving} disabled={!label.trim()} />
+        <Button title={t('Drop pin')} onPress={handleDrop} loading={saving} disabled={!label.trim()} />
         {error && <ErrorText style={styles.error}>{error}</ErrorText>}
       </ScrollView>
     </SafeAreaView>

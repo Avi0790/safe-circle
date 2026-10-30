@@ -29,6 +29,7 @@ import {
   type ManualMode,
 } from '@/lib/sharedTrips';
 import { colors, radius, spacing, themed, typography, useThemeVersion } from '@/lib/theme';
+import { t } from '@/lib/i18n';
 
 const LABEL: Record<ManualMode, string> = { bus: '🚌 Bus', train: '🚆 Train', flight: '✈️ Flight' };
 const PLACEHOLDER: Record<ManualMode, string> = { bus: 'Campus', train: 'Chicago Union Station', flight: 'Denver' };
@@ -89,10 +90,10 @@ export default function ShareTripScreen() {
   // live link that follows this trip until you arrive.
   function shareWithAnyone() {
     if (!mine) return;
-    Alert.alert('Share your ETA', "Send it to anyone, even if they don't have Safe Circle.", [
-      { text: 'Live link (until I arrive)', onPress: () => sendLiveLink() },
-      { text: 'Just the ETA as a message', onPress: () => sendMessage() },
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t('Share your ETA'), t("Send it to anyone, even if they don't have Safe Circle."), [
+      { text: t('Live link (until I arrive)'), onPress: () => sendLiveLink() },
+      { text: t('Just the ETA as a message'), onPress: () => sendMessage() },
+      { text: t('Cancel'), style: 'cancel' },
     ]);
   }
 
@@ -198,23 +199,22 @@ export default function ShareTripScreen() {
               {mineCircle ? `${mineCircle} can see` : 'Your circle can see'} that you're on your way,{' '}
               {tripEtaText(mine.eta, now, mine.mode)}.
             </Text>
-            <Button title="I've arrived" onPress={() => handleDone(true)} loading={busy} />
-            <Button title="Running late (+15 min)" variant="secondary" onPress={handleLate} disabled={busy} />
-            <Button title="Stop sharing" variant="secondary" onPress={() => handleDone(false)} disabled={busy} />
+            <Button title={t("I've arrived")} onPress={() => handleDone(true)} loading={busy} />
+            <Button title={t('Running late (+15 min)')} variant="secondary" onPress={handleLate} disabled={busy} />
+            <Button title={t('Stop sharing')} variant="secondary" onPress={() => handleDone(false)} disabled={busy} />
             {link ? (
               <>
                 <Text style={typography.caption}>
-                  🔗 A live link is out for this trip. Whoever has it sees your ETA and where you are
-                  until you arrive or stop sharing.
+                  {t('🔗 A live link is out for this trip. Whoever has it sees your ETA and where you are until you arrive or stop sharing.')}
                 </Text>
-                <Button title="Stop the live link" variant="secondary" onPress={stopLink} disabled={busy} />
+                <Button title={t('Stop the live link')} variant="secondary" onPress={stopLink} disabled={busy} />
               </>
             ) : (
-              <Button title="📤 Share ETA with anyone…" variant="secondary" onPress={shareWithAnyone} disabled={busy} />
+              <Button title={t('📤 Share ETA with anyone…')} variant="secondary" onPress={shareWithAnyone} disabled={busy} />
             )}
           </View>
         ) : !selectedCircle ? (
-          <Text style={typography.body}>Join or create a circle first, then you can share trips with it.</Text>
+          <Text style={typography.body}>{t('Join or create a circle first, then you can share trips with it.')}</Text>
         ) : (
           <>
             <View style={styles.section}>
@@ -239,7 +239,7 @@ export default function ShareTripScreen() {
             </View>
 
             <TextField
-              label="Where to?"
+              label={t('Where to?')}
               value={destination}
               onChangeText={setDestination}
               placeholder={PLACEHOLDER[mode]}
@@ -252,7 +252,7 @@ export default function ShareTripScreen() {
               <View style={styles.stepper}>
                 <Pressable
                   accessibilityRole="button"
-                  accessibilityLabel="Earlier"
+                  accessibilityLabel={t('Earlier')}
                   style={styles.stepBtn}
                   onPress={() => setMinutes((v) => stepTripMinutes(mode, v, -1))}
                 >
@@ -264,7 +264,7 @@ export default function ShareTripScreen() {
                 </View>
                 <Pressable
                   accessibilityRole="button"
-                  accessibilityLabel="Later"
+                  accessibilityLabel={t('Later')}
                   style={styles.stepBtn}
                   onPress={() => setMinutes((v) => stepTripMinutes(mode, v, 1))}
                 >
@@ -293,10 +293,10 @@ export default function ShareTripScreen() {
 
             {windowEnded && (
               <Text style={styles.warning}>
-                Your sharing window has ended, so your circle can't see trips until you start sharing again.
+                {t("Your sharing window has ended, so your circle can't see trips until you start sharing again.")}
               </Text>
             )}
-            <Button title="Share trip" onPress={handleStart} loading={busy} />
+            <Button title={t('Share trip')} onPress={handleStart} loading={busy} />
           </>
         )}
         {notice && <Text style={typography.caption}>{notice}</Text>}

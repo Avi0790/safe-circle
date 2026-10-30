@@ -11,6 +11,7 @@ import { formatTimeOfDay } from '@/lib/format';
 import { placeIcon } from '@/lib/places';
 import { colors, radius, spacing, themed, typography, useThemeVersion } from '@/lib/theme';
 import { phoneTimeZone } from '@/lib/timeZone';
+import { t } from '@/lib/i18n';
 
 interface PlaceRow {
   id: string;
@@ -114,12 +115,12 @@ export default function CurfewScreen() {
 
             {places.length === 0 ? (
               <Text style={typography.body}>
-                Add a place first (like Home) — a curfew needs somewhere to check for you.
+                {t('Add a place first (like Home) — a curfew needs somewhere to check for you.')}
               </Text>
             ) : (
               <>
                 <View style={styles.section}>
-                  <Text style={styles.label}>Where</Text>
+                  <Text style={styles.label}>{t('Where')}</Text>
                   {places.map((place) => {
                     const selected = place.id === placeId;
                     return (
@@ -140,7 +141,7 @@ export default function CurfewScreen() {
                 </View>
 
                 <View style={styles.section}>
-                  <Text style={styles.label}>By what time</Text>
+                  <Text style={styles.label}>{t('By what time')}</Text>
                   <Text style={typography.caption}>Your local time ({phoneTimeZone().replace(/_/g, ' ')}).</Text>
                   <View style={styles.chipRow}>
                     {TIME_OPTIONS.map((option) => {
@@ -162,11 +163,11 @@ export default function CurfewScreen() {
                   </View>
                 </View>
 
-                <Button title="Save curfew" onPress={handleSave} loading={saving} disabled={!placeId} />
+                <Button title={t('Save curfew')} onPress={handleSave} loading={saving} disabled={!placeId} />
               </>
             )}
             {current && (
-              <Button title="Turn off curfew" variant="secondary" onPress={handleClear} disabled={saving} />
+              <Button title={t('Turn off curfew')} variant="secondary" onPress={handleClear} disabled={saving} />
             )}
             {error && <ErrorText style={styles.error}>{error}</ErrorText>}
           </>

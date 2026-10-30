@@ -13,6 +13,7 @@ import { supabase } from '@/lib/supabase';
 import { formatClockTime, formatTimeLeft } from '@/lib/format';
 import { ensureSharingFor } from '@/lib/sharingWindow';
 import { colors, radius, spacing, themed, typography, useThemeVersion } from '@/lib/theme';
+import { t } from '@/lib/i18n';
 
 const DURATIONS = [15, 30, 60, 120];
 
@@ -87,8 +88,7 @@ export default function SafetyTimerScreen() {
             </Text>
             {mine.status === 'overdue' ? (
               <Text style={typography.body}>
-                Your circle was alerted with your last known location. Tap "I'm safe" if you're
-                okay.
+                {t("Your circle was alerted with your last known location. Tap \"I'm safe\" if you're okay.")}
               </Text>
             ) : (
               <Text style={typography.body}>
@@ -97,33 +97,31 @@ export default function SafetyTimerScreen() {
                 location.
               </Text>
             )}
-            <Button title="I'm safe" onPress={handleSafe} loading={busy} />
+            <Button title={t("I'm safe")} onPress={handleSafe} loading={busy} />
             {mine.status === 'active' && (
-              <Button title="Need 30 more minutes" variant="secondary" onPress={handleExtend} disabled={busy} />
+              <Button title={t('Need 30 more minutes')} variant="secondary" onPress={handleExtend} disabled={busy} />
             )}
           </View>
         ) : (
           <>
             <View style={styles.section}>
               <Text style={typography.body}>
-                For when there's no destination to arrive at — studying alone, a first date, a
-                solo hike. Your circle is told you asked to be checked on; if you don't check in,
-                an SOS goes out automatically with your last known location.
+                {t("For when there's no destination to arrive at — studying alone, a first date, a solo hike. Your circle is told you asked to be checked on; if you don't check in, an SOS goes out automatically with your last known location.")}
               </Text>
             </View>
 
             <View style={styles.section}>
               <TextField
-                label="Note (optional)"
+                label={t('Note (optional)')}
                 value={label}
                 onChangeText={setLabel}
-                placeholder="Studying at the library"
+                placeholder={t('Studying at the library')}
                 maxLength={60}
               />
             </View>
 
             <View style={styles.section}>
-              <Text style={styles.label}>Check on me in</Text>
+              <Text style={styles.label}>{t('Check on me in')}</Text>
               <View style={styles.chipRow}>
                 {DURATIONS.map((m) => {
                   const selected = m === minutes;
@@ -143,11 +141,11 @@ export default function SafetyTimerScreen() {
                 })}
               </View>
               <Text style={typography.caption}>
-                Turns on location sharing for the timer if it isn't already on.
+                {t("Turns on location sharing for the timer if it isn't already on.")}
               </Text>
             </View>
 
-            <Button title="Start timer" onPress={handleStart} loading={busy} />
+            <Button title={t('Start timer')} onPress={handleStart} loading={busy} />
           </>
         )}
         {error && <ErrorText style={styles.error}>{error}</ErrorText>}

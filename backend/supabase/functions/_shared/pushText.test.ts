@@ -1,4 +1,4 @@
-// node --test supabase/functions/_shared/   (Node 22.6+ runs TypeScript as is)
+// node --test supabase/functions/_shared/*.test.ts   (Node 22.6+ runs TypeScript as is)
 //
 // Every alert the database sends, written exactly as send_alert_push's
 // callers write it, must come out in Spanish for a Spanish speaker, keep

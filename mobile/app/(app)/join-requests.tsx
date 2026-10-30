@@ -8,6 +8,7 @@ import { useCircles } from '@/contexts/CircleContext';
 import { supabase } from '@/lib/supabase';
 import { timeAgo } from '@/lib/format';
 import { colors, spacing, themed, typography, useThemeVersion } from '@/lib/theme';
+import { t } from '@/lib/i18n';
 
 interface PendingRequest {
   id: string;
@@ -58,7 +59,7 @@ export default function JoinRequestsScreen() {
     setBusyId(circleId);
     const { error } = await supabase.rpc('set_circle_approval', { p_circle_id: circleId, p_required: next });
     setBusyId(null);
-    if (error) Alert.alert("Couldn't change that", error.message);
+    if (error) Alert.alert(t("Couldn't change that"), error.message);
     else setApproval((prev) => ({ ...prev, [circleId]: next }));
   }
 
@@ -66,7 +67,7 @@ export default function JoinRequestsScreen() {
     setBusyId(id);
     const { error } = await supabase.rpc('decide_join_request', { p_request_id: id, p_approve: approve });
     setBusyId(null);
-    if (error) Alert.alert("Couldn't do that", error.message);
+    if (error) Alert.alert(t("Couldn't do that"), error.message);
     await load();
     if (approve) await refreshCircles();
   }
@@ -76,13 +77,12 @@ export default function JoinRequestsScreen() {
       <Stack.Screen options={{ title: 'Join approvals' }} />
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={typography.body}>
-          Require your approval before anyone new can join a circle you created, so a leaked invite
-          code can't add a stranger.
+          {t("Require your approval before anyone new can join a circle you created, so a leaked invite code can't add a stranger.")}
         </Text>
         {isLoading ? (
           <ActivityIndicator />
         ) : mine.length === 0 ? (
-          <Text style={typography.body}>You haven't created a circle yet.</Text>
+          <Text style={typography.body}>{t("You haven't created a circle yet.")}</Text>
         ) : (
           mine.map((circle) => {
             const pending = requests.filter((r) => r.circle_id === circle.id);
@@ -91,7 +91,7 @@ export default function JoinRequestsScreen() {
                 <View style={styles.row}>
                   <View style={styles.rowText}>
                     <Text style={styles.name}>{circle.name}</Text>
-                    <Text style={typography.caption}>Require approval to join</Text>
+                    <Text style={typography.caption}>{t('Require approval to join')}</Text>
                   </View>
                   {busyId === circle.id ? (
                     <ActivityIndicator />
@@ -113,14 +113,14 @@ export default function JoinRequestsScreen() {
                     <View style={styles.actions}>
                       <View style={styles.action}>
                         <Button
-                          title="Approve"
+                          title={t('Approve')}
                           onPress={() => decide(request.id, true)}
                           loading={busyId === request.id}
                         />
                       </View>
                       <View style={styles.action}>
                         <Button
-                          title="Deny"
+                          title={t('Deny')}
                           variant="secondary"
                           onPress={() => decide(request.id, false)}
                           disabled={busyId === request.id}
@@ -130,7 +130,7 @@ export default function JoinRequestsScreen() {
                   </View>
                 ))}
                 {pending.length === 0 && (approval[circle.id] ?? false) && (
-                  <Text style={typography.caption}>No pending requests.</Text>
+                  <Text style={typography.caption}>{t('No pending requests.')}</Text>
                 )}
               </View>
             );

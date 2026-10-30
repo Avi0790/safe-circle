@@ -11,6 +11,7 @@ import { MIN_QUERY_LENGTH, searchPlaces, type PlaceResult } from '@/lib/geocode'
 import { MAX_REGIONS } from '@/lib/jobSiteReminders';
 import { supabase } from '@/lib/supabase';
 import { colors, radius, spacing, themed, typography, useThemeVersion } from '@/lib/theme';
+import { t } from '@/lib/i18n';
 
 interface Site {
   id: string;
@@ -101,9 +102,9 @@ export default function JobSitesScreen() {
 
   function remove(site: Site) {
     Alert.alert(`Remove ${site.name}?`, 'Workers stop getting reminders there.', [
-      { text: 'Cancel', style: 'cancel' },
+      { text: t('Cancel'), style: 'cancel' },
       {
-        text: 'Remove',
+        text: t('Remove'),
         style: 'destructive',
         onPress: async () => {
           const { error: rpcError } = await supabase.rpc('delete_job_site', { p_site: site.id });
@@ -119,45 +120,43 @@ export default function JobSitesScreen() {
       <Stack.Screen options={{ title: 'Job sites', headerBackTitle: 'Work' }} />
       <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
         <Text style={typography.body}>
-          Workers who turn on job site reminders get a nudge from their own phone when they arrive at
-          one of these without clocking in. Their phone keeps that to itself: nobody here is told
-          they were there.
+          {t('Workers who turn on job site reminders get a nudge from their own phone when they arrive at one of these without clocking in. Their phone keeps that to itself: nobody here is told they were there.')}
         </Text>
 
         <Text style={styles.sectionLabel} accessibilityRole="header">
           Sites ({sites.length} of {MAX_REGIONS})
         </Text>
-        {sites.length === 0 && <Text style={typography.caption}>No job sites yet.</Text>}
+        {sites.length === 0 && <Text style={typography.caption}>{t('No job sites yet.')}</Text>}
         {sites.map((s) => (
           <View key={s.id} style={styles.card}>
             <View style={{ flex: 1 }}>
               <Text style={styles.name}>{s.name}</Text>
               <Text style={typography.caption}>{s.radius_m} m radius</Text>
             </View>
-            {canEdit && <Button title="Remove" variant="secondary" onPress={() => remove(s)} />}
+            {canEdit && <Button title={t('Remove')} variant="secondary" onPress={() => remove(s)} />}
           </View>
         ))}
 
         {canEdit && sites.length < MAX_REGIONS && (
           <View style={styles.add}>
-            <Text style={styles.sectionLabel} accessibilityRole="header">Add a site</Text>
-            <TextField label="Name" placeholder="Main St yard" value={name} onChangeText={setName} autoCapitalize="words" maxLength={80} />
-            <Text style={typography.caption}>How close counts as arriving</Text>
+            <Text style={styles.sectionLabel} accessibilityRole="header">{t('Add a site')}</Text>
+            <TextField label={t('Name')} placeholder={t('Main St yard')} value={name} onChangeText={setName} autoCapitalize="words" maxLength={80} />
+            <Text style={typography.caption}>{t('How close counts as arriving')}</Text>
             <View style={styles.chips}>
               {RADII.map((r) => (
                 <Button key={r} title={`${r} m`} variant={radiusM === r ? 'primary' : 'secondary'} onPress={() => setRadiusM(r)} />
               ))}
             </View>
-            <Button title="Add where I am now" onPress={addHere} loading={busy} />
+            <Button title={t('Add where I am now')} onPress={addHere} loading={busy} />
             <TextField
-              label="Or search an address"
-              placeholder="1815 E Highland Dr, Jonesboro"
+              label={t('Or search an address')}
+              placeholder={t('1815 E Highland Dr, Jonesboro')}
               value={query}
               onChangeText={setQuery}
               onSubmitEditing={search}
               returnKeyType="search"
             />
-            <Button title="Search" variant="secondary" onPress={search} disabled={query.trim().length < MIN_QUERY_LENGTH} />
+            <Button title={t('Search')} variant="secondary" onPress={search} disabled={query.trim().length < MIN_QUERY_LENGTH} />
             {results.map((p) => (
               <Pressable accessibilityRole="button" key={p.id} style={styles.result} onPress={() => add(p.latitude, p.longitude, p.title)} accessibilityLabel={`Add ${p.title}`}>
                 <Text style={styles.name}>{p.title}</Text>

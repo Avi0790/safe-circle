@@ -12,6 +12,7 @@ import { supabase } from '@/lib/supabase';
 import { timeAgo } from '@/lib/format';
 import { placeIcon } from '@/lib/places';
 import { colors, spacing, themed, typography, useThemeVersion } from '@/lib/theme';
+import { t } from '@/lib/i18n';
 
 interface Place {
   id: string;
@@ -155,8 +156,8 @@ export default function PlacesScreen() {
 
   function confirmDeletePlace(place: Place) {
     Alert.alert(`Remove ${place.name}?`, "You'll stop getting arrive/leave alerts for it.", [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Remove', style: 'destructive', onPress: () => handleDeletePlace(place.id) },
+      { text: t('Cancel'), style: 'cancel' },
+      { text: t('Remove'), style: 'destructive', onPress: () => handleDeletePlace(place.id) },
     ]);
   }
 
@@ -185,12 +186,12 @@ export default function PlacesScreen() {
     if (!renamingId) return;
     const trimmed = renameValue.trim();
     if (!trimmed) {
-      setRenameError('Give this place a name.');
+      setRenameError(t('Give this place a name.'));
       return;
     }
     const radius = Number(renameRadiusValue);
     if (!Number.isFinite(radius) || radius < 20 || radius > 2000) {
-      setRenameError('Radius must be between 20 and 2000 meters.');
+      setRenameError(t('Radius must be between 20 and 2000 meters.'));
       return;
     }
     setRenameSaving(true);
@@ -217,20 +218,19 @@ export default function PlacesScreen() {
         ListHeaderComponent={
           <>
             <View style={styles.section}>
-              <Text style={styles.sectionLabel} accessibilityRole="header">Add a place</Text>
+              <Text style={styles.sectionLabel} accessibilityRole="header">{t('Add a place')}</Text>
               <Text style={typography.caption}>
-                Uses your current location — stand where you want the place to be (e.g. at home)
-                before adding it. 150m radius.
+                {t('Uses your current location — stand where you want the place to be (e.g. at home) before adding it. 150m radius.')}
               </Text>
               <TextField
-                label="Name"
-                placeholder="Home"
+                label={t('Name')}
+                placeholder={t('Home')}
                 value={name}
                 onChangeText={setName}
                 autoCapitalize="words"
               />
               {error && <ErrorText style={styles.error}>{error}</ErrorText>}
-              <Button title="Add place here" onPress={handleAddPlace} loading={saving} />
+              <Button title={t('Add place here')} onPress={handleAddPlace} loading={saving} />
             </View>
 
             <Text style={styles.sectionLabel} accessibilityRole="header">{selectedCircle?.name}'s places</Text>
@@ -242,13 +242,13 @@ export default function PlacesScreen() {
           renamingId === item.id ? (
             <View style={[styles.row, styles.renameForm]}>
               <TextField
-                label="Name"
+                label={t('Name')}
                 value={renameValue}
                 onChangeText={setRenameValue}
                 autoCapitalize="words"
               />
               <TextField
-                label="Radius (meters)"
+                label={t('Radius (meters)')}
                 value={renameRadiusValue}
                 onChangeText={setRenameRadiusValue}
                 keyboardType="numeric"
@@ -256,11 +256,11 @@ export default function PlacesScreen() {
               {renameError && <ErrorText style={styles.error}>{renameError}</ErrorText>}
               <View style={styles.renameButtons}>
                 <View style={styles.renameButton}>
-                  <Button title="Save" onPress={handleSaveRename} loading={renameSaving} />
+                  <Button title={t('Save')} onPress={handleSaveRename} loading={renameSaving} />
                 </View>
                 <View style={styles.renameButton}>
                   <Button
-                    title="Cancel"
+                    title={t('Cancel')}
                     variant="secondary"
                     onPress={() => setRenamingId(null)}
                     disabled={renameSaving}
@@ -289,7 +289,7 @@ export default function PlacesScreen() {
                     onPress={() => startRenamePlace(item)}
                     hitSlop={8}
                   >
-                    <Text style={styles.renameLink}>Edit</Text>
+                    <Text style={styles.renameLink}>{t('Edit')}</Text>
                   </Pressable>
                   <Pressable
                     accessibilityRole="button"
@@ -308,12 +308,12 @@ export default function PlacesScreen() {
           )
         }
         ListEmptyComponent={
-          !loading ? <Text style={typography.caption}>No places yet.</Text> : null
+          !loading ? <Text style={typography.caption}>{t('No places yet.')}</Text> : null
         }
         ListFooterComponent={
           <>
-            <Text style={[styles.sectionLabel, styles.activityLabel]}>Recent activity</Text>
-            {events.length === 0 && <Text style={typography.caption}>Nothing yet.</Text>}
+            <Text style={[styles.sectionLabel, styles.activityLabel]}>{t('Recent activity')}</Text>
+            {events.length === 0 && <Text style={typography.caption}>{t('Nothing yet.')}</Text>}
             {events.map((event) => (
               <View key={event.id} style={styles.row}>
                 <Text style={typography.body}>

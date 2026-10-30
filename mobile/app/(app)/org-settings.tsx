@@ -9,6 +9,7 @@ import { useAccount } from '@/contexts/AccountContext';
 import { confirmsName, DELETE_EFFECTS } from '@/lib/orgSettings';
 import { supabase } from '@/lib/supabase';
 import { colors, radius, spacing, themed, typography, useThemeVersion } from '@/lib/theme';
+import { t } from '@/lib/i18n';
 
 // Rename the organization (owners and admins) or delete it (owners only,
 // typing its name). The database checks both (migration ...000067); this
@@ -31,7 +32,7 @@ export default function OrgSettingsScreen() {
       <SafeAreaView style={styles.safeArea} edges={['bottom']}>
         <Stack.Screen options={{ title: 'Organization', headerBackTitle: 'Work' }} />
         <View style={styles.body}>
-          <Text style={typography.body}>Only owners and admins can change the organization.</Text>
+          <Text style={typography.body}>{t('Only owners and admins can change the organization.')}</Text>
         </View>
       </SafeAreaView>
     );
@@ -69,10 +70,10 @@ export default function OrgSettingsScreen() {
     <SafeAreaView style={styles.safeArea} edges={['bottom']}>
       <Stack.Screen options={{ title: 'Organization', headerBackTitle: 'Work' }} />
       <ScrollView contentContainerStyle={styles.body}>
-        <Text style={styles.sectionLabel} accessibilityRole="header">Name</Text>
-        <TextField label="Organization name" value={name} onChangeText={setName} autoCapitalize="words" maxLength={80} />
+        <Text style={styles.sectionLabel} accessibilityRole="header">{t('Name')}</Text>
+        <TextField label={t('Organization name')} value={name} onChangeText={setName} autoCapitalize="words" maxLength={80} />
         <Button
-          title="Save name"
+          title={t('Save name')}
           variant="secondary"
           onPress={handleRename}
           disabled={busy || name.trim() === '' || name.trim() === org.name}
@@ -87,9 +88,9 @@ export default function OrgSettingsScreen() {
                 • {line}
               </Text>
             ))}
-            <Text style={typography.caption}>Need the hours for payroll? Download the timesheets first.</Text>
+            <Text style={typography.caption}>{t('Need the hours for payroll? Download the timesheets first.')}</Text>
             <Button
-              title="Open timesheets"
+              title={t('Open timesheets')}
               variant="secondary"
               onPress={() => router.push({ pathname: '/timesheets', params: { orgId: org.org_id, orgName: org.name } })}
             />
@@ -101,7 +102,7 @@ export default function OrgSettingsScreen() {
               autoCorrect={false}
             />
             <Button
-              title="Delete organization"
+              title={t('Delete organization')}
               onPress={handleDelete}
               loading={busy}
               disabled={!confirmsName(typed, org.name)}

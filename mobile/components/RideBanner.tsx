@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase';
 import { timeAgo } from '@/lib/format';
 import type { RideRequest } from '@/lib/types';
 import { colors, radius, spacing } from '@/lib/theme';
+import { t } from '@/lib/i18n';
 
 // Open requests older than this are dead (accept_ride refuses them too).
 const OPEN_TTL_MS = 30 * 60_000;
@@ -44,7 +45,7 @@ export function RideBanner({
     setBusyId(id);
     const { error } = await fn();
     setBusyId(null);
-    if (error) Alert.alert("Couldn't do that", error.message);
+    if (error) Alert.alert(t("Couldn't do that"), error.message);
     onChanged();
   }
 

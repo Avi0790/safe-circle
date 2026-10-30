@@ -9,6 +9,7 @@ import { formatClockTime } from '@/lib/format';
 import { formatShiftElapsed } from '@/lib/shift';
 import { supabase } from '@/lib/supabase';
 import { colors, radius, spacing, themed, typography, useThemeVersion } from '@/lib/theme';
+import { t } from '@/lib/i18n';
 
 // One worker's recent shifts and the path they covered during them. The
 // track comes from org_worker_track, which only returns positions recorded
@@ -74,14 +75,14 @@ export default function CrewWorkerScreen() {
           </Text>
           {error && <ErrorText style={styles.error}>{error}</ErrorText>}
           {loaded && !error && track.length === 0 && (
-            <Text style={typography.body}>No on-shift positions in the last 24 hours.</Text>
+            <Text style={typography.body}>{t('No on-shift positions in the last 24 hours.')}</Text>
           )}
           {track.length > 0 && (
             <Text style={typography.body}>{track.length} positions recorded on shift.</Text>
           )}
 
-          <Text style={styles.sectionLabel} accessibilityRole="header">Recent shifts</Text>
-          {loaded && shifts.length === 0 && <Text style={typography.caption}>No shifts in the last 7 days.</Text>}
+          <Text style={styles.sectionLabel} accessibilityRole="header">{t('Recent shifts')}</Text>
+          {loaded && shifts.length === 0 && <Text style={typography.caption}>{t('No shifts in the last 7 days.')}</Text>}
           {shifts.map((s) => (
             <View key={s.shift_id} style={styles.card}>
               <Text style={styles.shiftTitle}>

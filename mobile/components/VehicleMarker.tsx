@@ -7,6 +7,7 @@ import { haversineMeters } from '@/lib/geo';
 import { SNAP_METERS, unwrapTowards } from '@/lib/glide';
 import type { LatLng } from '@/lib/navigation';
 import type { VehicleColor, VehicleStyle } from '@/lib/vehiclePreference';
+import { t } from '@/lib/i18n';
 
 // You, on the navigation map, tilting and turning with it (lib/avatarPose.ts)
 // and gliding between GPS fixes instead of jumping (lib/glide.ts). The glide
@@ -93,7 +94,7 @@ export function VehicleMarker({
       anchor={{ x: 0.5, y: 0.5 }}
       tracksViewChanges={false}
       zIndex={1000}
-      title="You"
+      title={t('You')}
       onPress={onPress}
     >
       <TiltedAvatar style={style} color={color} walking={walking} rotate={pose.native ? 0 : angle} tilt={pose.tilt} />

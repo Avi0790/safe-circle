@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '@/components/Button';
 import { parseJoinCode } from '@/lib/joinCode';
 import { colors, spacing, themed, typography } from '@/lib/theme';
+import { t } from '@/lib/i18n';
 
 // Scans a circle invite QR code and hands back the code. It only ever returns
 // something that parses as a real invite code; any other QR code shows a
@@ -49,16 +50,16 @@ export function QrScannerModal({
     <Modal visible={visible} animationType="slide" onRequestClose={close}>
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
-          <Text style={typography.heading}>Scan an invite QR code</Text>
-          <Button title="Cancel" variant="secondary" onPress={close} />
+          <Text style={typography.heading}>{t('Scan an invite QR code')}</Text>
+          <Button title={t('Cancel')} variant="secondary" onPress={close} />
         </View>
 
         {!permission ? null : !permission.granted ? (
           <View style={styles.center}>
             <Text style={typography.body}>
-              Safe Circle needs the camera to scan the QR code. Nothing is recorded or saved.
+              {t('Safe Circle needs the camera to scan the QR code. Nothing is recorded or saved.')}
             </Text>
-            <Button title="Allow camera" onPress={requestPermission} />
+            <Button title={t('Allow camera')} onPress={requestPermission} />
           </View>
         ) : (
           <View style={styles.camera}>

@@ -18,6 +18,7 @@ import {
   type TeamRow,
 } from '@/lib/teams';
 import { colors, radius, spacing, themed, typography, useThemeVersion } from '@/lib/theme';
+import { t } from '@/lib/i18n';
 
 const ROLE_RANK: Record<OrgRole, number> = { owner: 0, admin: 1, manager: 2, worker: 3 };
 
@@ -95,9 +96,9 @@ export default function CrewManageScreen() {
       `Remove ${person.full_name}?`,
       'They lose access to this organization, are clocked out if on shift, and are taken off every team.',
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('Cancel'), style: 'cancel' },
         {
-          text: 'Remove',
+          text: t('Remove'),
           style: 'destructive',
           onPress: () =>
             run(() => supabase.rpc('remove_org_member', { p_org: orgId, p_user: person.user_id })),
@@ -118,9 +119,9 @@ export default function CrewManageScreen() {
 
   function confirmDeleteTeam(teamId: string, name: string) {
     Alert.alert(`Delete ${name}?`, 'The people on it stay in the organization.', [
-      { text: 'Cancel', style: 'cancel' },
+      { text: t('Cancel'), style: 'cancel' },
       {
-        text: 'Delete',
+        text: t('Delete'),
         style: 'destructive',
         onPress: () => run(() => supabase.rpc('delete_team', { p_team: teamId })),
       },
@@ -132,7 +133,7 @@ export default function CrewManageScreen() {
       <SafeAreaView style={styles.safeArea}>
         <Stack.Screen options={{ title: 'Manage crew', headerBackTitle: 'Work' }} />
         <View style={styles.body}>
-          <Text style={typography.body}>Only owners and admins can manage people and teams.</Text>
+          <Text style={typography.body}>{t('Only owners and admins can manage people and teams.')}</Text>
         </View>
       </SafeAreaView>
     );
@@ -148,12 +149,11 @@ export default function CrewManageScreen() {
       <Stack.Screen options={{ title: orgName ? `${orgName}: crew` : 'Manage crew', headerBackTitle: 'Work' }} />
       <ScrollView contentContainerStyle={styles.body}>
         <Text style={typography.body}>
-          A manager sees the workers on teams they lead. Make someone a manager, add them to a team
-          as its lead, then add the workers they oversee.
+          {t('A manager sees the workers on teams they lead. Make someone a manager, add them to a team as its lead, then add the workers they oversee.')}
         </Text>
         {error && <ErrorText style={styles.error}>{error}</ErrorText>}
 
-        <Text style={styles.sectionLabel} accessibilityRole="header">People</Text>
+        <Text style={styles.sectionLabel} accessibilityRole="header">{t('People')}</Text>
         {people.map((p) => {
           const isSelf = p.user_id === session?.user.id;
           const actions = allowedMemberActions(callerRole as OrgRole, p, isSelf);
@@ -191,19 +191,19 @@ export default function CrewManageScreen() {
           );
         })}
 
-        <Text style={styles.sectionLabel} accessibilityRole="header">Teams</Text>
+        <Text style={styles.sectionLabel} accessibilityRole="header">{t('Teams')}</Text>
         <View style={styles.newTeam}>
           <TextField
-            label="New team"
-            placeholder="Crew A"
+            label={t('New team')}
+            placeholder={t('Crew A')}
             value={newTeamName}
             onChangeText={setNewTeamName}
             autoCapitalize="words"
           />
-          <Button title="Create team" onPress={createTeam} disabled={busy} />
+          <Button title={t('Create team')} onPress={createTeam} disabled={busy} />
         </View>
 
-        {teams.length === 0 && <Text style={typography.caption}>No teams yet.</Text>}
+        {teams.length === 0 && <Text style={typography.caption}>{t('No teams yet.')}</Text>}
         {teams.map((team) => {
           const open = expandedTeam === team.id;
           return (
@@ -245,7 +245,7 @@ export default function CrewManageScreen() {
                           />
                         )}
                         <Button
-                          title="Take off team"
+                          title={t('Take off team')}
                           variant="secondary"
                           disabled={busy}
                           onPress={() =>
@@ -258,7 +258,7 @@ export default function CrewManageScreen() {
                     </View>
                   ))}
 
-                  {team.candidates.length > 0 && <Text style={styles.sectionLabel} accessibilityRole="header">Add to team</Text>}
+                  {team.candidates.length > 0 && <Text style={styles.sectionLabel} accessibilityRole="header">{t('Add to team')}</Text>}
                   {team.candidates.map((c) => (
                     <Button
                       key={c.user_id}
@@ -278,7 +278,7 @@ export default function CrewManageScreen() {
                   ))}
 
                   <Button
-                    title="Delete team"
+                    title={t('Delete team')}
                     variant="secondary"
                     disabled={busy}
                     onPress={() => confirmDeleteTeam(team.id, team.name)}

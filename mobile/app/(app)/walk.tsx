@@ -14,6 +14,7 @@ import { placeIcon } from '@/lib/places';
 import { ensureSharingFor } from '@/lib/sharingWindow';
 import { cancelWalkReminder, scheduleWalkReminder } from '@/lib/walkReminder';
 import { colors, radius, spacing, themed, typography, useThemeVersion } from '@/lib/theme';
+import { t } from '@/lib/i18n';
 
 interface PlaceRow {
   id: string;
@@ -119,8 +120,7 @@ export default function WalkScreen() {
             </Text>
             {myWalk.status === 'overdue' ? (
               <Text style={typography.body}>
-                Your circle was alerted with your last known location. Tap "I'm safe" if you're
-                okay — or just arrive and it clears on its own.
+                {t("Your circle was alerted with your last known location. Tap \"I'm safe\" if you're okay — or just arrive and it clears on its own.")}
               </Text>
             ) : (
               <Text style={typography.body}>
@@ -129,29 +129,27 @@ export default function WalkScreen() {
                 automatically.
               </Text>
             )}
-            <Button title="I'm safe" onPress={handleSafe} loading={busy} />
+            <Button title={t("I'm safe")} onPress={handleSafe} loading={busy} />
             {myWalk.status === 'active' && (
-              <Button title="Need 10 more minutes" variant="secondary" onPress={handleExtend} disabled={busy} />
+              <Button title={t('Need 10 more minutes')} variant="secondary" onPress={handleExtend} disabled={busy} />
             )}
           </View>
         ) : (
           <>
             <View style={styles.section}>
               <Text style={typography.body}>
-                Your circle sees you're on your way and hears when you arrive. If you don't get
-                there — or tap "I'm safe" — before the timer ends, an SOS goes out automatically
-                with your last known location.
+                {t("Your circle sees you're on your way and hears when you arrive. If you don't get there — or tap \"I'm safe\" — before the timer ends, an SOS goes out automatically with your last known location.")}
               </Text>
             </View>
 
             <View style={styles.section}>
-              <Text style={styles.label}>Where to</Text>
+              <Text style={styles.label}>{t('Where to')}</Text>
               {places.length === 0 ? (
                 <>
                   <Text style={typography.caption}>
-                    Add a place first (like Home) — a walk needs a destination to arrive at.
+                    {t('Add a place first (like Home) — a walk needs a destination to arrive at.')}
                   </Text>
-                  <Button title="Manage places" variant="secondary" onPress={() => router.push('/places')} />
+                  <Button title={t('Manage places')} variant="secondary" onPress={() => router.push('/places')} />
                 </>
               ) : (
                 places.map((place) => {
@@ -177,7 +175,7 @@ export default function WalkScreen() {
             {places.length > 0 && (
               <>
                 <View style={styles.section}>
-                  <Text style={styles.label}>How long will it take?</Text>
+                  <Text style={styles.label}>{t('How long will it take?')}</Text>
                   <View style={styles.chipRow}>
                     {DURATIONS.map((m) => {
                       const selected = m === minutes;
@@ -197,10 +195,10 @@ export default function WalkScreen() {
                     })}
                   </View>
                   <Text style={typography.caption}>
-                    Turns on location sharing for the walk if it isn't already on.
+                    {t("Turns on location sharing for the walk if it isn't already on.")}
                   </Text>
                 </View>
-                <Button title="Start walking" onPress={handleStart} loading={busy} disabled={!placeId} />
+                <Button title={t('Start walking')} onPress={handleStart} loading={busy} disabled={!placeId} />
               </>
             )}
           </>

@@ -12,6 +12,7 @@ import { supabase } from '@/lib/supabase';
 import { textForHelp } from '@/lib/textForHelp';
 import type { BackupContact } from '@/lib/types';
 import { colors, radius, spacing, themed, typography, useThemeVersion } from '@/lib/theme';
+import { t } from '@/lib/i18n';
 
 // A fallback for when push notifications can't reach anyone — SOS, walks,
 // curfew, and every other alert in this app depend on this phone and
@@ -67,15 +68,14 @@ export default function TextForHelpScreen() {
       <Stack.Screen options={{ title: 'Text for help' }} />
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={typography.body}>
-          Opens a text message with your current location to whoever you pick below — useful when
-          there's no internet for push notifications. You still tap send yourself.
+          {t("Opens a text message with your current location to whoever you pick below — useful when there's no internet for push notifications. You still tap send yourself.")}
         </Text>
 
         <View style={styles.section}>
-          <Text style={styles.label}>Circle</Text>
+          <Text style={styles.label}>{t('Circle')}</Text>
           {membersWithPhone.length === 0 ? (
             <Text style={typography.caption}>
-              No one in this circle has added a phone number yet (Settings → Phone number).
+              {t('No one in this circle has added a phone number yet (Settings → Phone number).')}
             </Text>
           ) : (
             membersWithPhone.map((member) => {
@@ -97,10 +97,10 @@ export default function TextForHelpScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.label}>Backup contacts</Text>
+          <Text style={styles.label}>{t('Backup contacts')}</Text>
           {contacts.length === 0 ? (
             <Pressable accessibilityRole="button" onPress={() => router.push('/backup-contacts')}>
-              <Text style={styles.renameLinkText}>Add a backup contact</Text>
+              <Text style={styles.renameLinkText}>{t('Add a backup contact')}</Text>
             </Pressable>
           ) : (
             contacts.map((contact) => {
@@ -123,16 +123,16 @@ export default function TextForHelpScreen() {
 
         <View style={styles.section}>
           <TextField
-            label="Note (optional)"
+            label={t('Note (optional)')}
             value={note}
             onChangeText={setNote}
-            placeholder="I need help."
+            placeholder={t('I need help.')}
             multiline
           />
         </View>
 
         <Button
-          title="Text for help"
+          title={t('Text for help')}
           onPress={handleSend}
           loading={sending}
           disabled={selected.size === 0}

@@ -1,6 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import type { TravelMode } from '@/lib/navigation';
 import type { VoiceMode } from '@/lib/voicePreference';
+import { t } from '@/lib/i18n';
 
 // The navigation overlay, laid out like Google Maps: the next turn in a big
 // green card at the top (and the one after it), round buttons down the right
@@ -82,7 +83,7 @@ export function DriveHud(p: DriveHudProps) {
         ) : null}
         {p.thenGlyph && !p.rerouting ? (
           <View style={styles.then}>
-            <Text style={styles.thenText}>Then</Text>
+            <Text style={styles.thenText}>{t('Then')}</Text>
             <Text style={styles.thenGlyph}>{p.thenGlyph}</Text>
           </View>
         ) : null}
@@ -90,7 +91,7 @@ export function DriveHud(p: DriveHudProps) {
         <View style={styles.pills} pointerEvents="none">
           {p.alert ? <Text style={[styles.pill, styles.pillAlert]}>{p.alert}</Text> : null}
           {p.sharingWith ? <Text style={styles.pill}>👪 Sharing this trip with {p.sharingWith}</Text> : null}
-          {p.linkShared ? <Text style={styles.pill}>🔗 Live ETA link on, until you arrive</Text> : null}
+          {p.linkShared ? <Text style={styles.pill}>{t('🔗 Live ETA link on, until you arrive')}</Text> : null}
           {p.stopTitle ? <Text style={styles.pill}>Via {p.stopTitle}</Text> : null}
           {p.notice ? <Text style={[styles.pill, styles.pillNotice]}>{p.notice}</Text> : null}
         </View>
@@ -112,7 +113,7 @@ export function DriveHud(p: DriveHudProps) {
           </Pressable>
         )}
         {p.onSearch && (
-          <Pressable style={styles.round} onPress={p.onSearch} accessibilityRole="button" accessibilityLabel="Add a stop">
+          <Pressable style={styles.round} onPress={p.onSearch} accessibilityRole="button" accessibilityLabel={t('Add a stop')}>
             <Text allowFontScaling={false} style={styles.roundIcon}>🔍</Text>
           </Pressable>
         )}
@@ -135,9 +136,9 @@ export function DriveHud(p: DriveHudProps) {
           </Pressable>
         )}
         {p.onReport && (
-          <Pressable style={styles.report} onPress={p.onReport} accessibilityRole="button" accessibilityLabel="Report an incident">
+          <Pressable style={styles.report} onPress={p.onReport} accessibilityRole="button" accessibilityLabel={t('Report an incident')}>
             <Text allowFontScaling={false} style={styles.reportIcon}>⚠️</Text>
-            <Text style={styles.reportText}>Report</Text>
+            <Text style={styles.reportText}>{t('Report')}</Text>
           </Pressable>
         )}
       </View>
@@ -146,8 +147,8 @@ export function DriveHud(p: DriveHudProps) {
       <View style={[styles.speedColumn, { bottom: bottomOfButtons }]} pointerEvents="none">
         {p.speedLimitMph != null && p.mode !== 'walk' ? (
           <View style={styles.limitSign} accessibilityLabel={`Speed limit ${p.speedLimitMph} miles per hour`}>
-            <Text style={styles.limitWord}>SPEED</Text>
-            <Text style={styles.limitWord}>LIMIT</Text>
+            <Text style={styles.limitWord}>{t('SPEED')}</Text>
+            <Text style={styles.limitWord}>{t('LIMIT')}</Text>
             <Text style={styles.limitValue}>{p.speedLimitMph}</Text>
           </View>
         ) : null}
@@ -158,7 +159,7 @@ export function DriveHud(p: DriveHudProps) {
           <Text style={[styles.speedValue, p.overLimit && styles.speedValueOver]}>
             {p.speedMph == null ? '—' : p.mode === 'walk' ? p.speedMph.toFixed(1) : p.speedMph}
           </Text>
-          <Text style={[styles.speedUnit, p.overLimit && styles.speedValueOver]}>mph</Text>
+          <Text style={[styles.speedUnit, p.overLimit && styles.speedValueOver]}>{t('mph')}</Text>
         </View>
       </View>
 
@@ -168,7 +169,7 @@ export function DriveHud(p: DriveHudProps) {
           style={styles.sheetMain}
           onPress={p.onMore}
           disabled={!p.onMore}
-          accessibilityLabel="More options"
+          accessibilityLabel={t('More options')}
           accessibilityRole="button"
         >
           <View style={styles.handle} />
@@ -177,8 +178,8 @@ export function DriveHud(p: DriveHudProps) {
             {p.remainingDistance} · arrive {p.arrival}
           </Text>
         </Pressable>
-        <Pressable style={styles.exit} onPress={p.onEnd} accessibilityRole="button" accessibilityLabel="End navigation">
-          <Text style={styles.exitText}>Exit</Text>
+        <Pressable style={styles.exit} onPress={p.onEnd} accessibilityRole="button" accessibilityLabel={t('End navigation')}>
+          <Text style={styles.exitText}>{t('Exit')}</Text>
         </Pressable>
       </View>
     </>

@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase';
 import { timeAgo } from '@/lib/format';
 import type { LocationView } from '@/lib/types';
 import { colors, spacing, themed, typography, useThemeVersion } from '@/lib/theme';
+import { t } from '@/lib/i18n';
 
 const LIMIT = 100;
 
@@ -46,7 +47,7 @@ export default function LocationViewsScreen() {
         keyExtractor={(item) => String(item.id)}
         ListHeaderComponent={
           <Text style={typography.caption}>
-            Whenever someone opens your location history, it shows up here.
+            {t('Whenever someone opens your location history, it shows up here.')}
           </Text>
         }
         renderItem={({ item }) => (
@@ -57,7 +58,7 @@ export default function LocationViewsScreen() {
         )}
         ListEmptyComponent={
           !isLoading ? (
-            <Text style={[typography.body, styles.empty]}>No one has checked on you yet.</Text>
+            <Text style={[typography.body, styles.empty]}>{t('No one has checked on you yet.')}</Text>
           ) : null
         }
       />

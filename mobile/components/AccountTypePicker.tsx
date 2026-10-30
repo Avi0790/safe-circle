@@ -12,7 +12,7 @@ export function AccountTypePicker({
 }) {
   return (
     <View style={styles.container}>
-      <Text style={styles.label}>How will you use Safe Circle?</Text>
+      <Text style={styles.label}>{t('How will you use Safe Circle?')}</Text>
       {ACCOUNT_TYPES.map((option) => {
         const selected = option.id === value;
         return (

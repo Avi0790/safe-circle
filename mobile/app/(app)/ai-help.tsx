@@ -13,6 +13,7 @@ import { Stack } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { findFaqAnswer, HELP_FAQ, HELP_FALLBACK_ANSWER } from '@/lib/helpFaq';
 import { colors, radius, spacing, themed, typography, useThemeVersion } from '@/lib/theme';
+import { t } from '@/lib/i18n';
 
 interface DisplayTurn {
   id: string;
@@ -71,9 +72,7 @@ export default function AiHelpScreen() {
           ListHeaderComponent={
             <View style={styles.intro}>
               <Text style={typography.body}>
-                Ask how something in Safe Circle works — free and built into the app, no internet
-                needed. This isn't monitored by your circle and isn't for emergencies — use the SOS
-                button for those.
+                {t("Ask how something in Safe Circle works — free and built into the app, no internet needed. This isn't monitored by your circle and isn't for emergencies — use the SOS button for those.")}
               </Text>
               {turns.length === 0 && (
                 <View style={styles.starters}>
@@ -93,8 +92,8 @@ export default function AiHelpScreen() {
             style={styles.input}
             value={draft}
             onChangeText={setDraft}
-            accessibilityLabel="Ask a question"
-            placeholder="Ask a question…"
+            accessibilityLabel={t('Ask a question')}
+            placeholder={t('Ask a question…')}
             placeholderTextColor={colors.offline}
             multiline
             maxLength={200}
@@ -105,7 +104,7 @@ export default function AiHelpScreen() {
             onPress={() => send(draft)}
             disabled={!draft.trim()}
           >
-            <Text style={styles.sendButtonText}>Send</Text>
+            <Text style={styles.sendButtonText}>{t('Send')}</Text>
           </Pressable>
         </View>
       </KeyboardAvoidingView>

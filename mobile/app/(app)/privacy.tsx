@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '@/components/Button';
 import { PRIVACY_LIMITS, PRIVACY_NOT_DONE, PRIVACY_SECTIONS } from '@/lib/privacyInfo';
 import { colors, radius, spacing, themed, typography, useThemeVersion } from '@/lib/theme';
+import { t } from '@/lib/i18n';
 
 // A plain-language tour of what protects you and where the controls live.
 // Content lives in lib/privacyInfo.ts so it can be tested against the real
@@ -17,8 +18,7 @@ export default function PrivacyScreen() {
       <Stack.Screen options={{ title: 'How your privacy works' }} />
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={typography.body}>
-          Safe Circle shares your location only with people you choose, and you stay in control
-          of it. Here's what protects you — and where to change it.
+          {t("Safe Circle shares your location only with people you choose, and you stay in control of it. Here's what protects you — and where to change it.")}
         </Text>
 
         {PRIVACY_SECTIONS.map((section) => (
@@ -38,12 +38,12 @@ export default function PrivacyScreen() {
         ))}
 
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>🚫 What we don't do</Text>
+          <Text style={styles.cardTitle}>{t("🚫 What we don't do")}</Text>
           <Text style={typography.body}>{PRIVACY_NOT_DONE}</Text>
         </View>
 
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>⚠️ Honest limits</Text>
+          <Text style={styles.cardTitle}>{t('⚠️ Honest limits')}</Text>
           {PRIVACY_LIMITS.map((limit) => (
             <Text key={limit} style={typography.body}>
               • {limit}

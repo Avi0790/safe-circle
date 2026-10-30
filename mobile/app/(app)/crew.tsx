@@ -17,6 +17,7 @@ import {
 import { formatClockTime, timeAgo } from '@/lib/format';
 import { supabase } from '@/lib/supabase';
 import { colors, radius, spacing, themed, typography, useThemeVersion } from '@/lib/theme';
+import { t } from '@/lib/i18n';
 
 const POLL_MS = 30_000;
 
@@ -83,12 +84,11 @@ export default function CrewScreen() {
         <View style={styles.body}>
           <Text style={styles.summary}>{loaded ? crewSummary(split) : 'Loading…'}</Text>
           <Text style={typography.caption}>
-            Workers can see when you look at their location, in their Work tab. You only ever see
-            people while they're clocked in.
+            {t("Workers can see when you look at their location, in their Work tab. You only ever see people while they're clocked in.")}
           </Text>
           {error && <ErrorText style={styles.error}>{error}</ErrorText>}
 
-          {split.onShift.length > 0 && <Text style={styles.sectionLabel} accessibilityRole="header">On shift</Text>}
+          {split.onShift.length > 0 && <Text style={styles.sectionLabel} accessibilityRole="header">{t('On shift')}</Text>}
           {split.onShift.map((w) => {
             const f = workerFlags(w);
             return (
@@ -109,28 +109,27 @@ export default function CrewScreen() {
             );
           })}
 
-          {split.offShift.length > 0 && <Text style={styles.sectionLabel} accessibilityRole="header">Off shift</Text>}
+          {split.offShift.length > 0 && <Text style={styles.sectionLabel} accessibilityRole="header">{t('Off shift')}</Text>}
           {split.offShift.map((m) => (
             <View key={m.user_id} style={styles.cardQuiet}>
               <Text style={styles.name}>{m.full_name}</Text>
-              <Text style={typography.caption}>Off shift — no location is shown.</Text>
+              <Text style={typography.caption}>{t('Off shift — no location is shown.')}</Text>
             </View>
           ))}
 
-          {split.pending.length > 0 && <Text style={styles.sectionLabel} accessibilityRole="header">Waiting to accept</Text>}
+          {split.pending.length > 0 && <Text style={styles.sectionLabel} accessibilityRole="header">{t('Waiting to accept')}</Text>}
           {split.pending.map((m) => (
             <View key={m.user_id} style={styles.cardQuiet}>
               <Text style={styles.name}>{m.full_name}</Text>
               <Text style={typography.caption}>
-                Joined with your code but hasn't accepted the disclosure yet.
+                {t("Joined with your code but hasn't accepted the disclosure yet.")}
               </Text>
             </View>
           ))}
 
           {loaded && !error && roster.filter((m) => m.role === 'worker').length === 0 && (
             <Text style={typography.body}>
-              No crew members to show yet. Admins can invite people from the Work tab; managers see
-              the workers on teams they lead.
+              {t('No crew members to show yet. Admins can invite people from the Work tab; managers see the workers on teams they lead.')}
             </Text>
           )}
         </View>

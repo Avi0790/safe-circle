@@ -679,7 +679,7 @@ built directly in either language. Names, places and anything a person typed
 (a pin's label, an SOS message) pass through unchanged, and a message no rule
 knows is sent in English rather than garbled.
 
-`node --test supabase/functions/_shared/` checks every alert the database
+`node --test supabase/functions/_shared/*.test.ts` checks every alert the database
 sends, worded exactly as the SQL writes it (CI runs it on every push). A new
 alert in SQL needs a rule in `pushText.ts` and a line in its test, or it
 reaches Spanish speakers in English.

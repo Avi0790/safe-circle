@@ -12,6 +12,7 @@ import { stopSharing } from '@/lib/sharingWindow';
 import { deregisterPushNotifications } from '@/lib/pushNotifications';
 import { clearMembersCache } from '@/lib/membersCache';
 import { colors, radius, spacing, themed, typography, useThemeVersion } from '@/lib/theme';
+import { t } from '@/lib/i18n';
 
 const CONFIRM_WORD = 'DELETE';
 
@@ -64,18 +65,15 @@ export default function DeleteAccountScreen() {
     <SafeAreaView style={styles.safeArea} edges={['bottom']}>
       <Stack.Screen options={{ title: 'Delete account' }} />
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <Text style={typography.heading}>This can't be undone</Text>
+        <Text style={typography.heading}>{t("This can't be undone")}</Text>
         <Text style={typography.body}>
-          Deletes your account and everything in it: your location history, messages, places you
-          created, medical card, backup contacts and guest links.
+          {t('Deletes your account and everything in it: your location history, messages, places you created, medical card, backup contacts and guest links.')}
         </Text>
         <Text style={typography.body}>
-          Circles you created that still have other people in them are handed to the
-          longest-standing member, so they keep working. Circles with no one else in them are
-          deleted.
+          {t('Circles you created that still have other people in them are handed to the longest-standing member, so they keep working. Circles with no one else in them are deleted.')}
         </Text>
         <Text style={typography.caption}>
-          Want a copy first? Go back to Settings → Download my data.
+          {t('Want a copy first? Go back to Settings → Download my data.')}
         </Text>
         <TextField
           label={`Type ${CONFIRM_WORD} to confirm`}

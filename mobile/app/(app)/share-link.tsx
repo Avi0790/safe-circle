@@ -10,6 +10,7 @@ import { ensureSharingFor } from '@/lib/sharingWindow';
 import { buildTrackUrl, getWebBaseUrl, isLocalUrl } from '@/lib/shareLink';
 import type { ShareLink } from '@/lib/types';
 import { colors, radius, spacing, themed, typography, useThemeVersion } from '@/lib/theme';
+import { t } from '@/lib/i18n';
 
 const DURATIONS = [
   { label: '1 hour', minutes: 60 },
@@ -86,9 +87,7 @@ export default function ShareLinkScreen() {
       <Stack.Screen options={{ title: 'Guest link' }} />
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={typography.body}>
-          Share your live location with someone who doesn't have Safe Circle. They open the link in
-          any browser and see where you are — nothing else, no account — until it expires or you
-          revoke it.
+          {t("Share your live location with someone who doesn't have Safe Circle. They open the link in any browser and see where you are — nothing else, no account — until it expires or you revoke it.")}
         </Text>
 
         {isLocalUrl(baseUrl) && (
@@ -99,7 +98,7 @@ export default function ShareLinkScreen() {
         )}
 
         <View style={styles.section}>
-          <Text style={styles.label}>Link lasts</Text>
+          <Text style={styles.label}>{t('Link lasts')}</Text>
           <View style={styles.chipRow}>
             {DURATIONS.map((option) => {
               const selected = option.minutes === minutes;
@@ -118,15 +117,15 @@ export default function ShareLinkScreen() {
           </View>
         </View>
 
-        <Button title="Create link & share" onPress={handleCreate} loading={busy} />
+        <Button title={t('Create link & share')} onPress={handleCreate} loading={busy} />
         {error && <ErrorText style={styles.error}>{error}</ErrorText>}
 
         <View style={styles.section}>
-          <Text style={styles.label}>Active links</Text>
+          <Text style={styles.label}>{t('Active links')}</Text>
           {isLoading ? (
             <ActivityIndicator />
           ) : links.length === 0 ? (
-            <Text style={typography.caption}>None right now.</Text>
+            <Text style={typography.caption}>{t('None right now.')}</Text>
           ) : (
             links.map((link) => (
               <View key={link.id} style={styles.linkRow}>
@@ -146,7 +145,7 @@ export default function ShareLinkScreen() {
                   onPress={() => handleRevoke(link.id)}
                   hitSlop={8}
                 >
-                  <Text style={styles.revoke}>Revoke</Text>
+                  <Text style={styles.revoke}>{t('Revoke')}</Text>
                 </Pressable>
               </View>
             ))

@@ -13,6 +13,7 @@ import { CarPlayBridge } from '@/components/CarPlayBridge';
 import { canEnterApp } from '@/lib/accountType';
 import { offerTextForHelp, sendSos } from '@/lib/sos';
 import { useThemeVersion } from '@/lib/theme';
+import { t } from '@/lib/i18n';
 
 export default function AppLayout() {
   useThemeVersion(); // redraw on a theme switch (lib/theme.ts)
@@ -113,12 +114,12 @@ function ShakeSosListener({ enabled }: { enabled: boolean }) {
 
   useShakeToSos(enabled && shakeEnabled && !sending, () => {
     Alert.alert(
-      'Shake detected — send SOS?',
-      'This alerts everyone in your circle with your current location.',
+      t('Shake detected — send SOS?'),
+      t('This alerts everyone in your circle with your current location.'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('Cancel'), style: 'cancel' },
         {
-          text: 'Send SOS',
+          text: t('Send SOS'),
           style: 'destructive',
           onPress: async () => {
             setSending(true);

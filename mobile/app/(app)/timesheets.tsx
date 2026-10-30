@@ -19,6 +19,7 @@ import {
   weekLabel,
   weekStart,
 } from '@/lib/timesheet';
+import { t } from '@/lib/i18n';
 
 // Weekly hours for owners, admins and managers (lib/timesheet.ts), with a CSV
 // for payroll. Uses org_shifts(), so managers see only the teams they lead.
@@ -76,7 +77,7 @@ export default function TimesheetsScreen() {
 
         <View style={styles.weekRow}>
           <Button
-            title="‹ Earlier"
+            title={t('‹ Earlier')}
             variant="secondary"
             onPress={() => setWeeksBack((w) => w + 1)}
             disabled={weeksBack >= MAX_WEEKS_BACK}
@@ -85,7 +86,7 @@ export default function TimesheetsScreen() {
             <Text style={styles.weekText}>{weekLabel(sheet)}</Text>
             <Text style={typography.caption}>{weeksBack === 0 ? 'This week' : weeksBack === 1 ? 'Last week' : `${weeksBack} weeks ago`}</Text>
           </View>
-          <Button title="Later ›" variant="secondary" onPress={() => setWeeksBack((w) => w - 1)} disabled={weeksBack === 0} />
+          <Button title={t('Later ›')} variant="secondary" onPress={() => setWeeksBack((w) => w - 1)} disabled={weeksBack === 0} />
         </View>
 
         {error && <ErrorText style={styles.error}>{error}</ErrorText>}
@@ -126,16 +127,14 @@ export default function TimesheetsScreen() {
             ))}
 
             {sheet.rows.length > 0 && (
-              <Button title="Download timesheet (CSV)" onPress={handleExport} />
+              <Button title={t('Download timesheet (CSV)')} onPress={handleExport} />
             )}
             {exportError && <ErrorText style={styles.error}>{exportError}</ErrorText>}
           </>
         )}
 
         <Text style={typography.caption}>
-          Shift times only, never locations. Managers see only the teams they lead. A shift counts up
-          to 14 hours, when it ends by itself, and overnight shifts are split at midnight. Owners and
-          admins also see people who have left, for the weeks they worked.
+          {t('Shift times only, never locations. Managers see only the teams they lead. A shift counts up to 14 hours, when it ends by itself, and overnight shifts are split at midnight. Owners and admins also see people who have left, for the weeks they worked.')}
         </Text>
       </ScrollView>
     </SafeAreaView>

@@ -8,6 +8,7 @@ import { ErrorText } from '@/components/ErrorText';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { colors, spacing, themed, typography, useThemeVersion } from '@/lib/theme';
+import { t } from '@/lib/i18n';
 
 // Your medical card: blood type, allergies, conditions, medications, a note.
 // Circle-mates can read it ONLY while you have an active SOS (enforced by RLS
@@ -68,20 +69,19 @@ export default function MedicalCardScreen() {
       <Stack.Screen options={{ title: 'Medical card' }} />
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <Text style={typography.body}>
-          Only shown to your circle while you have an active SOS — never otherwise. Leave anything
-          blank you'd rather not share.
+          {t("Only shown to your circle while you have an active SOS — never otherwise. Leave anything blank you'd rather not share.")}
         </Text>
         {loading ? (
           <ActivityIndicator />
         ) : (
           <>
-            <TextField label="Blood type" value={bloodType} onChangeText={setBloodType} maxLength={10} autoCapitalize="characters" placeholder="O+" />
-            <TextField label="Allergies" value={allergies} onChangeText={setAllergies} maxLength={300} multiline autoCapitalize="sentences" />
-            <TextField label="Conditions" value={conditions} onChangeText={setConditions} maxLength={300} multiline autoCapitalize="sentences" />
-            <TextField label="Medications" value={medications} onChangeText={setMedications} maxLength={300} multiline autoCapitalize="sentences" />
-            <TextField label="Notes for responders" value={notes} onChangeText={setNotes} maxLength={500} multiline autoCapitalize="sentences" />
-            <Button title="Save" onPress={handleSave} loading={saving} />
-            {saved && <Text style={styles.saved}>Saved.</Text>}
+            <TextField label={t('Blood type')} value={bloodType} onChangeText={setBloodType} maxLength={10} autoCapitalize="characters" placeholder="O+" />
+            <TextField label={t('Allergies')} value={allergies} onChangeText={setAllergies} maxLength={300} multiline autoCapitalize="sentences" />
+            <TextField label={t('Conditions')} value={conditions} onChangeText={setConditions} maxLength={300} multiline autoCapitalize="sentences" />
+            <TextField label={t('Medications')} value={medications} onChangeText={setMedications} maxLength={300} multiline autoCapitalize="sentences" />
+            <TextField label={t('Notes for responders')} value={notes} onChangeText={setNotes} maxLength={500} multiline autoCapitalize="sentences" />
+            <Button title={t('Save')} onPress={handleSave} loading={saving} />
+            {saved && <Text style={styles.saved}>{t('Saved.')}</Text>}
             {error && <ErrorText style={styles.error}>{error}</ErrorText>}
           </>
         )}

@@ -143,18 +143,18 @@ export function OrgOnboarding({
   if (mode === 'create') {
     return (
       <View style={styles.content}>
-        <Text maxFontSizeMultiplier={1.3} style={typography.title}>Create an organization</Text>
+        <Text maxFontSizeMultiplier={1.3} style={typography.title}>{t('Create an organization')}</Text>
         <View style={styles.form}>
           <TextField
-            label="Organization name"
-            placeholder="Riverside Utilities"
+            label={t('Organization name')}
+            placeholder={t('Riverside Utilities')}
             value={orgName}
             onChangeText={setOrgName}
             autoCapitalize="words"
           />
           {error && <ErrorText style={styles.error}>{error}</ErrorText>}
-          <Button title="Create" onPress={handleCreate} loading={loading} />
-          <Button title="Back" variant="secondary" onPress={() => setMode('choose')} />
+          <Button title={t('Create')} onPress={handleCreate} loading={loading} />
+          <Button title={t('Back')} variant="secondary" onPress={() => setMode('choose')} />
         </View>
       </View>
     );
@@ -163,15 +163,14 @@ export function OrgOnboarding({
   if (mode === 'created') {
     return (
       <View style={styles.content}>
-        <Text maxFontSizeMultiplier={1.3} style={typography.title}>Organization created!</Text>
+        <Text maxFontSizeMultiplier={1.3} style={typography.title}>{t('Organization created!')}</Text>
         <Text style={typography.body}>
-          Share this code with your crew. It's shown only once and expires in 48 hours, so save
-          it now. You can make a new one later.
+          {t("Share this code with your crew. It's shown only once and expires in 48 hours, so save it now. You can make a new one later.")}
         </Text>
         <Text selectable style={styles.code}>
           {createdCode}
         </Text>
-        <Button title="Done" onPress={handleDoneAfterCreate} />
+        <Button title={t('Done')} onPress={handleDoneAfterCreate} />
       </View>
     );
   }
@@ -179,19 +178,19 @@ export function OrgOnboarding({
   if (mode === 'join') {
     return (
       <View style={styles.content}>
-        <Text maxFontSizeMultiplier={1.3} style={typography.title}>Join your crew</Text>
+        <Text maxFontSizeMultiplier={1.3} style={typography.title}>{t('Join your crew')}</Text>
         <View style={styles.form}>
           <TextField
-            label="Invite code"
-            placeholder="AB12CD"
+            label={t('Invite code')}
+            placeholder={t('AB12CD')}
             value={inviteCode}
             onChangeText={(text) => setInviteCode(text.toUpperCase())}
             autoCapitalize="characters"
             maxLength={6}
           />
           {error && <ErrorText style={styles.error}>{error}</ErrorText>}
-          <Button title="Continue" onPress={handleJoin} loading={loading} />
-          <Button title="Back" variant="secondary" onPress={() => setMode('choose')} />
+          <Button title={t('Continue')} onPress={handleJoin} loading={loading} />
+          <Button title={t('Back')} variant="secondary" onPress={() => setMode('choose')} />
         </View>
       </View>
     );
@@ -202,8 +201,8 @@ export function OrgOnboarding({
       <Text maxFontSizeMultiplier={1.3} style={typography.title}>{heading}</Text>
       <Text style={typography.body}>{intro}</Text>
       <View style={styles.form}>
-        <Button title="Create an organization" onPress={() => setMode('create')} />
-        <Button title="Join with a code" variant="secondary" onPress={() => setMode('join')} />
+        <Button title={t('Create an organization')} onPress={() => setMode('create')} />
+        <Button title={t('Join with a code')} variant="secondary" onPress={() => setMode('join')} />
       </View>
     </View>
   );

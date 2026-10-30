@@ -8,6 +8,7 @@ import { ErrorText } from '@/components/ErrorText';
 import { useCircles } from '@/contexts/CircleContext';
 import { supabase } from '@/lib/supabase';
 import { colors, spacing, themed, typography } from '@/lib/theme';
+import { t } from '@/lib/i18n';
 
 type Mode = 'choose' | 'create' | 'join' | 'created' | 'pending';
 
@@ -119,8 +120,8 @@ export function CircleOnboarding({
         <Text maxFontSizeMultiplier={1.3} style={typography.title}>{heading}</Text>
         <Text style={typography.body}>{intro}</Text>
         <View style={styles.form}>
-          <Button title="Create a circle" onPress={() => setMode('create')} />
-          <Button title="Join a circle" variant="secondary" onPress={() => setMode('join')} />
+          <Button title={t('Create a circle')} onPress={() => setMode('create')} />
+          <Button title={t('Join a circle')} variant="secondary" onPress={() => setMode('join')} />
         </View>
       </View>
     );
@@ -129,18 +130,18 @@ export function CircleOnboarding({
   if (mode === 'create') {
     return (
       <View style={styles.content}>
-        <Text maxFontSizeMultiplier={1.3} style={typography.title}>Create a circle</Text>
+        <Text maxFontSizeMultiplier={1.3} style={typography.title}>{t('Create a circle')}</Text>
         <View style={styles.form}>
           <TextField
-            label="Circle name"
-            placeholder="The Smiths"
+            label={t('Circle name')}
+            placeholder={t('The Smiths')}
             value={circleName}
             onChangeText={setCircleName}
             autoCapitalize="words"
           />
           {error && <ErrorText style={styles.error}>{error}</ErrorText>}
-          <Button title="Create" onPress={handleCreate} loading={loading} />
-          <Button title="Back" variant="secondary" onPress={() => setMode('choose')} />
+          <Button title={t('Create')} onPress={handleCreate} loading={loading} />
+          <Button title={t('Back')} variant="secondary" onPress={() => setMode('choose')} />
         </View>
       </View>
     );
@@ -149,15 +150,15 @@ export function CircleOnboarding({
   if (mode === 'pending') {
     return (
       <View style={styles.content}>
-        <Text maxFontSizeMultiplier={1.3} style={typography.title}>Request sent</Text>
+        <Text maxFontSizeMultiplier={1.3} style={typography.title}>{t('Request sent')}</Text>
         <Text style={typography.body}>
           {pendingCircleName} asks its creator to approve new members. You'll get a
           notification when they decide — or tap below to check.
         </Text>
         <View style={styles.form}>
-          <Button title="Check again" onPress={refresh} />
+          <Button title={t('Check again')} onPress={refresh} />
           <Button
-            title="Back"
+            title={t('Back')}
             variant="secondary"
             onPress={() => (onDone ? onDone() : setMode('choose'))}
           />
@@ -169,38 +170,37 @@ export function CircleOnboarding({
   if (mode === 'created') {
     return (
       <View style={styles.content}>
-        <Text maxFontSizeMultiplier={1.3} style={typography.title}>Circle created!</Text>
+        <Text maxFontSizeMultiplier={1.3} style={typography.title}>{t('Circle created!')}</Text>
         <Text style={typography.body}>
-          Share this code, or have people scan the QR code from the Join screen in the app. It's
-          shown only once, so save it now.
+          {t("Share this code, or have people scan the QR code from the Join screen in the app. It's shown only once, so save it now.")}
         </Text>
         {createdCode ? <InviteQr code={createdCode} /> : null}
         <Text selectable style={styles.code}>
           {createdCode}
         </Text>
-        <Button title="Done" onPress={handleDoneAfterCreate} />
+        <Button title={t('Done')} onPress={handleDoneAfterCreate} />
       </View>
     );
   }
 
   return (
     <View style={styles.content}>
-      <Text maxFontSizeMultiplier={1.3} style={typography.title}>Join a circle</Text>
+      <Text maxFontSizeMultiplier={1.3} style={typography.title}>{t('Join a circle')}</Text>
       <View style={styles.form}>
         <TextField
-          label="Invite code"
-          placeholder="AB12CD"
+          label={t('Invite code')}
+          placeholder={t('AB12CD')}
           value={inviteCode}
           onChangeText={(text) => setInviteCode(text.toUpperCase())}
           autoCapitalize="characters"
           maxLength={6}
         />
         {error && <ErrorText style={styles.error}>{error}</ErrorText>}
-        <Button title="Join" onPress={() => handleJoin()} loading={loading} />
+        <Button title={t('Join')} onPress={() => handleJoin()} loading={loading} />
         {Platform.OS !== 'web' && (
-          <Button title="Scan QR code" variant="secondary" onPress={() => setScanning(true)} />
+          <Button title={t('Scan QR code')} variant="secondary" onPress={() => setScanning(true)} />
         )}
-        <Button title="Back" variant="secondary" onPress={() => setMode('choose')} />
+        <Button title={t('Back')} variant="secondary" onPress={() => setMode('choose')} />
       </View>
       <QrScannerModal
         visible={scanning}

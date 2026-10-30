@@ -10,6 +10,7 @@ import {
   vehicleStyleName,
   type VehiclePreference,
 } from '@/lib/vehiclePreference';
+import { t } from '@/lib/i18n';
 
 // "Choose driving avatar", laid out like Google Maps': swipe through the
 // avatars (the one in the middle stands on a glowing platform), pick a colour
@@ -55,8 +56,8 @@ export function AvatarPicker({
   return (
     <View style={[styles.sheet, { paddingBottom: bottomInset + 16 }]}>
       <View style={styles.header}>
-        <Text style={styles.title} accessibilityRole="header">Choose driving avatar</Text>
-        <Pressable style={styles.close} onPress={onClose} accessibilityRole="button" accessibilityLabel="Close">
+        <Text style={styles.title} accessibilityRole="header">{t('Choose driving avatar')}</Text>
+        <Pressable style={styles.close} onPress={onClose} accessibilityRole="button" accessibilityLabel={t('Close')}>
           <Text style={styles.closeText}>✕</Text>
         </Pressable>
       </View>
@@ -95,7 +96,7 @@ export function AvatarPicker({
       </ScrollView>
       <Text style={styles.styleName}>{vehicleStyleName(draft.style)}</Text>
 
-      <Text style={styles.colorTitle}>Color</Text>
+      <Text style={styles.colorTitle}>{t('Color')}</Text>
       <Text style={styles.colorName}>{vehicleColorName(draft.color)}</Text>
       <View style={styles.swatches}>
         {VEHICLE_COLORS.map(({ color, hex, label }) => {
@@ -117,10 +118,10 @@ export function AvatarPicker({
 
       <View style={styles.buttons}>
         <Pressable style={[styles.button, styles.reset]} onPress={() => setDraft(DEFAULT_VEHICLE)} accessibilityRole="button">
-          <Text style={styles.resetText}>Reset</Text>
+          <Text style={styles.resetText}>{t('Reset')}</Text>
         </Pressable>
         <Pressable style={[styles.button, styles.done]} onPress={() => onDone(draft)} accessibilityRole="button">
-          <Text style={styles.doneText}>Done</Text>
+          <Text style={styles.doneText}>{t('Done')}</Text>
         </Pressable>
       </View>
     </View>
