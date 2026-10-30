@@ -7,6 +7,7 @@ import { formatMedicalCard } from '@/lib/medicalCard';
 import type { SosEvent } from '@/lib/types';
 import { colors, radius, spacing, themed, typography } from '@/lib/theme';
 import { t } from '@/lib/i18n';
+import { localizeSosMessage } from '@/lib/sosMessages';
 
 export function SosBanner({ events, onChanged }: { events: SosEvent[]; onChanged: () => void }) {
   const { session } = useAuth();
@@ -58,7 +59,7 @@ export function SosBanner({ events, onChanged }: { events: SosEvent[]; onChanged
             <Text style={styles.title}>
               {isMine ? t('🆘 Your SOS is active') : t('🆘 {name} needs help', { name: event.profiles?.full_name ?? t('Someone') })}
             </Text>
-            {event.message && <Text style={styles.message}>"{event.message}"</Text>}
+            {event.message && <Text style={styles.message}>"{localizeSosMessage(event.message)}"</Text>}
             {isMine && acks.length > 0 && (
               <Text style={styles.acks}>
                 {t(acks.length === 1 ? '👀 {names} is on it' : '👀 {names} are on it', {

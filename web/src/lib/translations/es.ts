@@ -2,6 +2,7 @@
 // exact English passed to t(). Shared phrases match the mobile app's
 // (mobile/lib/translations/es.ts). Have a native speaker review it.
 export const es: Record<string, string> = {
+  "Motion sensor readings, for shake-to-SOS and fall detection, stay on your phone; only an SOS is ever sent.": "Las lecturas del sensor de movimiento, para agitar para SOS y la detección de caídas, se quedan en tu teléfono; solo se envía un SOS.",
   "The short version": "En resumen",
   "Your location is shared only with people you choose, and only while you share it.": "Tu ubicación se comparte solo con las personas que eliges, y solo mientras la compartes.",
   "At work, your employer sees you only while you are clocked in, and you can see every time they look.": "En el trabajo, tu empleador te ve solo mientras estás en turno, y tú puedes ver cada vez que te mira.",

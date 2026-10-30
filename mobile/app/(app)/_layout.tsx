@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Stack, useRouter } from 'expo-router';
 import { ActivityIndicator, Alert, View } from 'react-native';
@@ -8,9 +8,12 @@ import { CircleProvider, useCircles } from '@/contexts/CircleContext';
 import { CircleMembersProvider } from '@/contexts/CircleMembersContext';
 import { ShakeSettingsProvider, useShakeSettings } from '@/contexts/ShakeSettingsContext';
 import { useProfileLanguage } from '@/hooks/useProfileLanguage';
+import { useFallDetection } from '@/hooks/useFallDetection';
 import { useShakeToSos } from '@/hooks/useShakeToSos';
 import { CarPlayBridge } from '@/components/CarPlayBridge';
+import { FallCheck } from '@/components/FallCheck';
 import { canEnterApp } from '@/lib/accountType';
+import { announce } from '@/lib/announce';
 import { offerTextForHelp, sendSos } from '@/lib/sos';
 import { useThemeVersion } from '@/lib/theme';
 import { t } from '@/lib/i18n';
@@ -56,6 +59,7 @@ function AppNavigator() {
   return (
     <>
       <ShakeSosListener enabled={hasCircle && !isLoading} />
+      <FallListener enabled={(hasCircle || hasActiveOrg) && !isLoading} />
       {isLoading ? (
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
           <ActivityIndicator />
@@ -134,3 +138,28 @@ function ShakeSosListener({ enabled }: { enabled: boolean }) {
 
   return null;
 }
+
+// Fall detection: opt-in (Settings → Fall detection). A possible fall opens
+// a 30-second "Are you OK?" countdown (components/FallCheck.tsx); only no
+// answer, or "Send SOS now", sends the SOS, to the circle and, on shift, to
+// the managers who oversee you (the same path as the SOS button).
+function FallListener({ enabled }: { enabled: boolean }) {
+  const { fallEnabled } = useShakeSettings();
+  const router = useRouter();
+  const [checking, setChecking] = useState(false);
+
+  useFallDetection(enabled && fallEnabled && !checking, () => setChecking(true));
+
+  const send = useCallback(
+    async (message: string) => {
+      setChecking(false);
+      const result = await sendSos(message);
+      if (result.ok) announce(t('SOS sent. Your circle has your location.'));
+      else offerTextForHelp(result.message, () => router.push('/text-for-help'));
+    },
+    [router],
+  );
+
+  return <FallCheck visible={checking} onDismiss={() => setChecking(false)} onSend={send} />;
+}
+

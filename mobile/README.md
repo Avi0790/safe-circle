@@ -976,6 +976,30 @@ rather than hardcoding styles per-screen, and keep the palette in sync
 with the web dashboard's (`web/src/index.css`) so the two clients feel
 related.
 
+## Fall detection ("man-down")
+
+Settings → Fall detection (off by default, per phone). For someone working
+alone or out on their own: if the phone feels a hard fall or crash and then
+lies still, a full-screen, vibrating "Are you OK?" counts down 30 seconds.
+"I'm OK" stops it and nothing is sent; no answer (or "Send SOS now") sends an
+SOS with the location and a message saying it was a possible fall, through
+the same path as the SOS button: the circle, and on shift the managers who
+oversee you. The message is shown, and pushed, in each reader's language.
+
+- `lib/fallDetector.ts` is the pattern, as pure logic: an impact of 4 g, or
+  2.8 g right after free fall; 1.5 s to settle (another impact restarts it, a
+  fall down stairs); then 4 s of lying still. Running, a bumpy ride, sitting
+  down hard, a dropped phone that's picked up, or getting up again don't
+  pass. `lib/__tests__/fallDetector.test.ts` plays recorded-style patterns
+  through it; `components/__tests__/FallCheck.test.tsx` covers the countdown.
+- A dropped phone left on the floor does pass, which is what the countdown
+  and vibration are for.
+- **Honest limit:** phones give apps motion data while they're open, so it
+  works while Safe Circle is open (on screen, driving, during a shift with
+  the app up). Watching from the background would need native code; Apple's
+  own fall detection is an Apple Watch feature. The motion readings never
+  leave the phone; only an SOS does.
+
 ## Español (Spanish)
 
 The app follows the phone's language, English or Spanish, and Settings →

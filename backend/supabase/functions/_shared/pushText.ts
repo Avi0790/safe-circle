@@ -121,6 +121,23 @@ export function localizePush(
   return { title: translate(title, TITLES), body: type === "pin" ? body : translate(body, BODIES) };
 }
 
+// An automatic SOS carries an English message (the database's for an overdue
+// walk, timer or check-in; the app's for a fall: mobile/lib/fallDetector.ts).
+// Anything a person typed is quoted as it is.
+function sosMessageEs(message: string): string {
+  let m = message.match(/^Automatic alert: didn't arrive at (.+) before their walk timer ran out\. This is their last known location\.$/);
+  if (m) return `Alerta automática: no llegó a ${m[1]} antes de que se acabara su tiempo de caminata. Esta es su última ubicación conocida.`;
+  m = message.match(/^Automatic alert: didn't check in(?: \((.+)\))? before their safety timer ran out\. This is their last known location\.$/);
+  if (m) return `Alerta automática: no se reportó${m[1] ? ` (${m[1]})` : ""} antes de que se acabara su temporizador. Esta es su última ubicación conocida.`;
+  if (message === "Automatic alert: missed a scheduled check-in. This is their last known location on shift.") {
+    return "Alerta automática: no hizo un reporte programado. Esta es su última ubicación conocida en turno.";
+  }
+  if (message === "Automatic alert: a possible fall was detected and they didn't respond for 30 seconds. This is their location.") {
+    return "Alerta automática: se detectó una posible caída y no respondió en 30 segundos. Esta es su ubicación.";
+  }
+  return message;
+}
+
 // The messages the Edge Functions write themselves, in either language.
 // Anything a person typed (an SOS message) is quoted as it is.
 export const PUSH = {
@@ -137,7 +154,7 @@ export const PUSH = {
   },
 
   sos: (language: PushLanguage, name: string, message?: string | null) => {
-    const quoted = message ? ` "${message}"` : "";
+    const quoted = message ? ` "${language === "es" ? sosMessageEs(message) : message}"` : "";
     return language === "es"
       ? { title: "🆘 SOS", body: `¡${name} necesita ayuda!${quoted}` }
       : { title: "🆘 SOS", body: `${name} needs help!${quoted}` };

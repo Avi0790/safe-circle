@@ -26,6 +26,7 @@ export const POLICY: { title: string; items: string[] }[] = [
       'Only if you add them: a phone number (for Text for help), a medical card, backup contacts.',
       'At work: when you clock in and out, check-ins, your position while on shift, and a record of who looked at it.',
       'The token your phone needs to receive notifications, and the language you use the app in.',
+      'Motion sensor readings, for shake-to-SOS and fall detection, stay on your phone; only an SOS is ever sent.',
     ],
   },
   {

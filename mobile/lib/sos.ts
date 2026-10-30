@@ -11,7 +11,7 @@ export type SendSosResult =
 // hooks/useShakeToSos.ts) — one place that gets the current position and
 // inserts sos_events, so both triggers go through the exact same path
 // (rate limit, trigger, push) with no chance of drifting apart.
-export async function sendSos(): Promise<SendSosResult> {
+export async function sendSos(message?: string): Promise<SendSosResult> {
   const { status } = await Location.requestForegroundPermissionsAsync();
   if (status !== 'granted') {
     return { ok: false, reason: 'permission-denied', message: t("Can't send your location with the SOS.") };
@@ -27,6 +27,7 @@ export async function sendSos(): Promise<SendSosResult> {
   const { error } = await supabase.from('sos_events').insert({
     latitude: position.coords.latitude,
     longitude: position.coords.longitude,
+    ...(message ? { message } : {}),
   });
   if (error) {
     return { ok: false, reason: 'insert-failed', message: error.message };

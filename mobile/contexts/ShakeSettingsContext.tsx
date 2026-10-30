@@ -1,15 +1,21 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
+import { getFallDetectionEnabled, setFallDetectionEnabled } from '@/lib/fallSettings';
 import { getShakeToSosEnabled, setShakeToSosEnabled } from '@/lib/shakeSettings';
 
 interface ShakeSettingsContextValue {
   enabled: boolean;
   setEnabled: (next: boolean) => Promise<void>;
+  // fall detection: the other motion-sensor safety setting (lib/fallSettings.ts)
+  fallEnabled: boolean;
+  setFallEnabled: (next: boolean) => Promise<void>;
 }
 
 const ShakeSettingsContext = createContext<ShakeSettingsContextValue>({
   enabled: false,
   setEnabled: async () => {},
+  fallEnabled: false,
+  setFallEnabled: async () => {},
 });
 
 // A context (not a plain hook read separately in Settings and in the
@@ -19,9 +25,11 @@ const ShakeSettingsContext = createContext<ShakeSettingsContextValue>({
 // listener running on stale state until next app launch.
 export function ShakeSettingsProvider({ children }: { children: ReactNode }) {
   const [enabled, setEnabledState] = useState(false);
+  const [fallEnabled, setFallEnabledState] = useState(false);
 
   useEffect(() => {
     getShakeToSosEnabled().then(setEnabledState);
+    getFallDetectionEnabled().then(setFallEnabledState);
   }, []);
 
   async function setEnabled(next: boolean) {
@@ -29,8 +37,13 @@ export function ShakeSettingsProvider({ children }: { children: ReactNode }) {
     await setShakeToSosEnabled(next);
   }
 
+  async function setFallEnabled(next: boolean) {
+    setFallEnabledState(next);
+    await setFallDetectionEnabled(next);
+  }
+
   return (
-    <ShakeSettingsContext.Provider value={{ enabled, setEnabled }}>
+    <ShakeSettingsContext.Provider value={{ enabled, setEnabled, fallEnabled, setFallEnabled }}>
       {children}
     </ShakeSettingsContext.Provider>
   );

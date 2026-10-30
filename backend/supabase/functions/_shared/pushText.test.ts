@@ -111,6 +111,19 @@ test("the Edge Functions' own messages, in both languages", () => {
   assert.equal(PUSH.nearby("es", "Ben", 0.42).body, "Ben está cerca — a 0.4 mi");
   assert.deepEqual(PUSH.sos("es", "Maya", "Car broke down"), { title: "🆘 SOS", body: '¡Maya necesita ayuda! "Car broke down"' });
   assert.equal(PUSH.sos("en", "Maya", null).body, "Maya needs help!");
+  // automatic SOS messages are translated; typed ones are not
+  assert.equal(
+    PUSH.sos("es", "Maya", "Automatic alert: a possible fall was detected and they didn't respond for 30 seconds. This is their location.").body,
+    '¡Maya necesita ayuda! "Alerta automática: se detectó una posible caída y no respondió en 30 segundos. Esta es su ubicación."',
+  );
+  assert.equal(
+    PUSH.sos("es", "Maya", "Automatic alert: didn't arrive at Home before their walk timer ran out. This is their last known location.").body,
+    '¡Maya necesita ayuda! "Alerta automática: no llegó a Home antes de que se acabara su tiempo de caminata. Esta es su última ubicación conocida."',
+  );
+  assert.equal(
+    PUSH.sos("en", "Maya", "Automatic alert: a possible fall was detected and they didn't respond for 30 seconds. This is their location.").body,
+    'Maya needs help! "Automatic alert: a possible fall was detected and they didn\'t respond for 30 seconds. This is their location."',
+  );
   assert.equal(PUSH.place("es", "Maya", true, "Home").body, "Maya llegó a Home");
   assert.equal(PUSH.place("en", "Maya", false, "School").body, "Maya left School");
 });

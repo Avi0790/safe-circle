@@ -52,7 +52,7 @@ export default function SettingsTab() {
   useThemeVersion(); // redraw on a theme switch (lib/theme.ts)
   const router = useRouter();
   const { session } = useAuth();
-  const { enabled: shakeEnabled, setEnabled: setShakeEnabled } = useShakeSettings();
+  const { enabled: shakeEnabled, setEnabled: setShakeEnabled, fallEnabled, setFallEnabled } = useShakeSettings();
   const { enabled: lockEnabled, setEnabled: setLockEnabled } = useAppLock();
   const [lockError, setLockError] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
@@ -768,6 +768,18 @@ export default function SettingsTab() {
               </Text>
             </View>
             <Switch accessibilityLabel={t('Shake for SOS')} value={shakeEnabled} onValueChange={setShakeEnabled} trackColor={{ true: colors.accent }} />
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <View style={styles.row}>
+            <View style={styles.rowText}>
+              <Text style={styles.sectionLabel} accessibilityRole="header">{t('Fall detection')}</Text>
+              <Text style={typography.caption}>
+                {t("If your phone feels a hard fall or crash and then stays still, it asks \"Are you OK?\" for 30 seconds, vibrating. No answer sends an SOS with your location, to your circle and, on shift, to your managers. Works while Safe Circle is open.")}
+              </Text>
+            </View>
+            <Switch accessibilityLabel={t('Fall detection')} value={fallEnabled} onValueChange={setFallEnabled} trackColor={{ true: colors.accent }} />
           </View>
         </View>
 
