@@ -81,6 +81,8 @@ print(m.group(1).strip() if m else "")
     printf '%s\n' "$report" | grep '^FAIL' | sed 's/^/      /'
   else
     echo "ok    $name ($pass checks)"
+    # the load test's timings are the point: show them
+    case "$name" in load/*) printf '%s\n' "$report" | sed 's/^/      /' ;; esac
   fi
 done
 
