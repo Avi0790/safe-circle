@@ -72,6 +72,8 @@ function RootNavigator() {
           link regardless of whether the tapper is currently signed in —
           see reset-password.tsx. */}
       <Stack.Screen name="reset-password" />
+      {/* Unguarded too: the privacy policy is read before signing up. */}
+      <Stack.Screen name="privacy-policy" />
     </Stack>
   );
 }

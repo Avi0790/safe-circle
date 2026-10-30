@@ -3,6 +3,7 @@ import { join } from 'path';
 import { applyLanguagePref, language, phoneLanguage, resolveLanguage, t } from '@/lib/i18n';
 import { themeVersion } from '@/lib/theme';
 import { es } from '@/lib/translations/es';
+import { POLICY } from '@/lib/privacyPolicy';
 
 const ROOT = join(__dirname, '..', '..');
 
@@ -35,6 +36,11 @@ const placeholders = (text: string) => [...text.matchAll(/\{(\w+)\}/g)].map((m) 
 describe('Spanish translations', () => {
   it('every English phrase wrapped in t() has Spanish', () => {
     const missing = [...new Set(literals)].filter((text) => !(text in es) && !SAME_IN_SPANISH.has(text));
+    expect(missing).toEqual([]);
+  });
+
+  it('the privacy policy is in Spanish, every heading and line', () => {
+    const missing = POLICY.flatMap((s) => [s.title, ...s.items]).filter((text) => !(text in es));
     expect(missing).toEqual([]);
   });
 

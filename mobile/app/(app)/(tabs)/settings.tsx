@@ -868,6 +868,7 @@ export default function SettingsTab() {
             onPress={() => router.push('/history-retention')}
           />
           <Button title={t('Ghost mode')} variant="secondary" onPress={() => router.push('/ghost-mode')} />
+          <Button title={t('Privacy policy')} variant="secondary" onPress={() => router.push('/privacy-policy')} />
         </View>
 
         <View style={styles.section}>

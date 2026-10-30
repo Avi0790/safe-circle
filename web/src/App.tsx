@@ -5,6 +5,7 @@ import { LoginScreen } from './components/LoginScreen'
 import { AppShell } from './components/AppShell'
 import { ResetPasswordScreen } from './components/ResetPasswordScreen'
 import { GuestTrack } from './components/GuestTrack'
+import { PrivacyPolicy } from './components/PrivacyPolicy'
 import { parseTrackToken } from './lib/track'
 import { t } from './lib/i18n'
 
@@ -60,6 +61,7 @@ function AuthenticatedApp() {
 // A guest tracking link (/track/<token>) must work with no account, so it's
 // decided before any of the sign-in logic above runs.
 function App() {
+  if (window.location.pathname === '/privacy') return <PrivacyPolicy />
   const token = parseTrackToken(window.location.pathname)
   return token ? <GuestTrack token={token} /> : <AuthenticatedApp />
 }

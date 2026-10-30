@@ -96,6 +96,9 @@ export default function SignupScreen() {
         {error && <ErrorText style={authStyles.error}>{t(error)}</ErrorText>}
 
         <Button title={t('Sign up')} onPress={handleSignUp} loading={loading} />
+        <Link href="/privacy-policy" style={authStyles.cardLink}>
+          {t('By signing up you agree to the privacy policy')}
+        </Link>
       </View>
     </AuthScreen>
   );

@@ -130,7 +130,9 @@ export function LoginScreen({ initialError = null }: { initialError?: string | n
           {t('Use the same account you signed up with in the Safe Circle mobile app.')}
         </p>
       </form>
-      <p className="credit">{t('Created and developed by Surendra B K')}</p>
+      <p className="credit">
+        {t('Created and developed by Surendra B K')} · <a href="/privacy">{t('Privacy policy')}</a>
+      </p>
     </div>
   )
 }
