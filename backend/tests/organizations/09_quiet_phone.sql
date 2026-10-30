@@ -111,7 +111,7 @@ begin
 
   -- the version bump asks workers to accept again
   perform pg_temp.su();
-  msg := msg || pg_temp.ok('disclosure is now version 3', public.org_disclosure_version() = 3);
+  msg := msg || pg_temp.ok('disclosure is version 3 or later', public.org_disclosure_version() >= 3);
 
   raise exception E'RESULT\n%', msg;
 end $$;

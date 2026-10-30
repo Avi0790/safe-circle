@@ -8,7 +8,7 @@ on:
 
 jobs:
   backend:
-    name: Backend (migrations apply cleanly)
+    name: Backend (migrations + security tests)
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -25,6 +25,11 @@ jobs:
       # This is what caught two real bugs (pgcrypto search_path, missing
       # column defaults) during development - see backend/README.md.
       - run: supabase start
+
+      # Every privacy and security test in backend/tests (who can see whose
+      # location, curfew, shifts, SOS, billing...) against that fresh
+      # database. Each rolls itself back; any FAIL fails the build.
+      - run: tests/run_all.sh
 
   web:
     name: Web dashboard

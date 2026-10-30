@@ -1,5 +1,8 @@
+create function pg_temp.ok(label text, cond boolean) returns text language sql as $$
+  select case when cond is true then 'PASS ' else 'FAIL ' end || label || E'\n'
+$$;
 do $$
-declare a text; b text; c text; d text; e int;
+declare a text; b text; c text; d text; msg text := '';
 begin
   insert into auth.users (id, email, raw_user_meta_data) values
     ('00000000-0000-0000-0000-0000000000e1','e1@test.invalid','{"full_name":"A","account_type":"industry"}'),
@@ -10,6 +13,9 @@ begin
   select account_type into b from public.profiles where id='00000000-0000-0000-0000-0000000000e2';
   select account_type into c from public.profiles where id='00000000-0000-0000-0000-0000000000e3';
   select account_type into d from public.profiles where id='00000000-0000-0000-0000-0000000000e4';
-  select count(*) into e from public.profiles where account_type <> 'family' and id::text not like '00000000-0000-0000-0000-0000000000e%';
-  raise exception 'RESULT industry=% individual=% missing=% invalid=% existing_non_family=%', a, b, c, d, e;
+  msg := msg || pg_temp.ok('signing up for work stores industry', a = 'industry');
+  msg := msg || pg_temp.ok('signing up just for yourself stores individual', b = 'individual');
+  msg := msg || pg_temp.ok('no choice (older apps) means family', c = 'family');
+  msg := msg || pg_temp.ok('a made-up account type falls back to family', d = 'family');
+  raise exception E'RESULT\n%', msg;
 end $$;

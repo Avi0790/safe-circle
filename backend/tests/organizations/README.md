@@ -12,8 +12,16 @@ supabase db query --linked -f tests/organizations/07_adversarial_security.sql
 ```
 
 The outcome appears in the error text as `PASS ...` / `FAIL ...` lines (the
-exception is deliberate). A script that prints `RESULT key=value ...` instead
-reports values to compare. After a run, this should return 0 for both:
+exception is deliberate). To run every test in `tests/` and get one summary
+(this is also what CI runs, on a fresh local database, for every push):
+
+```bash
+tests/run_all.sh                         # local database (supabase start)
+tests/run_all.sh --linked                # the live project
+tests/run_all.sh --linked organizations/07
+```
+
+After a run against the live project, this should return 0 for both:
 
 ```sql
 select count(*) from auth.users where email like '%@test.invalid';
@@ -23,13 +31,13 @@ select count(*) from public.organizations;
 | Script | What it covers |
 |---|---|
 | `01_organizations_core` | consent gate, clock-in, who sees whom, shift-window scoping, audit log, role guards, leaving, account deletion (46 checks) |
-| `02_teams_and_rls` | the exact reads and calls the team screens make, as each role |
-| `03_worker_views` | a worker reading who looked at them |
+| `02_teams_and_rls` | the exact reads and calls the team screens make, as each role (9 checks) |
+| `03_worker_views` | a worker reading who looked at them (4 checks) |
 | `04_sos_to_overseers` | SOS reaches only the right overseers and only on shift (22 checks) |
 | `05_reconsent_checkins_export` | re-consent, check-ins, "I'm OK", the export (33 checks) |
-| `06_account_type` | the signup choice and its fallbacks |
+| `06_account_type` | the signup choice and its fallbacks (4 checks) |
 | `07_adversarial_security` | forged audit rows, internal helpers, direct writes, cross-organization access, SOS tampering and rate-limit dodging, consent bypass, removed members (36 checks) |
-| `08_sos_names` | overseers get the sender's name without opening profiles |
+| `08_sos_names` | overseers get the sender's name without opening profiles (5 checks) |
 | `09_quiet_phone` | the "gone quiet" push: who is told, once per stretch, resets, exclusions |
 | `10_org_plans` | paid work organizations: trial, seats, demo billing, no self-upgrade, and that an ended plan stops new shifts and joins but never SOS, clock-out or a running shift (27 checks) |
 | `11_former_worker_shifts` | people who left stay on timesheets for owners and admins (times only); managers, other organizations and the leaver don't see them; nobody sees where a former worker was; the disclosure bump to version 4 (18 checks) |

@@ -1,3 +1,6 @@
+create function pg_temp.ok(label text, cond boolean) returns text language sql as $$
+  select case when cond is true then 'PASS ' else 'FAIL ' end || label || E'\n'
+$$;
 create function pg_temp.sw(u uuid) returns void language plpgsql as $$
 begin
   execute 'reset role';
@@ -42,25 +45,25 @@ begin
   perform pg_temp.sw(ad);
   select count(*) into n from public.teams where org_id = org;
   select count(*) into n2 from public.team_members where team_id = team;
-  msg := msg || 'admin reads teams=' || n || ' team_members=' || n2 || E'\n';
+  msg := msg || pg_temp.ok('admin reads the team and both its members', n = 1 and n2 = 2);
   select count(*) into n from public.org_roster(org);
-  msg := msg || 'admin roster rows=' || n || E'\n';
+  msg := msg || pg_temp.ok('admin sees the whole roster (5 people)', n = 5);
 
   -- manager (lead) and workers read only what they should
   perform pg_temp.sw(m1);
   select count(*) into n from public.teams where org_id = org;
   select count(*) into n2 from public.team_members where team_id = team;
-  msg := msg || 'lead manager reads teams=' || n || ' team_members=' || n2 || E'\n';
+  msg := msg || pg_temp.ok('the team''s lead manager reads the team and its members', n = 1 and n2 = 2);
   perform pg_temp.sw(w1);
   select count(*) into n from public.team_members where team_id = team;
-  msg := msg || 'worker in team reads team_members=' || n || ' (own row only expected 1)' || E'\n';
+  msg := msg || pg_temp.ok('a worker on the team reads only their own membership', n = 1);
   perform pg_temp.sw(w2);
   select count(*) into n from public.teams where org_id = org;
   select count(*) into n2 from public.team_members where team_id = team;
-  msg := msg || 'worker not in team reads teams=' || n || ' team_members=' || n2 || E'\n';
+  msg := msg || pg_temp.ok('a worker not on the team reads nothing of it', n = 0 and n2 = 0);
   perform pg_temp.sw(x);
   select count(*) into n from public.teams;
-  msg := msg || 'outsider reads teams=' || n || E'\n';
+  msg := msg || pg_temp.ok('someone outside the organization reads no teams', n = 0);
 
   -- end to end: w1 clocks in, the lead manager now sees w1 and not w2
   perform pg_temp.sw(w1);
@@ -69,20 +72,20 @@ begin
   perform public.clock_in(org);
   perform pg_temp.sw(m1);
   select count(*), max(full_name) into n, txt from public.org_live_roster(org);
-  msg := msg || 'lead manager live roster rows=' || n || ' (' || coalesce(txt,'') || ')' || E'\n';
+  msg := msg || pg_temp.ok('the lead manager''s live crew shows their team''s worker on shift, not the other', n = 1 and txt = 'W1');
 
   -- "Take off team": manager loses sight of w1
   perform pg_temp.sw(ad);
   perform public.remove_team_member(team, w1);
   perform pg_temp.sw(m1);
   select count(*) into n from public.org_live_roster(org);
-  msg := msg || 'after taking w1 off team, manager sees=' || n || E'\n';
+  msg := msg || pg_temp.ok('after "Take off team" the manager no longer sees that worker', n = 0);
 
   -- "Delete team" then re-check
   perform pg_temp.sw(ad);
   perform public.delete_team(team);
   select count(*) into n from public.teams where org_id = org;
-  msg := msg || 'teams after delete=' || n || E'\n';
+  msg := msg || pg_temp.ok('"Delete team" removes it', n = 0);
 
   raise exception E'RESULT\n%', msg;
 end $$;

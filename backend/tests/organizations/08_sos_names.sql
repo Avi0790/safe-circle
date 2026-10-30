@@ -1,3 +1,6 @@
+create function pg_temp.ok(label text, cond boolean) returns text language sql as $$
+  select case when cond is true then 'PASS ' else 'FAIL ' end || label || E'\n'
+$$;
 create function pg_temp.sw(u uuid) returns void language plpgsql as $$
 begin
   execute 'reset role';
@@ -9,7 +12,7 @@ declare
   o uuid := '00000000-0000-0000-0000-0000000000a0'; m1 uuid := '00000000-0000-0000-0000-0000000000b1';
   w1 uuid := '00000000-0000-0000-0000-0000000000c1'; x uuid := '00000000-0000-0000-0000-0000000000d1';
   org uuid; code text; team uuid; r uuid; e bigint; a text; b text; c int; d int; emb text;
-  t timestamptz := now();
+  t timestamptz := now(); msg text := '';
 begin
   insert into auth.users (id,email,raw_user_meta_data) values
    (o,'o@test.invalid','{"full_name":"Olive Owner"}'),(m1,'m1@test.invalid','{"full_name":"Max Lead"}'),
@@ -29,5 +32,10 @@ begin
   select count(*) into c from public.org_sos_details(array[e]);
   perform pg_temp.sw(w1);
   select count(*) into d from public.org_sos_details(array[e]);
-  raise exception 'RESULT overseer: profile_embed=% sender=% ack=% | outsider_rows=% | worker_rows=%', coalesce(emb,'NULL'), a, b, c, d;
+  msg := msg || pg_temp.ok('an owner can''t read the worker''s profile directly (not in their circle)', emb is null);
+  msg := msg || pg_temp.ok('...but org_sos_details names who sent the SOS', a = 'Wendy Worker');
+  msg := msg || pg_temp.ok('...and who is on the way', b = 'Max Lead');
+  msg := msg || pg_temp.ok('someone outside the organization gets nothing', c = 0);
+  msg := msg || pg_temp.ok('a worker can''t use it to look up names', d = 0);
+  raise exception E'RESULT\n%', msg;
 end $$;

@@ -1,3 +1,6 @@
+create function pg_temp.ok(label text, cond boolean) returns text language sql as $$
+  select case when cond is true then 'PASS ' else 'FAIL ' end || label || E'\n'
+$$;
 create function pg_temp.sw(u uuid) returns void language plpgsql as $$
 begin
   execute 'reset role';
@@ -10,7 +13,7 @@ declare
   ad uuid := '00000000-0000-0000-0000-0000000000f1';
   w1 uuid := '00000000-0000-0000-0000-0000000000f2';
   w2 uuid := '00000000-0000-0000-0000-0000000000f3';
-  org uuid; code text; n1 int; n2 int; nm text; rl text; nself int;
+  org uuid; code text; n1 int; n2 int; nm text; rl text; nself int; msg text := '';
 begin
   insert into auth.users (id, email, raw_user_meta_data) values
     (ad, 'ad@test.invalid', '{"full_name":"Boss Person"}'),
@@ -30,5 +33,9 @@ begin
   select count(*) into n2 from public.org_my_views(org);
   perform pg_temp.sw(ad);
   select count(*) into nself from public.org_my_views(org);
-  raise exception 'RESULT worker_sees=% by=% role=% | other_worker_sees=% | admin_sees_own=%', n1, nm, rl, n2, nself;
+  msg := msg || pg_temp.ok('a worker sees both times the owner looked at them (live crew and their track)', n1 = 2);
+  msg := msg || pg_temp.ok('...with the viewer''s name and role', nm = 'Boss Person' and rl = 'owner');
+  msg := msg || pg_temp.ok('another worker sees no views of themselves', n2 = 0);
+  msg := msg || pg_temp.ok('the owner''s own looking isn''t listed as views of the owner', nself = 0);
+  raise exception E'RESULT\n%', msg;
 end $$;
