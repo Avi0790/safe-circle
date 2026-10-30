@@ -233,7 +233,7 @@ location history, SOS) — built end to end.
   `send-battery-push`) — beyond the proposal: the apps already flag a low
   battery (<= 20%) but only if you're looking; a dead phone is the main
   reason someone silently drops off the map, so the circle gets a push
-  ("Thi's phone is at 12%"). Stateless dedupe: a trigger (with a `WHEN`
+  ("Ana's phone is at 12%"). Stateless dedupe: a trigger (with a `WHEN`
   clause so it's off the hot path) only fires if that person has had no
   other low-battery ping in the last 2 hours, so it alerts on entering
   "low" rather than every ping, and not again if the level flaps around

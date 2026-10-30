@@ -2,7 +2,7 @@
 
 *Part of [Safe Circle](../README.md) — created and developed by **Surendra B K** ([@surendr7a](https://github.com/surendr7a)).*
 
-Backend & data layer for the Safe Circle capstone project (Team Beacon).
+Backend & data layer for the Safe Circle capstone project.
 Built on [Supabase](https://supabase.com): hosted Postgres, auth, and realtime —
 no custom server to run or deploy.
 
@@ -558,9 +558,9 @@ doesn't match (`send-geofence-push/index.ts`).
 Two `.env.example` files, for two different audiences:
 
 - [`.env.example`](../.env.example) (repo root) — client-safe
-  `SUPABASE_URL` / anon key for **Avi (mobile)** and **Thi (web)**. Safe to
+  `SUPABASE_URL` / anon key for the **mobile app** and the **web dashboard**. Safe to
   put in a client bundle; RLS is what actually protects the data.
-- [`backend/.env.example`](.env.example) — used only by Surendra to `supabase
+- [`backend/.env.example`](.env.example) — used only by the backend owner to `supabase
   link` this folder and to deploy the Edge Function's secrets. The
   `service_role` key **must never** reach a client or get committed.
 
