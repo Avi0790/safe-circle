@@ -817,9 +817,11 @@ the iOS simulator or an Android emulator. Install once with
 Add `MAESTRO_CLI_NO_ANALYTICS=1` to turn off its usage statistics.
 
 ```bash
-maestro test .maestro/signed-out                     # no account needed
-maestro test --device <id> -e EMAIL=test@example.com -e PASSWORD=... .maestro/signed-in
+scripts/e2e.sh               # asks for the test account's email and password
+scripts/e2e.sh signed-out    # only the flows that need no account
 ```
+
+or by hand: `maestro test --device <id> -e EMAIL=... -e PASSWORD=... .maestro/signed-in`.
 
 - `signed-out/01_sign_in_screens`: sign-in, the three account types on
   sign-up, forgot password, and back. Touches nothing on the server.
