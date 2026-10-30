@@ -3,11 +3,11 @@
 // of everything below this comment; a web test fails if they drift).
 // Every sentence describes what the code does; change the code, change this.
 // Spanish: lib/translations/es.ts (i18n.test.ts checks every line has one).
-// {contact} and {age} are the owner's to decide; see POLICY_FILL.
+// {contact} and {age} are filled in from POLICY_FILL.
 
 export const POLICY_UPDATED = '2026-10-30';
 
-export const POLICY_FILL = { contact: 'surendrasunar507@gmail.com', age: '[minimum age]' };
+export const POLICY_FILL = { contact: 'surendrasunar507@gmail.com', age: '13' };
 
 export const POLICY: { title: string; items: string[] }[] = [
   {
