@@ -186,6 +186,8 @@ scripts/demo_roll_call.sh                             # live roll call: start on
 supabase db query --linked -f scripts/demo_reset.sql  # remove the demo data afterwards
 ```
 
+The full walkthrough, with timings and a backup recording, is in [docs/demo-script.md](docs/demo-script.md).
+
 ## Project structure
 
 ```

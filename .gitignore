@@ -6,3 +6,6 @@ supabase/.temp
 node_modules/
 .vscode/
 .claude/
+
+# screen recordings for the demo (large)
+docs/demo-video/
