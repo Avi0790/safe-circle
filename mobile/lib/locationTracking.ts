@@ -7,6 +7,7 @@ import * as Battery from 'expo-battery';
 import NetInfo from '@react-native-community/netinfo';
 import { supabase } from './supabase';
 import { enqueue, loadQueue, clearQueue, saveQueue, type QueuedPing } from './locationQueue';
+import { checkWorkWeather } from './workWeather';
 
 // Whether the user has sharing turned on — our own source of truth,
 // separate from the OS-level background task registration. Needed
@@ -159,6 +160,8 @@ if (isNative) {
     for (const loc of locations) {
       await flushQueueAndSend(await buildLocationPing(loc));
     }
+    // heat, cold, storms and wind while on shift (does nothing off shift)
+    await checkWorkWeather(locations[locations.length - 1].coords).catch(() => []);
   });
 }
 
@@ -228,6 +231,7 @@ async function reportForegroundFix(loc: Location.LocationObject) {
   if (await stopIfShareWindowEnded()) return;
   lastForegroundReportAt = Date.now();
   await flushQueueAndSend(await buildLocationPing(loc));
+  checkWorkWeather(loc.coords).catch(() => []);
 }
 
 async function foregroundHeartbeatTick() {

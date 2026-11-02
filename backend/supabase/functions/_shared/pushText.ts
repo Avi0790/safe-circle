@@ -47,6 +47,12 @@ const TITLES: Rule[] = [
     (kind, n) =>
       `⚠️ ${{ Hazard: "Peligro reportado", "Near miss": "Casi accidente reportado", Injury: "Lesión reportada", Incident: "Incidente reportado" }[kind]} por ${n}`,
   ],
+  [/^🥵 Dangerous heat where (.+) is working$/, (n) => `🥵 Calor peligroso donde trabaja ${n}`],
+  [/^🌡️ Heat where (.+) is working$/, (n) => `🌡️ Calor donde trabaja ${n}`],
+  [/^🥶 Dangerous cold where (.+) is working$/, (n) => `🥶 Frío peligroso donde trabaja ${n}`],
+  [/^❄️ Cold where (.+) is working$/, (n) => `❄️ Frío donde trabaja ${n}`],
+  [/^⛈️ Thunderstorm where (.+) is working$/, (n) => `⛈️ Tormenta eléctrica donde trabaja ${n}`],
+  [/^💨 Strong wind where (.+) is working$/, (n) => `💨 Viento fuerte donde trabaja ${n}`],
   [/^📣 Roll call: are you safe\?$/, () => "📣 Pase de lista: ¿estás bien?"],
   [/^📣 Roll call: please answer$/, () => "📣 Pase de lista: por favor responde"],
   [/^🆘 (.+) needs help \(roll call\)$/, (n) => `🆘 ${n} necesita ayuda (pase de lista)`],
@@ -58,6 +64,10 @@ const TITLES: Rule[] = [
 ];
 
 const BODIES: Rule[] = [
+  [/^Feels like (-?\d+)°F\. Make sure they get water, shade and rest breaks\.$/, (f) => `Sensación térmica de ${f}°F. Asegúrate de que tenga agua, sombra y descansos.`],
+  [/^Feels like (-?\d+)°F\. Make sure they can warm up indoors\.$/, (f) => `Sensación térmica de ${f}°F. Asegúrate de que pueda calentarse bajo techo.`],
+  [/^Lightning risk\. They should get indoors or into a vehicle\.$/, () => "Riesgo de rayos. Debe resguardarse bajo techo o en un vehículo."],
+  [/^Gusts of (\d+) mph\. Work at height or with loose materials should stop\.$/, (g) => `Ráfagas de ${g} mph. Se debe detener el trabajo en altura o con materiales sueltos.`],
   [/^Open Safe Circle and tap "I'm safe" or "I need help"\.$/, () => 'Abre Safe Circle y toca "Estoy a salvo" o "Necesito ayuda".'],
   [/^Open Safe Circle to see where they are\.$/, () => "Abre Safe Circle para ver dónde está."],
   [/^Open Safe Circle to see who\.$/, () => "Abre Safe Circle para ver quién."],

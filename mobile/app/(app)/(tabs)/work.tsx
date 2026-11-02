@@ -33,6 +33,8 @@ import { activeOrgs, ORG_DISCLOSURE, type OrgMembership } from '@/lib/orgInfo';
 import { language, t } from '@/lib/i18n';
 import { DEMO_SEAT_OPTIONS, planSummary, seatsFull, workerPlanNotice } from '@/lib/orgPlan';
 import { dayLabel, fetchSchedule, nextShift, timeRange, type ScheduleRow } from '@/lib/schedule';
+import { assessWeather, fetchWorkWeather, syncWeatherWatch, worstRisk, type WorkWeather } from '@/lib/workWeather';
+import * as Location from 'expo-location';
 import { describeOrgAudit, shiftAutoEndsAt } from '@/lib/shift';
 import { supabase } from '@/lib/supabase';
 import { colors, isDark, themed, useThemeVersion } from '@/lib/theme';
@@ -145,6 +147,34 @@ export default function WorkScreen() {
     const id = setInterval(() => setNow(Date.now()), 30_000);
     return () => clearInterval(id);
   }, [anyOnShift]);
+
+  // the weather where you are, while on shift (lib/workWeather.ts)
+  const [weather, setWeather] = useState<WorkWeather | null>(null);
+  const workerOnShift = mine.some((o) => o.on_shift && o.role === 'worker');
+  useEffect(() => {
+    syncWeatherWatch(workerOnShift);
+    if (!workerOnShift) {
+      setWeather(null);
+      return;
+    }
+    let alive = true;
+    const look = async () => {
+      try {
+        const last = await Location.getLastKnownPositionAsync({ maxAge: 30 * 60_000 });
+        if (!last) return;
+        const w = await fetchWorkWeather(last.coords.latitude, last.coords.longitude);
+        if (alive) setWeather(w);
+      } catch {
+        // weather is a nice-to-have here
+      }
+    };
+    look();
+    const id = setInterval(look, 20 * 60_000);
+    return () => {
+      alive = false;
+      clearInterval(id);
+    };
+  }, [workerOnShift]);
 
   const loadViews = useCallback(async () => {
     const workerOrgs = activeOrgs(orgs).filter((o) => o.role === 'worker');
@@ -363,6 +393,20 @@ export default function WorkScreen() {
             />
           )}
         </HeroCard>
+
+        {org.on_shift && weather && (() => {
+          const risk = worstRisk(assessWeather(weather));
+          return (
+            <Card tone={risk?.level === 'danger' ? 'danger' : risk ? 'warn' : undefined}>
+              <Text style={ui.rowTitle}>
+                {risk ? risk.title : t('Feels like {f}°F where you are', { f: Math.round(weather.feelsLikeF) })}
+              </Text>
+              <Text style={ui.rowSub}>
+                {risk ? risk.body : t('You and your managers are told if heat, cold, a storm or strong wind makes work risky.')}
+              </Text>
+            </Card>
+          );
+        })()}
 
         {org.on_shift && org.checkin_minutes != null && org.next_checkin_due && (
           <Card tone={overdue ? 'danger' : undefined}>

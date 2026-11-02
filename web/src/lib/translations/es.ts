@@ -281,4 +281,11 @@ export const es: Record<string, string> = {
   "Keep the note under 120 characters.": "Mantén la nota por debajo de 120 caracteres.",
   "Only the person who started it, or an owner or admin, can close it.": "Solo quien lo inició, o un propietario o administrador, puede cerrarlo.",
   "Close the roll call? {n} still haven't answered.": "¿Cerrar el pase de lista? {n} todavía no han respondido.",
+  "Weather warnings today": "Avisos de clima de hoy",
+  "🥵 {name}: dangerous heat, feels like {f}°F": "🥵 {name}: calor peligroso, sensación de {f}°F",
+  "🌡️ {name}: heat, feels like {f}°F": "🌡️ {name}: calor, sensación de {f}°F",
+  "🥶 {name}: dangerous cold, feels like {f}°F": "🥶 {name}: frío peligroso, sensación de {f}°F",
+  "❄️ {name}: cold, feels like {f}°F": "❄️ {name}: frío, sensación de {f}°F",
+  "⛈️ {name}: thunderstorm": "⛈️ {name}: tormenta eléctrica",
+  "💨 {name}: gusts of {g} mph": "💨 {name}: ráfagas de {g} mph",
 }

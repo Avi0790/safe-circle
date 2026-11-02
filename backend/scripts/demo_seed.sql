@@ -246,4 +246,12 @@ begin
         using o, ids[i], 'safe', t + make_interval(mins => i + 1);
     end loop;
   end if;
+  -- a wind warning from Maya's phone on today's shift (migration ...000076),
+  -- so the Live crew tab has one to show; no push, straight into the table
+  if to_regclass('public.shift_weather_alerts') is not null then
+    execute 'insert into public.shift_weather_alerts (org_id, user_id, shift_id, kind, level, feels_like_f, gust_mph, created_at)
+             select org_id, user_id, id, ''wind'', ''caution'', 48, 44, now() - interval ''40 minutes''
+             from public.shifts where user_id = $1 and clocked_out_at is null'
+      using ids[1];
+  end if;
 end $$;

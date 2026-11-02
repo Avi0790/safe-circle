@@ -14,6 +14,7 @@ import {
 import { formatClockTime, timeAgo } from '../lib/format'
 import { activateOnKey } from '../lib/keyboard'
 import { OrgMap } from './OrgMap'
+import { OrgWeatherAlerts } from './OrgWeatherAlerts'
 import { t } from '../lib/i18n'
 
 const POLL_MS = 30_000
@@ -93,6 +94,7 @@ export function OrgLive({ org }: { org: OrgMembership }) {
             {t("Workers can see when you look at their location, in their Work tab. You only ever see people while they're clocked in.")}
           </p>
           {error && <p className="org-error" role="alert">{error}</p>}
+          <OrgWeatherAlerts orgId={org.org_id} />
         </div>
 
         {selected && (

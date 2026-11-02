@@ -4,6 +4,7 @@ import { isBackgroundTaskActive, isTrackingActive } from '@/lib/locationTracking
 import { MAX_SHIFT_MINUTES } from '@/lib/shift';
 import { ensureSharingFor, stopSharing } from '@/lib/sharingWindow';
 import { supabase } from '@/lib/supabase';
+import { startWeatherWatch, stopWeatherWatch } from '@/lib/workWeather';
 
 // Clocking in has to start sharing, or a manager would see an empty map. But
 // it must only stop sharing again at clock-out if clocking in is what
@@ -53,6 +54,7 @@ export async function clockInTo(
   }
 
   await setStartedSharing(userId, startedByClockIn);
+  await startWeatherWatch();
   if (checkinMinutes != null) {
     await scheduleCheckinReminder(new Date(Date.now() + checkinMinutes * 60_000));
   }
@@ -67,6 +69,7 @@ export type ClockOutResult = { ok: true } | { ok: false; reason: string };
 // being sent.
 export async function clockOutOf(userId: string): Promise<ClockOutResult> {
   await cancelCheckinReminder();
+  await stopWeatherWatch();
   if (await getStartedSharing(userId)) {
     await stopSharing();
     await setStartedSharing(userId, false);

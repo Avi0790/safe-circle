@@ -206,6 +206,11 @@ open and resolved reports with photos (short-lived links) and "Mark
 resolved". Both follow the usual scope: owners and admins see everyone, a
 manager their teams.
 
+## Weather warnings
+
+The Live crew tab lists today's heat, cold, storm and wind warnings from the
+phones of workers on shift (`OrgWeatherAlerts.tsx`, `org_weather_alerts`).
+
 ## Roll call
 
 **Roll call** (`OrgRollCall.tsx`): start one with an optional message, then a

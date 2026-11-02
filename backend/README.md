@@ -736,6 +736,17 @@ reaches Spanish speakers in English.
   Answers and planned shifts are added to "Download my data".
 - Tests: `tests/organizations/19_roll_calls.sql` (30 checks).
 
+## Weather warnings on shift
+
+- `report_weather_risk(kind, level, feels_like_f, gust_mph)` (`...000076`):
+  from the worker's phone while it's on shift (`mobile/lib/workWeather.ts`).
+  Off shift it records nothing and returns false, so the phone stops
+  checking. One row per shift, risk and level (`unique`), so the overseers
+  get one push for a hot afternoon, and another only if it gets worse.
+  `org_weather_alerts(org, hours)` for the people who oversee them; in
+  "Download my data". Tests: `tests/organizations/20_shift_weather_alerts.sql`
+  (12 checks).
+
 ## Before a demo
 
 Sample data for presenting, and a check that the live project is ready:

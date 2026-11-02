@@ -1010,6 +1010,16 @@ prompt over whatever screen is open (`components/RollCallPrompt.tsx`) with
 two big buttons, "I'm safe" and "I need help"; with no signal the answer
 waits in the outbox and goes when the connection returns.
 
+## Weather on shift
+
+`lib/workWeather.ts`: while clocked in, each location update (background task
+or foreground) looks up the weather where you are at most every 20 minutes
+(Open-Meteo, keyless). Heat index 91 °F or more (OSHA moderate; 103 °F high),
+wind chill 0 °F or less (−20 °F dangerous), a thunderstorm, or gusts of 40
+mph raise a local notification at once, so it works without signal, and
+report it to your managers, retried later if there was no connection. The
+Work tab shows the conditions where you are while on shift.
+
 ## Without signal
 
 Field crews work where there's no coverage. An incident report (with its
