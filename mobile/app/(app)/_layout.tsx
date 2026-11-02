@@ -13,6 +13,7 @@ import { useShakeToSos } from '@/hooks/useShakeToSos';
 import { CarPlayBridge } from '@/components/CarPlayBridge';
 import { FallCheck } from '@/components/FallCheck';
 import { LockScreenSync } from '@/components/LockScreenSync';
+import { NotificationRouter } from '@/components/NotificationRouter';
 import { OutboxSync } from '@/components/OutboxSync';
 import { RollCallPrompt } from '@/components/RollCallPrompt';
 import { ShiftReminderSync } from '@/components/ShiftReminderSync';
@@ -39,6 +40,7 @@ export default function AppLayout() {
               <ShiftReminderSync />
               <RollCallPrompt />
               <WelcomeTour />
+              <NotificationRouter />
             </MembersScope>
           </ShakeSettingsProvider>
         </CircleProvider>

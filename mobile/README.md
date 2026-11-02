@@ -1007,6 +1007,14 @@ for time off" (first day and how many) or "Can't make it?" under an upcoming
 shift, sees each answer, and can withdraw one still waiting. Owners, admins
 and managers get a "Waiting for you" card with Approve and Decline.
 
+## Tapping a notification
+
+Opens the screen it's about (`lib/notificationRoute.ts`,
+`components/NotificationRouter.tsx`): family and travel alerts the map, a
+roll-call "needs help" that roll call, schedule and time-off news the
+Schedule, incidents the Incidents list, weather the crew view, chat the
+Chat tab. Anything unknown just opens the app.
+
 ## Welcome tour
 
 Four pages the first time the app opens signed in
