@@ -120,7 +120,7 @@ flowchart LR
         W["💻 Web dashboard<br/>React + Vite"]
     end
     subgraph Supabase
-        DB[("Postgres<br/>row-level security<br/>77 migrations")]
+        DB[("Postgres<br/>row-level security<br/>78 migrations")]
         AU["Auth + Realtime"]
         CR["12 scheduled jobs<br/>SOS escalation, curfews, timers"]
         EF["Edge Functions<br/>push, AI help, billing"]
@@ -148,7 +148,7 @@ Every push runs the whole suite on GitHub Actions, against a fresh database:
 
 | Suite | What it checks | Size |
 |---|---|---|
-| Database security tests | Who can see whose location, curfews, shifts, SOS, billing, as each kind of user | 30 files, ~600 checks |
+| Database security tests | Who can see whose location, curfews, shifts, SOS, billing, as each kind of user | 31 files, ~610 checks |
 | Load test | 302 people and ~113,000 positions; the crew map answers in ~30 ms | 7 timed checks |
 | Mobile app | Screens, logic, accessibility rules, translations, fall detection | 655 tests |
 | Web dashboard | Logic, accessibility and contrast, translations, the privacy policy | 124 tests |

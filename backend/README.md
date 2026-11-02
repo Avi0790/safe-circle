@@ -760,6 +760,25 @@ reaches Spanish speakers in English.
   "Download my data". Tests: `tests/organizations/20_shift_weather_alerts.sql`
   (12 checks).
 
+## Security review of the work-mode additions
+
+A review of `...000074`–`...000077` (`...000078`, tests in
+`tests/organizations/22_review_fixes.sql`, 10 checks). Nothing let anyone
+reach another organization; these close gaps inside one:
+
+- a roll-call answer stored the position even after the worker clocked out;
+  now only while still on shift;
+- roll calls and time-off requests had no limit, so either could flood
+  people with pushes: six roll calls per person an hour, ten waiting
+  requests per worker;
+- a heat, cold or wind report without its number made an empty push;
+- a shift that had started could be cancelled, or a "can't make it"
+  approved, deleting the record of a late or missed shift.
+
+The same review in `...000074` found and fixed the bigger one:
+`org_can_see_worker()` answering null for outsiders, which let them resolve
+incident reports.
+
 ## Before a demo
 
 Sample data for presenting, and a check that the live project is ready:

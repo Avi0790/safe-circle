@@ -931,4 +931,6 @@ export const es: Record<string, string> = {
   "Join your work crew and your managers see you only while you're clocked in. Every time one looks, you see it in your Work tab.": "Únete a tu equipo de trabajo y tus gerentes te ven solo mientras marcas entrada. Cada vez que uno mira, lo ves en tu pestaña Trabajo.",
   "You're in control": "Tú tienes el control",
   "Hide from one person with ghost mode, choose how long history is kept, and download or delete everything from Settings.": "Ocúltate de una persona con el modo fantasma, elige cuánto tiempo se guarda el historial y descarga o borra todo desde Ajustes.",
+  "That's six roll calls this hour. Wait a little before starting another.": "Ya van seis pases de lista en esta hora. Espera un poco antes de iniciar otro.",
+  "You have 10 requests waiting already. Wait for an answer first.": "Ya tienes 10 solicitudes esperando. Espera una respuesta primero.",
 };

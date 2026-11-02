@@ -296,4 +296,6 @@ export const es: Record<string, string> = {
   "Request not found.": "No se encontró la solicitud.",
   "That request has already been answered.": "Esa solicitud ya fue respondida.",
   "They have approved time off then.": "Tiene tiempo libre aprobado en ese horario.",
+  "That's six roll calls this hour. Wait a little before starting another.": "Ya van seis pases de lista en esta hora. Espera un poco antes de iniciar otro.",
+  "That shift has already started.": "Ese turno ya empezó.",
 }

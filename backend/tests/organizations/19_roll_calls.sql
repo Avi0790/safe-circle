@@ -81,6 +81,7 @@ begin
   perform pg_temp.sw(m2);
   txt := pg_temp.err(format('select public.start_roll_call(%L)', org));
   msg := msg || pg_temp.ok('nobody on shift: nothing to ask', txt like 'Nobody you oversee is on shift%');
+  perform pg_temp.su(); insert into public.shifts (org_id, user_id, clocked_in_at) values (org, w2, now());
 
   -- ===== answering =====
   perform pg_temp.sw(w3);
