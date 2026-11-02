@@ -206,6 +206,15 @@ open and resolved reports with photos (short-lived links) and "Mark
 resolved". Both follow the usual scope: owners and admins see everyone, a
 manager their teams.
 
+## Schedule
+
+**Schedule** (`OrgSchedule.tsx`, `org_schedule`): plan a shift for a worker
+(day, start, length, note), see the week with each shift against the real
+clock-in (upcoming, on time, late, missed, worked) and hours planned against
+worked, and cancel ones that haven't started. The worker is notified and
+reminded on their phone. **Timesheets** gains a Planned column. Managers plan
+only the teams they lead.
+
 ## Español
 
 The dashboard follows the browser's language, English or Spanish, and the

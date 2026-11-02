@@ -47,10 +47,14 @@ const TITLES: Rule[] = [
     (kind, n) =>
       `⚠️ ${{ Hazard: "Peligro reportado", "Near miss": "Casi accidente reportado", Injury: "Lesión reportada", Incident: "Incidente reportado" }[kind]} por ${n}`,
   ],
+  [/^📅 You have a new shift$/, () => "📅 Tienes un turno nuevo"],
+  [/^📅 A shift was cancelled$/, () => "📅 Se canceló un turno"],
   [/^(.+) closed$/, (o) => `${o} cerró`], // last: the most general shape
 ];
 
 const BODIES: Rule[] = [
+  [/^Open Safe Circle to see when\.$/, () => "Abre Safe Circle para ver cuándo."],
+  [/^Open Safe Circle to see your schedule\.$/, () => "Abre Safe Circle para ver tu horario."],
   [/^They accepted your ride request\.$/, () => "Aceptó tu solicitud de viaje."],
   [/^They know and are responding\.$/, () => "Ya lo sabe y está respondiendo."],
   [

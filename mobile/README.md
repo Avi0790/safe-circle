@@ -987,6 +987,19 @@ the people who oversee the reporter at once and decides who can read it
 and a "Mark resolved" button. Photos go to a private bucket, resized to
 1280 px, under `<org>/<you>/`.
 
+## Shift schedules
+
+Owners, admins and managers plan shifts ahead from Work → Schedule
+(`app/(app)/schedule.tsx`, `lib/schedule.ts`): who, which day, the start time
+and the length, and an optional note. The week view shows each planned shift
+against the real clock-in (upcoming, on time, late, missed, worked), with
+hours planned against hours worked; Timesheets shows each worker's planned
+hours too. Workers see "My schedule" and their next shift on the Work tab.
+Half an hour before each one, their phone reminds them with a local
+notification (`components/ShiftReminderSync.tsx`, kept in step through
+Realtime), so it arrives even without signal. A planned shift never clocks
+anyone in.
+
 ## Without signal
 
 Field crews work where there's no coverage. An incident report (with its

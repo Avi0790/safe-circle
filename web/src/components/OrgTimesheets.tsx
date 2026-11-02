@@ -14,6 +14,7 @@ import {
   weekStart,
 } from '../lib/timesheet'
 import { t } from '../lib/i18n'
+import { plannedByWorker, type ScheduleRow } from '../lib/schedule'
 
 // Weekly hours for payroll: a worker-by-day grid with totals and a CSV, the
 // same as the phone's Timesheets screen. Built on org_shifts(), so managers
@@ -21,6 +22,7 @@ import { t } from '../lib/i18n'
 export function OrgTimesheets({ org }: { org: OrgMembership }) {
   const [weeksBack, setWeeksBack] = useState(0)
   const [shifts, setShifts] = useState<CrewShift[]>([])
+  const [planned, setPlanned] = useState<ScheduleRow[]>([])
   const [loaded, setLoaded] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -34,7 +36,11 @@ export function OrgTimesheets({ org }: { org: OrgMembership }) {
         p_days: daysToFetch(start, new Date()),
         p_limit: 500,
       })
+      // planned shifts (migration ...000074); none on an older server
+      const end = new Date(start.getFullYear(), start.getMonth(), start.getDate() + 7)
+      const schedule = await supabase.rpc('org_schedule', { p_org: org.org_id, p_from: start.toISOString(), p_to: end.toISOString() })
       if (cancelled) return
+      setPlanned((schedule.data as ScheduleRow[] | null) ?? [])
       if (rpcError) setError(rpcError.message)
       else {
         setError(null)
@@ -48,6 +54,9 @@ export function OrgTimesheets({ org }: { org: OrgMembership }) {
   }, [org.org_id, start])
 
   const sheet = useMemo(() => buildTimesheet(shifts, start), [shifts, start])
+  const plan = useMemo(() => plannedByWorker(planned), [planned])
+  const hasPlan = plan.size > 0
+  const totalPlanned = [...plan.values()].reduce((a, b) => a + b, 0)
 
   function download() {
     const blob = new Blob([timesheetCsv(sheet, org.name)], { type: 'text/csv;charset=utf-8' })
@@ -92,6 +101,7 @@ export function OrgTimesheets({ org }: { org: OrgMembership }) {
                 </th>
               ))}
               <th scope="col" className="ts-num">{t('Total')}</th>
+              {hasPlan && <th scope="col" className="ts-num">{t('Planned')}</th>}
             </tr>
           </thead>
           <tbody>
@@ -111,6 +121,7 @@ export function OrgTimesheets({ org }: { org: OrgMembership }) {
                   </td>
                 ))}
                 <td className="ts-num ts-total">{hours(r.totalMinutes)}</td>
+                {hasPlan && <td className="ts-num">{plan.has(r.userId) ? hours(plan.get(r.userId)!) : '–'}</td>}
               </tr>
             ))}
           </tbody>
@@ -123,6 +134,7 @@ export function OrgTimesheets({ org }: { org: OrgMembership }) {
                 </td>
               ))}
               <td className="ts-num ts-total">{hours(sheet.totalMinutes)}</td>
+              {hasPlan && <td className="ts-num">{hours(totalPlanned)}</td>}
             </tr>
           </tfoot>
         </table>

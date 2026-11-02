@@ -703,6 +703,24 @@ reaches Spanish speakers in English.
   as it's raised. Tests: `tests/organizations/17_safety_report.sql`
   (11 checks).
 
+## Shift schedules
+
+- **Planned shifts** (`...000074`): `schedule_shift(org, worker, starts,
+  ends, note, job_site)` for owners, admins and the worker's managers: workers
+  only, ending after it starts, at most 16 hours, not already over, no overlap
+  with another of theirs. The worker gets a push ("📅 You have a new shift");
+  `cancel_scheduled_shift()` tells them too. Readable by the worker, owners
+  and admins, and the managers who lead them (`can_see_schedule`).
+- **Planned against actual**: `org_schedule(org, from, to)` pairs each planned
+  shift with the clock-in nearest its start (within 3 hours): *late* is more
+  than 10 minutes after the start, *missed* is no clock-in an hour in.
+- The same migration fixes `org_can_see_worker()`, which answered null, not
+  false, for someone with no role in the organization. That let an outsider
+  through any check written as "refuse unless admin or can see"
+  (`resolve_incident` was one); it now always answers true or false.
+- Tests: `tests/organizations/18_shift_schedules.sql` (21 checks, including
+  that regression).
+
 ## Before a demo
 
 Sample data for presenting, and a check that the live project is ready:
@@ -720,8 +738,9 @@ six fictional workers and a fictional manager, Grace, who leads three of them
 with a trail of positions, and eight weeks of safety history for the Safety
 report and Incidents tabs: eight SOS alerts on shift (seven answered by Grace
 in 2 to 8 minutes, one nobody answered, all resolved), missed check-ins and
-quiet phones, Grace's location views, and six incident reports (two still
-open). It sends no notifications: the past SOS alerts are added before the
+quiet phones, Grace's location views, six incident reports (two still
+open), and a planned schedule from last week to next (one late, one missed)
+for the Schedule tab. It sends no notifications: the past SOS alerts are added before the
 shifts they fall in, so nobody was on shift to be told. Run it on the day:
 shifts close on their own when a phone stops reporting (`close-stale-shifts`),
 so after a few hours nobody is on shift any more.

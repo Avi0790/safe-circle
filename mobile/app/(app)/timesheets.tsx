@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '@/components/Button';
 import { ErrorText } from '@/components/ErrorText';
 import type { CrewShift } from '@/lib/crew';
+import { fetchSchedule, planVsActual, type ScheduleRow } from '@/lib/schedule';
 import { shareTextFile } from '@/lib/shareFile';
 import { supabase } from '@/lib/supabase';
 import { colors, radius, spacing, themed, typography, useThemeVersion } from '@/lib/theme';
@@ -30,6 +31,7 @@ export default function TimesheetsScreen() {
   const name = orgName ? String(orgName) : 'Organization';
   const [weeksBack, setWeeksBack] = useState(0);
   const [shifts, setShifts] = useState<CrewShift[]>([]);
+  const [planned, setPlanned] = useState<ScheduleRow[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [exportError, setExportError] = useState<string | null>(null);
@@ -46,7 +48,10 @@ export default function TimesheetsScreen() {
         p_days: daysToFetch(start, new Date()),
         p_limit: 500,
       });
+      // planned shifts (migration ...000074); none on an older server
+      const schedule = await fetchSchedule(orgId, start, new Date(start.getFullYear(), start.getMonth(), start.getDate() + 7));
       if (cancelled) return;
+      setPlanned(schedule.rows);
       if (rpcError) setError(rpcError.message);
       else setShifts((data as CrewShift[] | null) ?? []);
       setLoaded(true);
@@ -57,6 +62,8 @@ export default function TimesheetsScreen() {
   }, [orgId, start]);
 
   const sheet = useMemo(() => buildTimesheet(shifts, start), [shifts, start]);
+  const plannedFor = (userId?: string) => planVsActual(userId ? planned.filter((p) => p.user_id === userId) : planned);
+  const totalPlan = plannedFor();
 
   async function handleExport() {
     setExportError(null);
@@ -100,6 +107,11 @@ export default function TimesheetsScreen() {
                   ? t('No shifts this week.')
                   : t(sheet.rows.length === 1 ? 'worked by 1 worker' : 'worked by {n} workers', { n: sheet.rows.length })}
               </Text>
+              {totalPlan.shifts > 0 && (
+                <Text style={typography.caption}>
+                  {t('{h} h planned · {late} late · {missed} missed', { h: hours(totalPlan.plannedMinutes), late: totalPlan.late, missed: totalPlan.missed })}
+                </Text>
+              )}
             </View>
 
             {sheet.rows.map((r) => (
@@ -112,6 +124,7 @@ export default function TimesheetsScreen() {
                   {r.shifts.length} {r.shifts.length === 1 ? 'shift' : 'shifts'}
                   {r.onShift ? ' · on shift now, counted up to now' : ''}
                   {r.former ? ' · has left the organization' : ''}
+                  {plannedFor(r.userId).shifts > 0 ? ` · ${t('{h} h planned', { h: hours(plannedFor(r.userId).plannedMinutes) })}` : ''}
                 </Text>
                 <View style={styles.days}>
                   {DAY_LABELS.map((d, i) => (

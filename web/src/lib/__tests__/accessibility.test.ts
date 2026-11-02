@@ -92,7 +92,7 @@ describe('accessibility', () => {
     const light = tokens(css.slice(0, css.indexOf('@media (prefers-color-scheme: dark)')))
     const dark = { ...light, ...tokens(css.slice(css.indexOf('@media (prefers-color-scheme: dark)'))) }
     for (const [theme, t] of Object.entries({ light, dark })) {
-      for (const text of ['text', 'text-h', 'muted', 'warn-text', 'accent', 'danger']) {
+      for (const text of ['text', 'text-h', 'muted', 'warn-text', 'ok-text', 'accent', 'danger']) {
         for (const surface of ['bg', 'bg-elevated']) {
           const ratio = contrast(t[text], t[surface])
           expect({ theme, text, surface, ok: ratio >= 4.5 }).toEqual({ theme, text, surface, ok: true })

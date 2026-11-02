@@ -82,6 +82,7 @@ Safe Circle is one account with two kinds of circle:
 - **Works without signal**: reports and check-ins made in a dead zone are saved on the phone and sent as soon as there's a connection.
 - **Incident reports**: a worker reports a hazard, a near miss or an injury with a note and a photo; the people who oversee them are alerted at once and mark it resolved. The position goes with it only on shift.
 - **Safety report**: week by week on the web dashboard: hours, SOS alerts and how fast someone answered, missed check-ins, quiet phones, incidents and location views, for the whole crew or a manager's teams.
+- **Shift schedules**: owners and managers plan shifts ahead; the worker is notified and their phone reminds them half an hour before, even without signal. Each planned shift is shown against the real clock-in (on time, late, missed), and timesheets show planned against worked hours.
 - **Job-site reminders** that never leave the worker's phone; **timesheets** with a payroll CSV (times only, never places).
 - A **web dashboard** for owners and managers, and a platform view that shows totals only.
 
@@ -114,7 +115,7 @@ flowchart LR
         W["💻 Web dashboard<br/>React + Vite"]
     end
     subgraph Supabase
-        DB[("Postgres<br/>row-level security<br/>71 migrations")]
+        DB[("Postgres<br/>row-level security<br/>74 migrations")]
         AU["Auth + Realtime"]
         CR["11 scheduled jobs<br/>SOS escalation, curfews, timers"]
         EF["Edge Functions<br/>push, AI help, billing"]
@@ -142,10 +143,10 @@ Every push runs the whole suite on GitHub Actions, against a fresh database:
 
 | Suite | What it checks | Size |
 |---|---|---|
-| Database security tests | Who can see whose location, curfews, shifts, SOS, billing, as each kind of user | 24 files, ~480 checks |
+| Database security tests | Who can see whose location, curfews, shifts, SOS, billing, as each kind of user | 27 files, ~540 checks |
 | Load test | 302 people and ~113,000 positions; the crew map answers in ~30 ms | 7 timed checks |
-| Mobile app | Screens, logic, accessibility rules, translations, fall detection | 605 tests |
-| Web dashboard | Logic, accessibility and contrast, translations, the privacy policy | 111 tests |
+| Mobile app | Screens, logic, accessibility rules, translations, fall detection | 634 tests |
+| Web dashboard | Logic, accessibility and contrast, translations, the privacy policy | 121 tests |
 | Notifications | Every alert translated correctly for Spanish speakers | Node tests |
 | Tap-through (Maestro) | Sign-in, tabs, check-in, Spanish, clocking in, on a simulator | 6 flows |
 

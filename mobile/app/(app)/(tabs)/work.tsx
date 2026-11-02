@@ -32,6 +32,7 @@ import { jobSiteRemindersOn, setJobSiteReminders } from '@/lib/jobSiteReminders'
 import { activeOrgs, ORG_DISCLOSURE, type OrgMembership } from '@/lib/orgInfo';
 import { language, t } from '@/lib/i18n';
 import { DEMO_SEAT_OPTIONS, planSummary, seatsFull, workerPlanNotice } from '@/lib/orgPlan';
+import { dayLabel, fetchSchedule, nextShift, timeRange, type ScheduleRow } from '@/lib/schedule';
 import { describeOrgAudit, shiftAutoEndsAt } from '@/lib/shift';
 import { supabase } from '@/lib/supabase';
 import { colors, isDark, themed, useThemeVersion } from '@/lib/theme';
@@ -110,6 +111,7 @@ export default function WorkScreen() {
   const [checkinChoice, setCheckinChoice] = useState<number | null>(null);
   const [siteReminders, setSiteReminders] = useState(false);
   const [siteNote, setSiteNote] = useState<string | null>(null);
+  const [next, setNext] = useState<Record<string, ScheduleRow | null>>({});
 
   useEffect(() => {
     jobSiteRemindersOn().then(setSiteReminders);
@@ -153,6 +155,12 @@ export default function WorkScreen() {
       }),
     );
     setViews(Object.fromEntries(entries));
+    const now = new Date();
+    const ahead = new Date(now.getTime() + 14 * 86_400_000);
+    const upcoming = await Promise.all(
+      workerOrgs.map(async (o) => [o.org_id, nextShift((await fetchSchedule(o.org_id, now, ahead)).rows)] as const),
+    );
+    setNext(Object.fromEntries(upcoming));
   }, [orgs]);
 
   useEffect(() => {
@@ -389,6 +397,25 @@ export default function WorkScreen() {
 
         <Pressable
           accessibilityRole="button"
+          onPress={() => router.push({ pathname: '/schedule', params: { orgId: org.org_id, orgName: org.name } })}
+          style={({ pressed }) => [ui.card, ui.row, pressed && { opacity: 0.8 }]}
+        >
+          <View style={styles.rowIcon}>
+            <Text allowFontScaling={false} style={styles.rowEmoji}>📅</Text>
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={ui.rowTitle}>{t('My schedule')}</Text>
+            <Text style={ui.rowSub}>
+              {next[org.org_id]
+                ? t('Next: {day}, {time}', { day: dayLabel(next[org.org_id]!.starts_at), time: timeRange(next[org.org_id]!.starts_at, next[org.org_id]!.ends_at) })
+                : t('No shifts planned')}
+            </Text>
+          </View>
+          <Text style={styles.chevron}>›</Text>
+        </Pressable>
+
+        <Pressable
+          accessibilityRole="button"
           accessibilityHint={t('Tell the people who oversee you about a hazard, a near miss or an injury.')}
           onPress={() => router.push({ pathname: '/report-incident', params: { orgId: org.org_id } })}
           style={({ pressed }) => [ui.card, ui.row, pressed && { opacity: 0.8 }]}
@@ -487,6 +514,12 @@ export default function WorkScreen() {
             title={t('Timesheets')}
             caption={t('Hours and payroll CSV')}
             onPress={() => router.push({ pathname: '/timesheets', params: { orgId: org.org_id, orgName: org.name } })}
+          />
+          <ActionTile
+            icon="📅"
+            title={t('Schedule')}
+            caption={t('Plan shifts ahead')}
+            onPress={() => router.push({ pathname: '/schedule', params: { orgId: org.org_id, orgName: org.name } })}
           />
           <ActionTile
             icon="📍"

@@ -63,6 +63,10 @@ begin
     select count(*) into workers from public.org_members m
     where m.org_id = org and m.role = 'worker' and m.status = 'active' and m.consented_at is not null;
     msg := msg || pg_temp.check(workers = 6, format('6 demo workers, all consented (%s)', workers), 'run scripts/demo_seed.sql again');
+    if to_regclass('public.scheduled_shifts') is not null then
+      execute 'select count(*) from public.scheduled_shifts where org_id = $1 and starts_at > now()' into n using org;
+      msg := msg || pg_temp.check(n >= 10, format('upcoming planned shifts (%s)', n), 'run scripts/demo_seed.sql again');
+    end if;
 
     select count(*) into sites from public.job_sites where org_id = org;
     msg := msg || pg_temp.check(sites = 2, format('2 job sites (%s)', sites), 'run scripts/demo_seed.sql again');

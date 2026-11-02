@@ -13,6 +13,7 @@
   /* text versions of the amber and grey above, which are too light to read
      on white (4.5:1 is the WCAG AA minimum; these are 5.0 and 4.8) */
   --warn-text: #b45309;
+  --ok-text: #15803d;
   --muted: #6b7280;
   /* chart bars: validated against the light surface (dataviz validator) */
   --chart-bar: #7c3aed;
@@ -36,6 +37,7 @@
     --stale: #fbbf24;
     --offline: #3f4451;
     --warn-text: #fbbf24;
+    --ok-text: #4ade80;
     --muted: #9ca3af;
     /* the accent above is too light for a bar on this surface */
     --chart-bar: #8b5cf6;
@@ -1263,4 +1265,31 @@ button:active:not(:disabled) {
   max-width: 480px;
   border-radius: 12px;
   display: block;
+}
+
+/* Shift schedule */
+.schedule-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.schedule-note {
+  flex: 1 1 220px;
+}
+.schedule-status {
+  font-weight: 700;
+}
+.schedule-muted {
+  color: var(--muted);
+}
+.schedule-good {
+  color: var(--ok-text);
+}
+.schedule-warn {
+  color: var(--warn-text);
+}
+.schedule-danger {
+  color: var(--danger);
 }

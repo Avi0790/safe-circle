@@ -5,9 +5,10 @@
 -- overnight worker), two people on shift right now near Arkansas State with a
 -- trail of positions, and eight weeks of safety history: SOS alerts the
 -- manager answered (and one nobody did), missed check-ins, quiet phones,
--- location views and incident reports. So the crew map, timesheets, the
--- Safety report, Incidents and the Platform tab all have something
--- real-looking to show.
+-- location views and incident reports, and a planned schedule from last
+-- week to next. So the crew map, timesheets, the Schedule, the Safety
+-- report, Incidents and the Platform tab all have something real-looking to
+-- show.
 --
 -- Nothing here sends a notification: the past SOS alerts are added before
 -- the shifts they fall in (so no one was "on shift" to be told) and already
@@ -203,4 +204,33 @@ begin
       t
     );
   end loop;
+  -- the schedule (migration ...000074): last week, this week and next, as
+  -- planned. Most match the real clock-ins; worker 4 was planned half an hour
+  -- before they came in five days ago (late), and worker 5 was planned on a
+  -- day they didn't come (missed). Straight into the table: no notifications.
+  if to_regclass('public.scheduled_shifts') is not null then
+    for d in -7..13 loop
+      day_start := ((current_date - d)::timestamp) at time zone 'America/Chicago';
+      for i in 1..6 loop
+        continue when (i + d) % 6 = 0 and not (i = 5 and d = 1);
+        if d = 0 and i in (1, 2) then
+          shift_in := now() - make_interval(mins => case i when 1 then 195 else 100 end);
+        elsif i = 6 then
+          shift_in := day_start - interval '2 hours';
+        else
+          shift_in := day_start + interval '7 hours' + make_interval(mins => (i % 3) * 30);
+        end if;
+        -- today's that began but aren't in shifts yet (they're added once finished)
+        continue when d = 0 and i not in (1, 2) and shift_in < now() and shift_in + interval '8 hours' > now();
+        if i = 4 and d = 5 then
+          shift_in := shift_in - interval '30 minutes';
+        end if;
+        execute 'insert into public.scheduled_shifts (org_id, user_id, starts_at, ends_at, note, created_by)
+                 values ($1, $2, $3, $4, $5, $6)'
+          using org, ids[i], shift_in, shift_in + interval '8 hours',
+                case when i = 6 then 'Night shift at the yard' end,
+                case when i <= 3 then mgr else owner end;
+      end loop;
+    end loop;
+  end if;
 end $$;
