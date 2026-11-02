@@ -14,6 +14,11 @@ appId: com.surendrabk.safecircle
 - tapOn: "Sign in"    # the button (the screen's title is "Welcome back")
 # a wrong EMAIL or PASSWORD stops here, and the label says why
 - extendedWaitUntil:
-    visible: "Map, tab.*"
+    visible: "Skip"
     timeout: 20000
-    label: "Signed in (if this fails: is EMAIL / PASSWORD a real test account?)"
+    label: "Signed in: the welcome tour (if this fails: is EMAIL / PASSWORD a real test account?)"
+- tapOn: "Skip"       # clearState means a first launch, so the tour always shows
+- extendedWaitUntil:
+    visible: "Map, tab.*"
+    timeout: 10000
+    label: "On the map"

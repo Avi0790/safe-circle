@@ -47,6 +47,7 @@ import {
 } from '@/lib/appearance';
 import { activeOrgs } from '@/lib/orgInfo';
 import { applyLanguagePref, canChooseLanguage, getLanguagePref, LANGUAGE_OPTIONS, t, type LanguagePref } from '@/lib/i18n';
+import { showTourAgain } from '@/lib/tour';
 
 export default function SettingsTab() {
   useThemeVersion(); // redraw on a theme switch (lib/theme.ts)
@@ -881,6 +882,7 @@ export default function SettingsTab() {
           />
           <Button title={t('Ghost mode')} variant="secondary" onPress={() => router.push('/ghost-mode')} />
           <Button title={t('Privacy policy')} variant="secondary" onPress={() => router.push('/privacy-policy')} />
+          <Button title={t('Show the welcome tour')} variant="secondary" onPress={showTourAgain} />
         </View>
 
         <View style={styles.section}>

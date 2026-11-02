@@ -89,6 +89,8 @@ Safe Circle is one account with two kinds of circle:
 - **Job-site reminders** that never leave the worker's phone; **timesheets** with a payroll CSV (times only, never places).
 - A **web dashboard** for owners and managers, and a platform view that shows totals only.
 
+A four-page **welcome tour** on first launch (SOS, work mode, privacy), skippable, and in Settings any time.
+
 ## Privacy and security
 
 The rules live in the database, not just the app: **row-level security on every table** decides who can read what, so they hold even for someone who builds their own client.
@@ -146,10 +148,10 @@ Every push runs the whole suite on GitHub Actions, against a fresh database:
 
 | Suite | What it checks | Size |
 |---|---|---|
-| Database security tests | Who can see whose location, curfews, shifts, SOS, billing, as each kind of user | 27 files, ~540 checks |
+| Database security tests | Who can see whose location, curfews, shifts, SOS, billing, as each kind of user | 30 files, ~600 checks |
 | Load test | 302 people and ~113,000 positions; the crew map answers in ~30 ms | 7 timed checks |
-| Mobile app | Screens, logic, accessibility rules, translations, fall detection | 634 tests |
-| Web dashboard | Logic, accessibility and contrast, translations, the privacy policy | 121 tests |
+| Mobile app | Screens, logic, accessibility rules, translations, fall detection | 655 tests |
+| Web dashboard | Logic, accessibility and contrast, translations, the privacy policy | 124 tests |
 | Notifications | Every alert translated correctly for Spanish speakers | Node tests |
 | Tap-through (Maestro) | Sign-in, tabs, check-in, Spanish, clocking in, on a simulator | 6 flows |
 

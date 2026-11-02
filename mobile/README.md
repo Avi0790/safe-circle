@@ -1007,6 +1007,14 @@ for time off" (first day and how many) or "Can't make it?" under an upcoming
 shift, sees each answer, and can withdraw one still waiting. Owners, admins
 and managers get a "Waiting for you" card with Approve and Decline.
 
+## Welcome tour
+
+Four pages the first time the app opens signed in
+(`components/WelcomeTour.tsx`, `lib/tour.ts`): what Safe Circle is, SOS
+and the timers, work mode, and privacy. Skip at any point; Settings →
+Privacy → "Show the welcome tour" brings it back. The Maestro sign-in flow
+taps Skip, since `clearState` makes every run a first launch.
+
 ## Roll call
 
 Work → Roll call (owners, admins, managers; `app/(app)/roll-call.tsx`): an

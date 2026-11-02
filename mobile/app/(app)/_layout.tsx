@@ -16,6 +16,7 @@ import { LockScreenSync } from '@/components/LockScreenSync';
 import { OutboxSync } from '@/components/OutboxSync';
 import { RollCallPrompt } from '@/components/RollCallPrompt';
 import { ShiftReminderSync } from '@/components/ShiftReminderSync';
+import { WelcomeTour } from '@/components/WelcomeTour';
 import { canEnterApp } from '@/lib/accountType';
 import { announce } from '@/lib/announce';
 import { offerTextForHelp, sendSos } from '@/lib/sos';
@@ -37,6 +38,7 @@ export default function AppLayout() {
               <OutboxSync />
               <ShiftReminderSync />
               <RollCallPrompt />
+              <WelcomeTour />
             </MembersScope>
           </ShakeSettingsProvider>
         </CircleProvider>
