@@ -510,6 +510,12 @@ export default function WorkScreen() {
 
         <View style={ui.tiles}>
           <ActionTile
+            icon="📣"
+            title={t('Roll call')}
+            caption={t('Is everyone OK?')}
+            onPress={() => router.push({ pathname: '/roll-call', params: { orgId: org.org_id, orgName: org.name } })}
+          />
+          <ActionTile
             icon="🕒"
             title={t('Timesheets')}
             caption={t('Hours and payroll CSV')}

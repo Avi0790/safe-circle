@@ -123,7 +123,7 @@ begin
              coalesce(to_char(now() - last_ok, 'HH24"h "MI"m ago"'), 'never')),
       'check cron.job_run_details for its error');
   end loop;
-  msg := msg || pg_temp.check((select count(*) from cron.job) >= 11, format('all scheduled jobs present (%s of 11)', (select count(*) from cron.job)),
+  msg := msg || pg_temp.check((select count(*) from cron.job) >= 12, format('all scheduled jobs present (%s of 12)', (select count(*) from cron.job)),
     'a migration that schedules jobs is missing: supabase db push');
 
   -- ===== push notifications =====

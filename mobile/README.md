@@ -1000,6 +1000,16 @@ notification (`components/ShiftReminderSync.tsx`, kept in step through
 Realtime), so it arrives even without signal. A planned shift never clocks
 anyone in.
 
+## Roll call
+
+Work → Roll call (owners, admins, managers; `app/(app)/roll-call.tsx`): an
+optional message, then "Start roll call" asks everyone you oversee on shift.
+Live tally of safe, need help and no answer, the people who need help first
+with a Map link to where they answered from. Workers get a full-screen
+prompt over whatever screen is open (`components/RollCallPrompt.tsx`) with
+two big buttons, "I'm safe" and "I need help"; with no signal the answer
+waits in the outbox and goes when the connection returns.
+
 ## Without signal
 
 Field crews work where there's no coverage. An incident report (with its

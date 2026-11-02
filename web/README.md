@@ -206,6 +206,12 @@ open and resolved reports with photos (short-lived links) and "Mark
 resolved". Both follow the usual scope: owners and admins see everyone, a
 manager their teams.
 
+## Roll call
+
+**Roll call** (`OrgRollCall.tsx`): start one with an optional message, then a
+live tally and list (Realtime, with a 15-second fallback), the people who
+need help first with a map link, and earlier roll calls with their results.
+
 ## Schedule
 
 **Schedule** (`OrgSchedule.tsx`, `org_schedule`): plan a shift for a worker

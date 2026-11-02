@@ -6,6 +6,7 @@ import { isAdminRole, type OrgMembership } from '../lib/org'
 import { billingReturnNotice } from '../lib/billing'
 import { planSummary } from '../lib/plan'
 import { OrgIncidents } from './OrgIncidents'
+import { OrgRollCall } from './OrgRollCall'
 import { OrgSchedule } from './OrgSchedule'
 import { OrgLive } from './OrgLive'
 import { OrgPeople } from './OrgPeople'
@@ -17,7 +18,7 @@ import { OrgSosBanner } from './OrgSosBanner'
 import { OrgTimesheets } from './OrgTimesheets'
 import { t } from '../lib/i18n'
 
-type Tab = 'live' | 'people' | 'shifts' | 'schedule' | 'timesheets' | 'safety' | 'incidents' | 'plan' | 'settings'
+type Tab = 'live' | 'rollcall' | 'people' | 'shifts' | 'schedule' | 'timesheets' | 'safety' | 'incidents' | 'plan' | 'settings'
 
 // The work view for owners, admins and managers: a live crew map, people and
 // teams (owners/admins), and shift history. Unlike the circle dashboard this
@@ -115,6 +116,7 @@ export function OrgDashboard({
         )}
         <nav className="org-tabs" aria-label={t('Organization')}>
           {tabButton('live', 'Live crew')}
+          {tabButton('rollcall', 'Roll call')}
           {admin && tabButton('people', 'People & teams')}
           {tabButton('shifts', 'Shifts')}
           {tabButton('schedule', 'Schedule')}
@@ -134,6 +136,7 @@ export function OrgDashboard({
         {activeTab === 'shifts' && <OrgShifts key={org.org_id} org={org} />}
         {activeTab === 'timesheets' && <OrgTimesheets key={org.org_id} org={org} />}
         {activeTab === 'safety' && <OrgSafety key={org.org_id} org={org} />}
+        {activeTab === 'rollcall' && <OrgRollCall key={org.org_id} org={org} />}
         {activeTab === 'schedule' && <OrgSchedule key={org.org_id} org={org} />}
         {activeTab === 'incidents' && <OrgIncidents key={org.org_id} org={org} />}
         {activeTab === 'plan' && <OrgPlan key={org.org_id} org={org} onChanged={onOrgsChanged} notice={billingNotice} />}

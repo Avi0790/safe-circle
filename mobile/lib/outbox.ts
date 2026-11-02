@@ -6,10 +6,11 @@ import { checkInNow } from '@/lib/clockIn';
 import { formatClockTime } from '@/lib/format';
 import { t } from '@/lib/i18n';
 import { submitIncident, type IncidentKind } from '@/lib/incidents';
+import { sendAnswer, type RollCallAnswer } from '@/lib/rollCall';
 import { supabase } from '@/lib/supabase';
 
 // Field crews work where there's no signal. An incident report, a check-in
-// to your circle or a work "I'm OK" made with no connection is kept on the
+// to your circle, a work "I'm OK" or a roll-call answer made with no connection is kept on the
 // phone (a report's photo too) and sent, oldest first, as soon as there's a
 // connection again (components/OutboxSync.tsx). Each says it was made
 // without signal and when, so nobody reads a late one as current.
@@ -26,12 +27,19 @@ export type OutboxItem =
       position: { latitude: number; longitude: number } | null;
     })
   | (Base & { type: 'circle_checkin'; circleId: string; latitude: number; longitude: number })
-  | (Base & { type: 'work_checkin' });
+  | (Base & { type: 'work_checkin' })
+  | (Base & {
+      type: 'roll_call_answer';
+      rollCallId: string;
+      answer: RollCallAnswer;
+      position: { latitude: number; longitude: number } | null;
+    });
 
 type NewItem =
   | Omit<Extract<OutboxItem, { type: 'incident' }>, 'id' | 'createdAt'>
   | Omit<Extract<OutboxItem, { type: 'circle_checkin' }>, 'id' | 'createdAt'>
-  | Omit<Extract<OutboxItem, { type: 'work_checkin' }>, 'id' | 'createdAt'>;
+  | Omit<Extract<OutboxItem, { type: 'work_checkin' }>, 'id' | 'createdAt'>
+  | Omit<Extract<OutboxItem, { type: 'roll_call_answer' }>, 'id' | 'createdAt'>;
 
 const KEY = 'safecircle.outbox.v1';
 const PHOTO_DIR = `${FileSystem.documentDirectory ?? ''}outbox/`;
@@ -145,6 +153,11 @@ async function sendOne(item: OutboxItem): Promise<SendOutcome> {
       const result = await checkInNow();
       if (result.ok) return 'sent';
       return isNetworkError(result.reason) ? 'offline' : 'refused';
+    }
+    case 'roll_call_answer': {
+      const result = await sendAnswer(item.rollCallId, item.answer, item.position);
+      if (result.ok) return 'sent';
+      return isNetworkError(result.error) ? 'offline' : 'refused';
     }
   }
 }
@@ -263,4 +276,25 @@ export async function workCheckInOrQueue(): Promise<SendOrQueue> {
     return { ok: true, queued: true };
   }
   return { ok: false, error: result.reason };
+}
+
+// A roll-call answer (lib/rollCall.ts). A late "I'm safe" still counts; one
+// sent after the roll call closed is refused and dropped.
+export async function answerRollCallOrQueue(
+  rollCallId: string,
+  answer: RollCallAnswer,
+  position: { latitude: number; longitude: number } | null,
+): Promise<SendOrQueue> {
+  const item = { type: 'roll_call_answer' as const, rollCallId, answer, position };
+  if (await isOffline()) {
+    await enqueueOutbox(item);
+    return { ok: true, queued: true };
+  }
+  const result = await sendAnswer(rollCallId, answer, position);
+  if (result.ok) return { ok: true, queued: false };
+  if (isNetworkError(result.error)) {
+    await enqueueOutbox(item);
+    return { ok: true, queued: true };
+  }
+  return { ok: false, error: result.error };
 }

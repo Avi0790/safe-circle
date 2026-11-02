@@ -14,6 +14,7 @@ import { CarPlayBridge } from '@/components/CarPlayBridge';
 import { FallCheck } from '@/components/FallCheck';
 import { LockScreenSync } from '@/components/LockScreenSync';
 import { OutboxSync } from '@/components/OutboxSync';
+import { RollCallPrompt } from '@/components/RollCallPrompt';
 import { ShiftReminderSync } from '@/components/ShiftReminderSync';
 import { canEnterApp } from '@/lib/accountType';
 import { announce } from '@/lib/announce';
@@ -35,6 +36,7 @@ export default function AppLayout() {
               <LockScreenSync />
               <OutboxSync />
               <ShiftReminderSync />
+              <RollCallPrompt />
             </MembersScope>
           </ShakeSettingsProvider>
         </CircleProvider>
@@ -89,6 +91,7 @@ function AppNavigator() {
             <Stack.Screen name="crew-manage" options={{ headerShown: true }} />
             <Stack.Screen name="timesheets" options={{ headerShown: true }} />
             <Stack.Screen name="schedule" options={{ headerShown: true }} />
+            <Stack.Screen name="roll-call" options={{ headerShown: true }} />
             <Stack.Screen name="org-settings" options={{ headerShown: true }} />
             <Stack.Screen name="job-sites" options={{ headerShown: true }} />
             <Stack.Screen name="report-incident" options={{ headerShown: true }} />

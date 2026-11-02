@@ -47,12 +47,20 @@ const TITLES: Rule[] = [
     (kind, n) =>
       `⚠️ ${{ Hazard: "Peligro reportado", "Near miss": "Casi accidente reportado", Injury: "Lesión reportada", Incident: "Incidente reportado" }[kind]} por ${n}`,
   ],
+  [/^📣 Roll call: are you safe\?$/, () => "📣 Pase de lista: ¿estás bien?"],
+  [/^📣 Roll call: please answer$/, () => "📣 Pase de lista: por favor responde"],
+  [/^🆘 (.+) needs help \(roll call\)$/, (n) => `🆘 ${n} necesita ayuda (pase de lista)`],
+  [/^⏱️ 1 person hasn't answered the roll call$/, () => "⏱️ 1 persona no ha respondido al pase de lista"],
+  [/^⏱️ (\d+) people haven't answered the roll call$/, (n) => `⏱️ ${n} personas no han respondido al pase de lista`],
   [/^📅 You have a new shift$/, () => "📅 Tienes un turno nuevo"],
   [/^📅 A shift was cancelled$/, () => "📅 Se canceló un turno"],
   [/^(.+) closed$/, (o) => `${o} cerró`], // last: the most general shape
 ];
 
 const BODIES: Rule[] = [
+  [/^Open Safe Circle and tap "I'm safe" or "I need help"\.$/, () => 'Abre Safe Circle y toca "Estoy a salvo" o "Necesito ayuda".'],
+  [/^Open Safe Circle to see where they are\.$/, () => "Abre Safe Circle para ver dónde está."],
+  [/^Open Safe Circle to see who\.$/, () => "Abre Safe Circle para ver quién."],
   [/^Open Safe Circle to see when\.$/, () => "Abre Safe Circle para ver cuándo."],
   [/^Open Safe Circle to see your schedule\.$/, () => "Abre Safe Circle para ver tu horario."],
   [/^They accepted your ride request\.$/, () => "Aceptó tu solicitud de viaje."],

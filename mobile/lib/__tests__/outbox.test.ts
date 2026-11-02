@@ -5,6 +5,7 @@ let mockOnline = true;
 const mockSubmit = jest.fn();
 const mockInsert = jest.fn();
 const mockCheckIn = jest.fn();
+const mockAnswer = jest.fn();
 const mockCopied: string[] = [];
 const mockDeleted: string[] = [];
 
@@ -27,12 +28,14 @@ jest.mock('expo-location', () => ({
   getCurrentPositionAsync: async () => ({ coords: { latitude: 35.8, longitude: -90.7 } }),
 }));
 jest.mock('@/lib/incidents', () => ({ submitIncident: (...a: unknown[]) => mockSubmit(...a) }));
+jest.mock('@/lib/rollCall', () => ({ sendAnswer: (...a: unknown[]) => mockAnswer(...a) }));
 jest.mock('@/lib/clockIn', () => ({ checkInNow: (...a: unknown[]) => mockCheckIn(...a) }));
 jest.mock('@/lib/supabase', () => ({
   supabase: { from: () => ({ insert: (...a: unknown[]) => mockInsert(...a) }) },
 }));
 
 import {
+  answerRollCallOrQueue,
   circleCheckInOrQueue,
   flushOutbox,
   isNetworkError,
@@ -49,6 +52,7 @@ beforeEach(async () => {
   mockSubmit.mockReset();
   mockInsert.mockReset();
   mockCheckIn.mockReset();
+  mockAnswer.mockReset();
   mockCopied.length = 0;
   mockDeleted.length = 0;
 });
@@ -123,4 +127,22 @@ it('tells a network failure from a refusal', () => {
   expect(isNetworkError('TypeError: Network request failed')).toBe(true);
   expect(isNetworkError('Failed to fetch')).toBe(true);
   expect(isNetworkError('Say what happened.')).toBe(false);
+});
+
+describe('roll call', () => {
+  it('"I\'m safe" in a dead zone is kept with its position and sent when signal returns', async () => {
+    mockOnline = false;
+    expect(await answerRollCallOrQueue('rc1', 'safe', { latitude: 35.8, longitude: -90.7 })).toEqual({ ok: true, queued: true });
+    expect(mockAnswer).not.toHaveBeenCalled();
+    mockOnline = true;
+    mockAnswer.mockResolvedValue({ ok: true });
+    expect(await flushOutbox()).toEqual({ sent: 1, refused: 0 });
+    expect(mockAnswer).toHaveBeenCalledWith('rc1', 'safe', { latitude: 35.8, longitude: -90.7 });
+  });
+
+  it('an answer to a roll call that has closed is shown, not kept', async () => {
+    mockAnswer.mockResolvedValue({ ok: false, error: 'That roll call is closed.' });
+    expect(await answerRollCallOrQueue('rc1', 'help', null)).toEqual({ ok: false, error: 'That roll call is closed.' });
+    expect(await pendingItems()).toEqual([]);
+  });
 });

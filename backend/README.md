@@ -721,6 +721,21 @@ reaches Spanish speakers in English.
 - Tests: `tests/organizations/18_shift_schedules.sql` (21 checks, including
   that regression).
 
+## Roll call
+
+- **Roll call** (`...000075`): `start_roll_call(org, note)` for owners,
+  admins and managers asks every worker they oversee who is on shift right
+  now (`org_roll_call_members`, a snapshot) and pushes them. Off shift, nobody
+  is asked: work can't see you then. `answer_roll_call(id, 'safe' | 'help',
+  lat, lng)`; "help" pushes the worker's overseers and the starter once.
+  `escalate_roll_calls()` (every minute) asks the silent again after five
+  minutes and tells the starter and their overseers how many are left; a roll
+  call closes after two hours or with `close_roll_call()`. Read through
+  `org_roll_calls_list()` (tallies) and `roll_call_status()` (answers, the
+  people needing help first); both tables are in Realtime for live tallies.
+  Answers and planned shifts are added to "Download my data".
+- Tests: `tests/organizations/19_roll_calls.sql` (30 checks).
+
 ## Before a demo
 
 Sample data for presenting, and a check that the live project is ready:

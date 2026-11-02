@@ -233,4 +233,17 @@ begin
       end loop;
     end loop;
   end if;
+  -- a roll call last Tuesday during a storm warning (migration ...000075):
+  -- everyone on shift answered safe within a few minutes, closed by Grace
+  if to_regclass('public.org_roll_calls') is not null then
+    t := ((current_date - 6)::timestamp at time zone 'America/Chicago') + interval '13 hours';
+    execute 'insert into public.org_roll_calls (org_id, started_by, note, created_at, escalated_at, closed_at)
+             values ($1, $2, $3, $4, $4 + interval ''5 minutes'', $4 + interval ''20 minutes'') returning id'
+      into o using org, mgr, 'Tornado warning. Get inside and check in.', t;
+    for i in 1..5 loop
+      execute 'insert into public.org_roll_call_members (roll_call_id, user_id, answer, answered_at)
+               values ($1, $2, $3, $4)'
+        using o, ids[i], 'safe', t + make_interval(mins => i + 1);
+    end loop;
+  end if;
 end $$;

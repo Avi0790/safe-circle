@@ -1293,3 +1293,12 @@ button:active:not(:disabled) {
 .schedule-danger {
   color: var(--danger);
 }
+
+/* Roll call */
+.rollcall-note {
+  flex: 1 1 260px;
+}
+.rollcall-help td {
+  color: var(--danger);
+  font-weight: 700;
+}
