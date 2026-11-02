@@ -195,3 +195,80 @@ export async function syncShiftReminders(reminders: Reminder[]): Promise<void> {
     console.warn('[schedule] could not set shift reminders:', err);
   }
 }
+
+// ---- time off and "I can't make this shift" (migration ...000077) ----
+
+export type RequestStatus = 'pending' | 'approved' | 'declined' | 'withdrawn';
+
+export interface ShiftRequest {
+  id: string;
+  user_id: string;
+  worker_name: string | null;
+  kind: 'time_off' | 'drop';
+  starts_at: string;
+  ends_at: string;
+  note: string | null;
+  status: RequestStatus;
+  decided_by_name: string | null;
+  decided_at: string | null;
+  created_at: string;
+  can_decide: boolean;
+}
+
+export const TIME_OFF_DAYS = [1, 2, 3, 5, 7, 14];
+
+const REQUEST_STATUS: Record<RequestStatus, string> = {
+  pending: 'Waiting for an answer',
+  approved: 'Approved',
+  declined: 'Declined',
+  withdrawn: 'Withdrawn',
+};
+export const requestStatusLabel = (s: string) => REQUEST_STATUS[s as RequestStatus] ?? s;
+
+// Whole local days: from midnight on the first to midnight after the last.
+export function timeOffSpan(firstDay: Date, days: number) {
+  const from = new Date(firstDay.getFullYear(), firstDay.getMonth(), firstDay.getDate());
+  return { from, to: new Date(from.getFullYear(), from.getMonth(), from.getDate() + days) };
+}
+
+// "Tue, Nov 3 – Thu, Nov 5" for time off (the last day, not the midnight
+// after it), "Tue, Nov 3, 7:00 AM – 3:00 PM" for a shift.
+export function requestWhen(r: Pick<ShiftRequest, 'kind' | 'starts_at' | 'ends_at'>): string {
+  if (r.kind === 'drop') return `${dayLabel(r.starts_at)}, ${timeRange(r.starts_at, r.ends_at)}`;
+  const last = new Date(new Date(r.ends_at).getTime() - 1);
+  const first = dayLabel(r.starts_at);
+  return first === dayLabel(last) ? first : `${first} – ${dayLabel(last)}`;
+}
+
+type Result = { ok: true } | { ok: false; error: string };
+const done = (error: { message: string } | null): Result => (error ? { ok: false, error: error.message } : { ok: true });
+
+export async function fetchShiftRequests(orgId: string) {
+  const { data, error } = await supabase.rpc('org_shift_requests', { p_org: orgId, p_pending_only: false });
+  return { rows: (data as ShiftRequest[] | null) ?? [], error: error?.message ?? null };
+}
+
+export async function requestTimeOff(orgId: string, from: Date, to: Date, note: string): Promise<Result> {
+  const { error } = await supabase.rpc('request_time_off', {
+    p_org: orgId,
+    p_from: from.toISOString(),
+    p_to: to.toISOString(),
+    p_note: note.trim() || null,
+  });
+  return done(error);
+}
+
+export async function requestShiftDrop(shiftId: string, note = ''): Promise<Result> {
+  const { error } = await supabase.rpc('request_shift_drop', { p_shift: shiftId, p_note: note.trim() || null });
+  return done(error);
+}
+
+export async function decideShiftRequest(id: string, approve: boolean): Promise<Result> {
+  const { error } = await supabase.rpc('decide_shift_request', { p_id: id, p_approve: approve });
+  return done(error);
+}
+
+export async function withdrawShiftRequest(id: string): Promise<Result> {
+  const { error } = await supabase.rpc('withdraw_shift_request', { p_id: id });
+  return done(error);
+}

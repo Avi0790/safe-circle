@@ -12,6 +12,9 @@ import * as Notifications from 'expo-notifications';
 import {
   nextShift,
   planVsActual,
+  requestStatusLabel,
+  requestWhen,
+  timeOffSpan,
   REMIND_BEFORE_MS,
   shiftReminders,
   shiftTimes,
@@ -133,3 +136,23 @@ describe('planning helpers', () => {
     expect(statusInfo('nonsense').label).toBe('Upcoming');
   });
 });
+
+describe('time off and shift requests', () => {
+  it('time off is whole local days', () => {
+    const { from, to } = timeOffSpan(new Date(2026, 10, 3, 15, 20), 3);
+    expect([from.getDate(), from.getHours(), to.getDate(), to.getHours()]).toEqual([3, 0, 6, 0]);
+  });
+
+  it('says the last day off, not the midnight after it', () => {
+    const { from, to } = timeOffSpan(new Date(2026, 10, 3), 3);
+    expect(requestWhen({ kind: 'time_off', starts_at: from.toISOString(), ends_at: to.toISOString() })).toBe('Tue, Nov 3 – Thu, Nov 5');
+    const one = timeOffSpan(new Date(2026, 10, 3), 1);
+    expect(requestWhen({ kind: 'time_off', starts_at: one.from.toISOString(), ends_at: one.to.toISOString() })).toBe('Tue, Nov 3');
+  });
+
+  it('names each status', () => {
+    expect(requestStatusLabel('pending')).toBe('Waiting for an answer');
+    expect(requestStatusLabel('approved')).toBe('Approved');
+  });
+});
+

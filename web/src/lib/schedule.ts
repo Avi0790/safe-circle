@@ -78,3 +78,31 @@ export function shiftFromInputs(date: string, time: string, lengthHours: number)
 
 const pad = (n: number) => String(n).padStart(2, '0')
 export const dateInput = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+
+// Time off and "can't make this shift" (migration ...000077).
+export interface ShiftRequest {
+  id: string
+  user_id: string
+  worker_name: string | null
+  kind: 'time_off' | 'drop'
+  starts_at: string
+  ends_at: string
+  note: string | null
+  status: 'pending' | 'approved' | 'declined' | 'withdrawn'
+  decided_by_name: string | null
+  decided_at: string | null
+  created_at: string
+  can_decide: boolean
+}
+
+// Time off by its days (the last day, not the midnight after); a shift by
+// its day and hours.
+export function requestWhen(
+  r: Pick<ShiftRequest, 'kind' | 'starts_at' | 'ends_at'>,
+  day: (iso: string) => string,
+  clock: (iso: string) => string,
+): string {
+  if (r.kind === 'drop') return `${day(r.starts_at)}, ${clock(r.starts_at)} – ${clock(r.ends_at)}`
+  const last = new Date(new Date(r.ends_at).getTime() - 1).toISOString()
+  return day(r.starts_at) === day(last) ? day(r.starts_at) : `${day(r.starts_at)} – ${day(last)}`
+}

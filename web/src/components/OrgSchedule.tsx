@@ -6,6 +6,7 @@ import { formatClockTime } from '../lib/format'
 import { t } from '../lib/i18n'
 import { byDay, dateInput, planVsActual, SHIFT_LENGTHS, shiftFromInputs, statusInfo, type ScheduleRow } from '../lib/schedule'
 import { hours, weekLabel, weekStart } from '../lib/timesheet'
+import { OrgShiftRequests } from './OrgShiftRequests'
 
 // Plan shifts ahead (migration ...000074) and see each against the real
 // clock-in: upcoming, on time, late, missed or worked. Managers plan only the
@@ -100,6 +101,8 @@ export function OrgSchedule({ org }: { org: OrgMembership }) {
           {t('Later ›')}
         </button>
       </div>
+
+      <OrgShiftRequests orgId={org.org_id} onChanged={load} />
 
       <form className="org-card schedule-form" onSubmit={plan}>
         <h3>{t('Plan a shift')}</h3>

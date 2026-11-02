@@ -736,6 +736,19 @@ reaches Spanish speakers in English.
   Answers and planned shifts are added to "Download my data".
 - Tests: `tests/organizations/19_roll_calls.sql` (30 checks).
 
+## Time off and shift requests
+
+- `request_time_off(org, from, to, note)` (workers, up to 60 days) and
+  `request_shift_drop(scheduled_shift, note)` (your own planned shift, before
+  it starts, one question at a time) push the worker's overseers
+  (`...000077`). `decide_shift_request(id, approve)` for owners, admins and
+  the managers who lead them: approving a shift request deletes that planned
+  shift; approving time off deletes the planned shifts inside it, and
+  `schedule_shift()` refuses to plan over approved time off. The worker is
+  pushed either way; `withdraw_shift_request()` while it's pending.
+  `org_shift_requests(org, pending_only)`; in "Download my data". Tests:
+  `tests/organizations/21_shift_requests.sql` (19 checks).
+
 ## Weather warnings on shift
 
 - `report_weather_risk(kind, level, feels_like_f, gust_mph)` (`...000076`):

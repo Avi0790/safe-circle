@@ -288,4 +288,12 @@ export const es: Record<string, string> = {
   "❄️ {name}: cold, feels like {f}°F": "❄️ {name}: frío, sensación de {f}°F",
   "⛈️ {name}: thunderstorm": "⛈️ {name}: tormenta eléctrica",
   "💨 {name}: gusts of {g} mph": "💨 {name}: ráfagas de {g} mph",
+  "Waiting for you ({n})": "Esperando tu respuesta ({n})",
+  "Time off": "Tiempo libre",
+  "Can't make this shift": "No puede cubrir este turno",
+  "Decline": "Rechazar",
+  "Approve": "Aprobar",
+  "Request not found.": "No se encontró la solicitud.",
+  "That request has already been answered.": "Esa solicitud ya fue respondida.",
+  "They have approved time off then.": "Tiene tiempo libre aprobado en ese horario.",
 }

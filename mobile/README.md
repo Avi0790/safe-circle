@@ -1000,6 +1000,13 @@ notification (`components/ShiftReminderSync.tsx`, kept in step through
 Realtime), so it arrives even without signal. A planned shift never clocks
 anyone in.
 
+## Time off and shift changes
+
+On the Schedule screen (`components/ShiftRequests.tsx`), a worker taps "Ask
+for time off" (first day and how many) or "Can't make it?" under an upcoming
+shift, sees each answer, and can withdraw one still waiting. Owners, admins
+and managers get a "Waiting for you" card with Approve and Decline.
+
 ## Roll call
 
 Work → Roll call (owners, admins, managers; `app/(app)/roll-call.tsx`): an

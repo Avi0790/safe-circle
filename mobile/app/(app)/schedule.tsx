@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '@/components/Button';
 import { ErrorText } from '@/components/ErrorText';
 import { TextField } from '@/components/TextField';
+import { ShiftRequests } from '@/components/ShiftRequests';
 import { Card, Chip, SectionTitle, ui } from '@/components/ui/AppUI';
 import { useAccount } from '@/contexts/AccountContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -18,6 +19,7 @@ import {
   fetchSchedule,
   NOTE_MAX,
   planShift,
+  requestShiftDrop,
   planVsActual,
   SHIFT_LENGTHS,
   shiftTimes,
@@ -49,6 +51,7 @@ export default function ScheduleScreen() {
   const [workers, setWorkers] = useState<RosterMember[]>([]);
   const [planning, setPlanning] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [requestsVersion, setRequestsVersion] = useState(0);
 
   const start = useMemo(() => weekStart(new Date(), weeksBack), [weeksBack]);
   const end = useMemo(() => new Date(start.getFullYear(), start.getMonth(), start.getDate() + 7), [start]);
@@ -87,6 +90,25 @@ export default function ScheduleScreen() {
     }
     return [...groups.entries()];
   }, [mine]);
+
+  function askToDrop(r: ScheduleRow) {
+    Alert.alert(t("Can't make this shift?"), `${dayLabel(r.starts_at)}, ${timeRange(r.starts_at, r.ends_at)}`, [
+      { text: t('Keep it'), style: 'cancel' },
+      {
+        text: t('Ask to be taken off'),
+        onPress: async () => {
+          setBusyId(r.id);
+          const result = await requestShiftDrop(r.id);
+          setBusyId(null);
+          if (!result.ok) setError(t(result.error));
+          else {
+            announce(t('Asked. Your managers have been told.'));
+            setRequestsVersion((v) => v + 1);
+          }
+        },
+      },
+    ]);
+  }
 
   function confirmCancel(r: ScheduleRow) {
     Alert.alert(
@@ -150,6 +172,15 @@ export default function ScheduleScreen() {
           </View>
         )}
 
+        {orgId && (
+          <ShiftRequests
+            orgId={orgId}
+            overseer={overseer}
+            version={requestsVersion}
+            onChanged={() => load()}
+          />
+        )}
+
         {overseer && !planning && (
           <Button title={t('Plan a shift')} onPress={() => setPlanning(true)} disabled={workers.length === 0} />
         )}
@@ -206,6 +237,11 @@ export default function ScheduleScreen() {
                       hitSlop={8}
                     >
                       <Text style={styles.cancel}>{t('Cancel shift')}</Text>
+                    </Pressable>
+                  )}
+                  {!overseer && new Date(r.starts_at).getTime() > Date.now() && (
+                    <Pressable accessibilityRole="button" onPress={() => askToDrop(r)} disabled={busyId === r.id} hitSlop={8}>
+                      <Text style={styles.askOff}>{t("Can't make it?")}</Text>
                     </Pressable>
                   )}
                 </View>
@@ -321,6 +357,7 @@ const styles = themed(() => StyleSheet.create({
   shiftRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   dot: { width: 10, height: 10, borderRadius: 5 },
   cancel: { color: colors.danger, fontWeight: '700', fontSize: 14, marginTop: spacing.xs },
+  askOff: { color: colors.accent, fontWeight: '700', fontSize: 14, marginTop: spacing.xs },
   label: { fontSize: 13, fontWeight: '700', color: colors.textHeading, marginTop: spacing.xs },
   stepper: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   stepperText: { fontSize: 20, fontWeight: '700', color: colors.textHeading, minWidth: 100, textAlign: 'center' },

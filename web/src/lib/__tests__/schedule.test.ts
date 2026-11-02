@@ -1,4 +1,4 @@
-import { byDay, dateInput, plannedByWorker, planVsActual, shiftFromInputs, statusInfo, type ScheduleRow } from '../schedule'
+import { byDay, dateInput, plannedByWorker, planVsActual, requestWhen, shiftFromInputs, statusInfo, type ScheduleRow } from '../schedule'
 
 const now = Date.parse('2026-11-02T12:00:00Z')
 const at = (h: number) => new Date(now + h * 3_600_000).toISOString()
@@ -42,5 +42,18 @@ describe('schedule', () => {
   it('treats an unknown status as upcoming', () => {
     expect(statusInfo('missed').tone).toBe('danger')
     expect(statusInfo('??').label).toBe('Upcoming')
+  })
+})
+
+describe('requestWhen', () => {
+  const day = (iso: string) => new Date(iso).toDateString().slice(0, 10)
+  const clock = (iso: string) => `${new Date(iso).getHours()}h`
+  it('says the last day off, and a shift by its hours', () => {
+    const from = new Date(2026, 10, 3)
+    const to = new Date(2026, 10, 6)
+    expect(requestWhen({ kind: 'time_off', starts_at: from.toISOString(), ends_at: to.toISOString() }, day, clock)).toBe('Tue Nov 03 – Thu Nov 05')
+    const s = new Date(2026, 10, 3, 7)
+    const e = new Date(2026, 10, 3, 15)
+    expect(requestWhen({ kind: 'drop', starts_at: s.toISOString(), ends_at: e.toISOString() }, day, clock)).toBe('Tue Nov 03, 7h – 15h')
   })
 })

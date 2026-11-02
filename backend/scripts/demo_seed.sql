@@ -254,4 +254,16 @@ begin
              from public.shifts where user_id = $1 and clocked_out_at is null'
       using ids[1];
   end if;
+  -- two requests waiting for an answer (migration ...000077): Aisha asks for
+  -- next Friday and Saturday off; Luis can't make his next shift
+  if to_regclass('public.shift_requests') is not null then
+    execute 'insert into public.shift_requests (org_id, user_id, kind, starts_at, ends_at, note, created_at)
+             values ($1, $2, ''time_off'', $3, $3 + interval ''2 days'', ''Family wedding'', now() - interval ''3 hours'')'
+      using org, ids[4], ((current_date + (11 - extract(isodow from current_date)::int) % 7 + 1)::timestamp at time zone 'America/Chicago');
+    execute 'insert into public.shift_requests (org_id, user_id, kind, starts_at, ends_at, scheduled_shift_id, note, created_at)
+             select org_id, user_id, ''drop'', starts_at, ends_at, id, ''Doctor appointment'', now() - interval ''1 hour''
+             from public.scheduled_shifts where user_id = $1 and starts_at > now() + interval ''1 day''
+             order by starts_at limit 1'
+      using ids[3];
+  end if;
 end $$;

@@ -78,6 +78,7 @@ Safe Circle is one account with two kinds of circle:
 - Workers **clock in** after reading a plain-language disclosure of exactly what their employer can see; any change has to be accepted again.
 - Managers see a **live crew map** only of people on shift, only of the teams they lead. Shifts end by themselves after 14 hours.
 - **Roll call**: in a storm, a fire alarm or an evacuation, a manager asks "Is everyone OK?" and every worker on shift gets a full-screen "I'm safe" / "I need help". A live tally shows who's answered; "I need help" alerts the managers at once with where they are, and anyone silent after 5 minutes is asked again.
+- **Time off and shift changes**: a worker asks for time off or says they can't make a planned shift; their manager approves or declines and the worker is told. Approved time off takes them off those shifts and can't be planned over.
 - **Heat, cold, storm and wind warnings**: while a worker is on shift, their phone checks the weather where they are; dangerous heat (OSHA's heat-index bands), wind chill, thunderstorms or strong gusts warn the worker and give their managers a heads-up, once per shift for each risk.
 - Optional **check-ins**: a missed one alerts the managers. A phone that goes **quiet** for about 20 minutes on shift alerts them too.
 - Every time a manager looks at a worker's location, the worker sees it in **"Who's looked at you"**.
@@ -117,7 +118,7 @@ flowchart LR
         W["💻 Web dashboard<br/>React + Vite"]
     end
     subgraph Supabase
-        DB[("Postgres<br/>row-level security<br/>76 migrations")]
+        DB[("Postgres<br/>row-level security<br/>77 migrations")]
         AU["Auth + Realtime"]
         CR["12 scheduled jobs<br/>SOS escalation, curfews, timers"]
         EF["Edge Functions<br/>push, AI help, billing"]

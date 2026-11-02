@@ -211,6 +211,11 @@ manager their teams.
 The Live crew tab lists today's heat, cold, storm and wind warnings from the
 phones of workers on shift (`OrgWeatherAlerts.tsx`, `org_weather_alerts`).
 
+## Time off and shift changes
+
+The Schedule tab shows time off and shift requests waiting for an answer
+(`OrgShiftRequests.tsx`), with Approve and Decline.
+
 ## Roll call
 
 **Roll call** (`OrgRollCall.tsx`): start one with an optional message, then a
