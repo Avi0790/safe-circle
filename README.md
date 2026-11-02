@@ -182,6 +182,7 @@ You need Node 22+, the [Supabase CLI](https://supabase.com/docs/guides/cli), and
 cd backend
 supabase db query --linked -f scripts/demo_seed.sql   # a demo crew with workers on shift
 scripts/demo_check.sh                                 # READY, or what to fix first
+scripts/demo_roll_call.sh                             # live roll call: start one, the demo crew answers
 supabase db query --linked -f scripts/demo_reset.sql  # remove the demo data afterwards
 ```
 

@@ -784,6 +784,12 @@ shifts they fall in, so nobody was on shift to be told. Run it on the day:
 shifts close on their own when a phone stops reporting (`close-stale-shifts`),
 so after a few hours nobody is on shift any more.
 
+`demo_roll_call.sh` is for showing a roll call live: it puts all six demo
+workers on shift (`demo_roll_call_prep.sql`), waits for you to start a roll
+call as the owner, then answers as the demo workers over about half a
+minute: four safe, Aisha "I need help" (a real push to you), and Priya
+silent, so the five-minute escalation can be shown too.
+
 `demo_check.sh` runs `scripts/demo_check.sql` (the demo data, that every
 scheduled job ran recently and succeeded, that push requests are getting
 through, and privacy: row level security on every table, nothing readable
