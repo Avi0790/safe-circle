@@ -3,8 +3,9 @@
 --
 -- Demo people are recognised by their email domain (demo.safecircle.invalid,
 -- which can never be a real address); the demo organization by its name and
--- by having demo people in it. Deleting the demo accounts deletes their
--- profiles, locations and memberships with them.
+-- by having demo people in it. Deleting the organization takes its teams,
+-- incident reports, safety log and audit with it; deleting the demo accounts
+-- takes their profiles, locations, SOS alerts and memberships.
 do $$
 declare
   o uuid;

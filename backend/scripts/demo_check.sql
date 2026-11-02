@@ -87,6 +87,22 @@ begin
 
     select m.user_id into maya from public.org_members m join auth.users u on u.id = m.user_id
     where m.org_id = org and u.email = 'demo.maya@demo.safecircle.invalid';
+
+    -- the safety history the Safety report and Incidents tabs show
+    msg := msg || pg_temp.check(
+      exists (select 1 from public.org_members m join auth.users u on u.id = m.user_id
+              where m.org_id = org and m.role = 'manager' and u.email = 'demo.grace@demo.safecircle.invalid'),
+      'a demo manager (Grace) leads a team', 'run scripts/demo_seed.sql again');
+    select count(*) into n from public.shifts where org_id = org and clocked_in_at < now() - interval '42 days';
+    msg := msg || pg_temp.check(n > 0, 'eight weeks of shifts for the Safety report', 'run scripts/demo_seed.sql again');
+    select count(*) into n from public.sos_events e join public.org_members m on m.user_id = e.user_id and m.org_id = org;
+    msg := msg || pg_temp.check(n >= 8, format('past SOS alerts on shift (%s)', n), 'run scripts/demo_seed.sql again');
+    msg := msg || pg_temp.check(
+      not exists (select 1 from public.sos_events e join public.org_members m on m.user_id = e.user_id and m.org_id = org where e.resolved_at is null),
+      'no demo SOS is still active (no red banner)', 'run scripts/demo_reset.sql, then demo_seed.sql');
+    select count(*) into n from public.incident_reports where org_id = org;
+    msg := msg || pg_temp.check(n >= 6, format('incident reports (%s, %s open)', n,
+      (select count(*) from public.incident_reports where org_id = org and status = 'open')), 'run scripts/demo_seed.sql again');
   end if;
 
   -- ===== the scheduled jobs =====

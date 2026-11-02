@@ -714,11 +714,17 @@ supabase db query --linked -f scripts/demo_reset.sql  # remove the demo data aft
 ```
 
 `demo_seed.sql` adds a "Demo Crew" organization owned by the platform owner:
-six fictional workers (`@demo.safecircle.invalid`, no password, nobody can sign
-in as them), a paid 10-seat plan, two job sites, nine days of shifts, and two
-workers on shift with a trail of positions. Run it on the day: shifts close on
-their own when a phone stops reporting (`close-stale-shifts`), and the demo
-"phones" stop once seeded, so after a few hours nobody is on shift any more.
+six fictional workers and a fictional manager, Grace, who leads three of them
+(`@demo.safecircle.invalid`, no password, nobody can sign in as them), a paid
+10-seat plan, two job sites, eight weeks of shifts, two workers on shift now
+with a trail of positions, and eight weeks of safety history for the Safety
+report and Incidents tabs: eight SOS alerts on shift (seven answered by Grace
+in 2 to 8 minutes, one nobody answered, all resolved), missed check-ins and
+quiet phones, Grace's location views, and six incident reports (two still
+open). It sends no notifications: the past SOS alerts are added before the
+shifts they fall in, so nobody was on shift to be told. Run it on the day:
+shifts close on their own when a phone stops reporting (`close-stale-shifts`),
+so after a few hours nobody is on shift any more.
 
 `demo_check.sh` runs `scripts/demo_check.sql` (the demo data, that every
 scheduled job ran recently and succeeded, that push requests are getting
