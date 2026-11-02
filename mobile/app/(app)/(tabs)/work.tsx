@@ -3,6 +3,7 @@ import { Alert, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 're
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '@/components/Button';
+import { OutboxBanner } from '@/components/OutboxBanner';
 import { SosBanner } from '@/components/SosBanner';
 import { SosButton } from '@/components/SosButton';
 import { ErrorText } from '@/components/ErrorText';
@@ -24,7 +25,8 @@ import { useAccount } from '@/contexts/AccountContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useActiveSosEvents } from '@/hooks/useActiveSosEvents';
 import { announce } from '@/lib/announce';
-import { checkInNow, clockInTo, clockOutOf } from '@/lib/clockIn';
+import { clockInTo, clockOutOf } from '@/lib/clockIn';
+import { workCheckInOrQueue } from '@/lib/outbox';
 import { formatClockTime, timeAgo } from '@/lib/format';
 import { jobSiteRemindersOn, setJobSiteReminders } from '@/lib/jobSiteReminders';
 import { activeOrgs, ORG_DISCLOSURE, type OrgMembership } from '@/lib/orgInfo';
@@ -224,10 +226,14 @@ export default function WorkScreen() {
   async function handleCheckIn(org: OrgMembership) {
     setError(null);
     setBusyOrg(org.org_id);
-    const result = await checkInNow();
+    // with no signal it's kept on the phone and sent later (lib/outbox.ts)
+    const result = await workCheckInOrQueue();
     setBusyOrg(null);
     if (!result.ok) {
-      setError(result.reason);
+      setError(result.error);
+    } else if (result.queued) {
+      setNotice(t("No signal: your check-in is sent as soon as you're back online."));
+      announce(t('Saved on your phone'));
     } else {
       announce(t('Checked in'));
     }
@@ -611,6 +617,7 @@ export default function WorkScreen() {
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       <SosBanner events={sosEvents} onChanged={refreshSos} />
       <ScrollView contentContainerStyle={[styles.content, hasWorker && { paddingBottom: 120 }]}>
+        <OutboxBanner />
         <View>
           <Text style={styles.date}>{todayLabel(now)}</Text>
           <Text maxFontSizeMultiplier={1.3} style={styles.title} accessibilityRole="header">{t('Work')}</Text>

@@ -17,9 +17,9 @@ import {
   incidentKindInfo,
   NOTE_MAX,
   pickIncidentPhoto,
-  submitIncident,
   type IncidentKind,
 } from '@/lib/incidents';
+import { reportIncidentOrQueue } from '@/lib/outbox';
 import { supabase } from '@/lib/supabase';
 import { colors, radius, spacing, themed, typography, useThemeVersion } from '@/lib/theme';
 
@@ -90,15 +90,23 @@ export default function ReportIncidentScreen() {
         // sent without a position rather than not at all
       }
     }
-    const result = await submitIncident({ orgId, userId: session.user.id, kind, note, photoUri, position });
+    // with no signal it's kept on the phone and sent later (lib/outbox.ts)
+    const result = await reportIncidentOrQueue({ orgId, userId: session.user.id, kind, note, photoUri, position });
     setBusy(false);
     if (!result.ok) {
       setError(t(result.error));
       return;
     }
-    announce(t('Report sent'));
     setNote('');
     setPhotoUri(null);
+    if (result.queued) {
+      announce(t('Saved on your phone'));
+      Alert.alert(t('Saved on your phone'), t("There's no signal right now. Your report is sent as soon as you're back online."), [
+        { text: t('Done'), onPress: () => router.back() },
+      ]);
+      return;
+    }
+    announce(t('Report sent'));
     await load();
     Alert.alert(t('Report sent'), t('The people who oversee you have been told.'), [
       { text: t('Done'), onPress: () => router.back() },

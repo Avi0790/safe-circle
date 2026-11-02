@@ -987,6 +987,19 @@ the people who oversee the reporter at once and decides who can read it
 and a "Mark resolved" button. Photos go to a private bucket, resized to
 1280 px, under `<org>/<you>/`.
 
+## Without signal
+
+Field crews work where there's no coverage. An incident report (with its
+photo), a check-in to your circle and a work "I'm OK" made with no
+connection are kept on the phone (`lib/outbox.ts`) and sent, oldest first,
+the moment the connection comes back, when the app reopens, or when you tap
+the "📶 waiting for signal" banner on the Map and Work tabs
+(`components/OutboxSync.tsx`, `OutboxBanner.tsx`). Each one sent late says
+when it was really made. Something the server refuses (say, you've since left
+the organization) is dropped instead of retried forever. Location updates
+already worked this way (`lib/locationQueue.ts`); an SOS with no internet
+offers a text message instead.
+
 ## Lock screen (Live Activities)
 
 Walk me home, Check on me and your shift appear on the lock screen and in the

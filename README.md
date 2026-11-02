@@ -79,6 +79,7 @@ Safe Circle is one account with two kinds of circle:
 - Managers see a **live crew map** only of people on shift, only of the teams they lead. Shifts end by themselves after 14 hours.
 - Optional **check-ins**: a missed one alerts the managers. A phone that goes **quiet** for about 20 minutes on shift alerts them too.
 - Every time a manager looks at a worker's location, the worker sees it in **"Who's looked at you"**.
+- **Works without signal**: reports and check-ins made in a dead zone are saved on the phone and sent as soon as there's a connection.
 - **Incident reports**: a worker reports a hazard, a near miss or an injury with a note and a photo; the people who oversee them are alerted at once and mark it resolved. The position goes with it only on shift.
 - **Safety report**: week by week on the web dashboard: hours, SOS alerts and how fast someone answered, missed check-ins, quiet phones, incidents and location views, for the whole crew or a manager's teams.
 - **Job-site reminders** that never leave the worker's phone; **timesheets** with a payroll CSV (times only, never places).

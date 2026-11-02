@@ -13,6 +13,7 @@ import { useNow } from '@/hooks/useNow';
 import { useRoadReports } from '@/hooks/useRoadReports';
 import { RoadReportMarker } from '@/components/RoadReportMarker';
 import { reportsForCircle } from '@/lib/roadReports';
+import { OutboxBanner } from '@/components/OutboxBanner';
 import { SosBanner } from '@/components/SosBanner';
 import { SosButton } from '@/components/SosButton';
 import { WalkBanner } from '@/components/WalkBanner';
@@ -292,6 +293,7 @@ export default function MapTab() {
           </Pressable>
         </View>
         <SosBanner events={sosEvents} onChanged={refreshSos} />
+        <OutboxBanner />
         <WalkBanner walks={walks} onChanged={refreshWalks} />
         <SafetyTimerBanner timers={timers} onChanged={refreshTimers} />
         <RideBanner requests={rideRequests} onChanged={refreshRides} onAskEveryone={handleAskEveryone} />

@@ -13,6 +13,7 @@ import { useShakeToSos } from '@/hooks/useShakeToSos';
 import { CarPlayBridge } from '@/components/CarPlayBridge';
 import { FallCheck } from '@/components/FallCheck';
 import { LockScreenSync } from '@/components/LockScreenSync';
+import { OutboxSync } from '@/components/OutboxSync';
 import { canEnterApp } from '@/lib/accountType';
 import { announce } from '@/lib/announce';
 import { offerTextForHelp, sendSos } from '@/lib/sos';
@@ -31,6 +32,7 @@ export default function AppLayout() {
               <AppNavigator />
               <CarPlayBridge />
               <LockScreenSync />
+              <OutboxSync />
             </MembersScope>
           </ShakeSettingsProvider>
         </CircleProvider>

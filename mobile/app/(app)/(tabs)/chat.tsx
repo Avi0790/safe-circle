@@ -22,6 +22,7 @@ import { Avatar } from '@/components/Avatar';
 import { appColors } from '@/components/ui/AppUI';
 import { ErrorText } from '@/components/ErrorText';
 import { announce } from '@/lib/announce';
+import { circleCheckInOrQueue } from '@/lib/outbox';
 import { timeAgo } from '@/lib/format';
 import type { Message } from '@/lib/types';
 import { colors, spacing, themed, typography, useThemeVersion } from '@/lib/theme';
@@ -36,7 +37,7 @@ export default function ChatTab() {
   const { session } = useAuth();
   const { selectedCircle } = useCircles();
   const { members } = useCircleMembers(selectedCircle?.id ?? null);
-  const { messages, isLoading, error, send, checkIn } = useCircleMessages(selectedCircle?.id ?? null);
+  const { messages, isLoading, error, send } = useCircleMessages(selectedCircle?.id ?? null);
   const { markRead } = useChatRead();
   const isFocused = useIsFocused();
   const [draft, setDraft] = useState('');
@@ -77,10 +78,11 @@ export default function ChatTab() {
     if (checkingIn) return;
     setCheckingIn(true);
     setSendError(null);
-    const result = await checkIn();
+    // with no signal it's kept on the phone and sent later (lib/outbox.ts)
+    const result = await circleCheckInOrQueue(selectedCircle?.id ?? null);
     setCheckingIn(false);
     if (!result.ok) setSendError(result.error);
-    else announce(t('Check-in sent to your circle'));
+    else announce(result.queued ? t("No signal: your check-in is sent when you're back online") : t('Check-in sent to your circle'));
   }
 
   return (
