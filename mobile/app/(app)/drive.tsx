@@ -34,6 +34,7 @@ import {
   navState,
   nextAnnouncement,
   OFF_ROUTE_METERS,
+  shownOnMap,
   prepareRoute,
   smoothSpeed,
   type LatLng,
@@ -466,11 +467,18 @@ export default function DriveScreen() {
   // The camera follows you, turned to your heading once you are moving (or
   // kept north-up if you chose that). A walker is slower, closer to the
   // ground and looking straight down. In route overview it stays put.
+  // where the car is drawn: on the route when you're close to it
+  // (lib/navigation.ts, shownOnMap), the camera following it there
+  const shown = useMemo(
+    () => (fix ? shownOnMap(fix, heading, nav, mode === 'walk') : null),
+    [fix, heading, nav, mode],
+  );
+
   useEffect(() => {
-    if (phase !== 'driving' || !mapReady || !fix || cameraMode === 'overview') return;
+    if (phase !== 'driving' || !mapReady || !shown || cameraMode === 'overview') return;
     const walking = mode === 'walk';
     const moving = (speedMps ?? 0) >= (walking ? 0.6 : 1);
-    const camHeading = cameraMode === 'north' ? 0 : moving ? heading : undefined;
+    const camHeading = cameraMode === 'north' ? 0 : moving ? shown.heading : undefined;
     const camPitch = walking ? 0 : 45;
     setMapCam((c) =>
       c.pitch === camPitch && (camHeading == null || c.heading === camHeading)
@@ -479,7 +487,7 @@ export default function DriveScreen() {
     );
     mapRef.current?.animateCamera(
       {
-        center: { latitude: fix.latitude, longitude: fix.longitude },
+        center: { latitude: shown.position.latitude, longitude: shown.position.longitude },
         heading: camHeading,
         pitch: camPitch,
         zoom: walking ? 18 : 17,
@@ -488,7 +496,7 @@ export default function DriveScreen() {
       // the same time the car takes to glide there, so it stays centred
       { duration: glideMs || 700 },
     );
-  }, [phase, mapReady, fix, speedMps, mode, cameraMode, heading, glideMs]);
+  }, [phase, mapReady, shown, speedMps, mode, cameraMode, glideMs]);
 
   useEffect(() => {
     let cancelled = false;
@@ -1091,10 +1099,10 @@ export default function DriveScreen() {
         >
           <Polyline coordinates={prepared.route.coords} strokeColor={colors.accent} strokeWidth={6} />
           <Marker coordinate={dest} title={dest.title} />
-          {phase === 'driving' && fix && (
+          {phase === 'driving' && shown && (
             <VehicleMarker
-              position={fix}
-              heading={heading}
+              position={shown.position}
+              heading={shown.heading}
               cameraHeading={mapCam.heading}
               cameraPitch={mapCam.pitch}
               glideMs={glideMs}

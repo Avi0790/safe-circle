@@ -12,6 +12,8 @@ import {
   smoothSpeed,
   type LatLng,
   type Route,
+  shownOnMap,
+  SNAP_METERS,
 } from '../navigation';
 import { externalMapsUrl } from '../externalMaps';
 import { parseOsrmRoute, RoutingError } from '../routing';
@@ -308,3 +310,46 @@ describe('parsePhotonResults', () => {
     expect(parsePhotonResults({ features: 'nope' })).toEqual([]);
   });
 });
+
+describe('the car on the route', () => {
+  // a road running due north
+  const road = [
+    { latitude: 35.84, longitude: -90.7 },
+    { latitude: 35.85, longitude: -90.7 },
+  ];
+  const cum = cumulativeDistances(road);
+  const east = (m: number) => m / (111320 * Math.cos((35.845 * Math.PI) / 180));
+
+  it('finds the nearest point on the route and the way the road runs', () => {
+    const hit = projectOnRoute({ latitude: 35.845, longitude: -90.7 + east(12) }, road, cum)!;
+    expect(hit.offRouteM).toBeCloseTo(12, 0);
+    expect(hit.point.longitude).toBeCloseTo(-90.7, 6);
+    expect(hit.point.latitude).toBeCloseTo(35.845, 6);
+    expect(hit.bearing).toBeCloseTo(0, 3);
+  });
+
+  it('GPS 12 m to the side draws the car on the route, pointing along the road', () => {
+    const fix = { latitude: 35.845, longitude: -90.7 + east(12) };
+    const hit = projectOnRoute(fix, road, cum)!;
+    const nav = { offRouteM: hit.offRouteM, snapped: hit.point, roadBearing: hit.bearing };
+    const shown = shownOnMap(fix, 12, nav);
+    expect(shown.snapped).toBe(true);
+    expect(shown.position).toEqual(hit.point);
+    expect(shown.heading).toBe(hit.bearing);
+  });
+
+  it('really off the route, it stays where you are', () => {
+    const fix = { latitude: 35.845, longitude: -90.7 + east(SNAP_METERS + 15) };
+    const hit = projectOnRoute(fix, road, cum)!;
+    const shown = shownOnMap(fix, 90, { offRouteM: hit.offRouteM, snapped: hit.point, roadBearing: hit.bearing });
+    expect(shown).toEqual({ position: fix, heading: 90, snapped: false });
+  });
+
+  it('facing the other way keeps your own heading, and walking snaps less', () => {
+    const nav = { offRouteM: 8, snapped: road[0], roadBearing: 0 };
+    expect(shownOnMap(road[1], 180, nav).heading).toBe(180);
+    expect(shownOnMap(road[1], 0, { ...nav, offRouteM: 20 }, true).snapped).toBe(false);
+    expect(shownOnMap(road[1], 0, null)).toEqual({ position: road[1], heading: 0, snapped: false });
+  });
+});
+

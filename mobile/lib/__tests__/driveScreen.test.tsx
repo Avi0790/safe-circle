@@ -1042,10 +1042,12 @@ describe('Drive screen: Google-style navigation view', () => {
     expect(t).toContain('Report');
   });
 
-  async function emitWithHeading(_r: ReactTestRenderer, heading: number, t: number) {
+  // offRoute: about 90 m to the side, where the car keeps the GPS heading
+  // instead of turning to follow the road (lib/navigation.ts, shownOnMap)
+  async function emitWithHeading(_r: ReactTestRenderer, heading: number, t: number, offRoute = false) {
     await act(async () => {
       mockWatchers.filter((w) => !w.removed).forEach((w) =>
-        w.cb({ coords: { latitude: route[3][1], longitude: route[3][0], speed: 13, heading }, timestamp: t }),
+        w.cb({ coords: { latitude: route[3][1] + (offRoute ? 0.0008 : 0), longitude: route[3][0], speed: 13, heading }, timestamp: t }),
       );
     });
   }
@@ -1177,8 +1179,8 @@ describe('Drive screen: Google-style navigation view', () => {
     await press(r, 'Heading up'); // north up: the drawing shows the real heading
     // (relative angles are kept within ±180°, so this is where the long way
     // round would happen: 170° to -170°)
-    await emitWithHeading(r, 170, 10_000);
-    await emitWithHeading(r, 190, 11_000);
+    await emitWithHeading(r, 170, 10_000, true);
+    await emitWithHeading(r, 190, 11_000, true);
     const last = turns[turns.length - 1].toValue;
     const prev = turns[turns.length - 2].toValue;
     expect(last - prev).toBeCloseTo(20, 5);

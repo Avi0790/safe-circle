@@ -291,6 +291,9 @@ export function cumulativeDistances(coords: LatLng[]): number[] {
 export interface Projection {
   alongM: number;
   offRouteM: number;
+  // the nearest point on the route, and which way the road runs there
+  point: LatLng;
+  bearing: number;
 }
 
 // Closest point on the polyline to `pos`, within a window of distance-along so
@@ -326,7 +329,12 @@ export function projectOnRoute(
     const py = ay + t * dy;
     const dist = Math.sqrt(px * px + py * py);
     if (best === null || dist < best.offRouteM) {
-      best = { offRouteM: dist, alongM: cum[i] + t * (cum[i + 1] - cum[i]) };
+      best = {
+        offRouteM: dist,
+        alongM: cum[i] + t * (cum[i + 1] - cum[i]),
+        point: { latitude: pos.latitude + py / 110540, longitude: pos.longitude + px / (cosLat * 111320) },
+        bearing: ((Math.atan2(dx, dy) * 180) / Math.PI + 360) % 360,
+      };
     }
   }
   return best;
@@ -353,6 +361,8 @@ export function prepareRoute(route: Route): PreparedRoute {
 export interface NavState {
   alongM: number;
   offRouteM: number;
+  snapped: LatLng; // your position moved onto the route
+  roadBearing: number; // which way the route runs there
   remainingM: number;
   remainingS: number;
   nextStepIndex: number;
@@ -390,12 +400,41 @@ export function navState(
   return {
     alongM: hit.alongM,
     offRouteM: hit.offRouteM,
+    snapped: hit.point,
+    roadBearing: hit.bearing,
     remainingM,
     remainingS: totalM > 0 ? route.durationS * (remainingM / totalM) : 0,
     nextStepIndex: next,
     distanceToNextM: Math.max(0, (stepAlong[next] ?? totalM) - hit.alongM),
     arrived: remainingM <= ARRIVE_METERS,
   };
+}
+
+// ------------------------------------------------------------------ the car on the map
+
+// Phone GPS is off by 5 to 15 m, more between buildings, which drew the car
+// beside the road instead of on the route. Within this distance it's shown on
+// the route (as Apple and Google Maps do); further off, where you really are,
+// so leaving the route is plain to see. Walking snaps less: sidewalks run
+// beside the line.
+export const SNAP_METERS = 30;
+export const WALK_SNAP_METERS = 12;
+
+const angleBetween = (a: number, b: number) => Math.abs(((a - b + 540) % 360) - 180);
+
+export function shownOnMap(
+  fix: LatLng,
+  heading: number,
+  nav: Pick<NavState, 'offRouteM' | 'snapped' | 'roadBearing'> | null,
+  walking = false,
+): { position: LatLng; heading: number; snapped: boolean } {
+  if (!nav || nav.offRouteM > (walking ? WALK_SNAP_METERS : SNAP_METERS)) {
+    return { position: fix, heading, snapped: false };
+  }
+  // Point along the road when heading roughly its way; turning around (or
+  // standing still facing elsewhere) keeps the compass heading.
+  const alongRoad = !walking && angleBetween(heading, nav.roadBearing) < 50;
+  return { position: nav.snapped, heading: alongRoad ? nav.roadBearing : heading, snapped: true };
 }
 
 // ------------------------------------------------------------------ voice
