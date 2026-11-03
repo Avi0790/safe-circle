@@ -4,7 +4,9 @@ appId: com.surendrabk.safecircle
 ---
 - launchApp:
     clearState: true
-- assertVisible: "Welcome back"
+- extendedWaitUntil:          # a cold Release start can take a while on a busy Mac
+    visible: "Welcome back"
+    timeout: 30000
 - assertVisible: "Sign in to see your circle."
 - assertVisible: "Email"
 - assertVisible: "Password"
