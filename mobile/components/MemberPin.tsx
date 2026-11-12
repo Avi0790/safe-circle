@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Marker } from 'react-native-maps';
+import Svg, { Defs, Path, RadialGradient, Stop } from 'react-native-svg';
 import { Avatar } from '@/components/Avatar';
 import { isDriving, isLowBattery, isStale, isStatusActive, speedToMph } from '@/lib/format';
 import { colors } from '@/lib/theme';
@@ -17,12 +18,24 @@ import type { MemberWithLocation } from '@/lib/types';
 // its coordinate by default, so the dot lands on the spot on Apple and Google
 // Maps alike, with no anchor or offset to get wrong (Apple Maps ignores
 // `anchor`, and its `centerOffset` didn't line the dot up on device).
-const BOX_W = 84;
+const BOX_W = 160; // wide enough for the direction beam to any side
 const DOT_Y = 80; // the location dot's centre: the exact spot
 const BOX_H = DOT_Y * 2;
 const BUBBLE = 62;
 const TIP_Y = DOT_Y - 7; // the tail points down into the dot
 const DOT = 18;
+const BX = (BOX_W - BUBBLE) / 2; // the bubble's left edge, for placing badges
+
+// The direction beam: a soft wedge from the dot, pointing the way they're
+// heading (drawn pointing north, then turned by the heading).
+const BEAM_R = 72;
+const BEAM_SPREAD = 26; // degrees each side
+const BEAM_PATH = (() => {
+  const a = (BEAM_SPREAD * Math.PI) / 180;
+  const c = BOX_W / 2;
+  const y = c - BEAM_R * Math.cos(a);
+  return `M${c} ${c} L${c - BEAM_R * Math.sin(a)} ${y} A${BEAM_R} ${BEAM_R} 0 0 1 ${c + BEAM_R * Math.sin(a)} ${y} Z`;
+})();
 export const PIN_ANCHOR = { x: 0.5, y: DOT_Y / BOX_H }; // = the middle
 
 export interface PinBadges {
@@ -30,6 +43,7 @@ export interface PinBadges {
   mph: number | null; // only while driving
   battery: number | null; // percent, only when low
   emoji: string | null; // an active quick status
+  heading: number | null; // degrees, to the nearest 10, only while fresh
 }
 
 export function pinBadges(member: MemberWithLocation): PinBadges {
@@ -41,6 +55,7 @@ export function pinBadges(member: MemberWithLocation): PinBadges {
     mph: driving ? Math.round(speedToMph(loc!.speed) ?? 0) : null,
     battery: loc && isLowBattery(loc.battery_level) ? Math.round((loc.battery_level ?? 0) * 100) : null,
     emoji: member.status_emoji && isStatusActive(member.status_expires_at) ? member.status_emoji : null,
+    heading: loc && !stale && loc.heading != null ? (Math.round(loc.heading / 10) * 10) % 360 : null,
   };
 }
 
@@ -49,15 +64,19 @@ export function MemberPin({
   name,
   onPress,
   coordinate,
+  heading,
 }: {
   member: MemberWithLocation;
   name: string;
   onPress?: () => void;
   // where to draw it instead of their last report (your own pin follows your live GPS)
   coordinate?: { latitude: number; longitude: number } | null;
+  // and which way you're heading, from the same live GPS
+  heading?: number | null;
 }) {
   const badges = pinBadges(member);
-  const badgeKey = `${badges.stale}|${badges.mph}|${badges.battery}|${badges.emoji}`;
+  const beam = heading != null ? (Math.round(heading / 10) * 10) % 360 : badges.heading;
+  const badgeKey = `${badges.stale}|${badges.mph}|${badges.battery}|${badges.emoji}|${beam}`;
 
   // A marker's view is snapshotted into a bitmap, so it keeps tracking changes
   // until the photo has drawn (it arrives asynchronously), then freezes. A
@@ -97,6 +116,19 @@ export function MemberPin({
           new architecture, and the map then sized and centred the marker on
           its first child (the tail), putting the dot ~13 pt off the spot */}
       <View style={styles.box} collapsable={false}>
+        {beam != null && (
+          <View style={[StyleSheet.absoluteFill, { transform: [{ rotate: `${beam}deg` }] }]} pointerEvents="none">
+            <Svg width={BOX_W} height={BOX_H}>
+              <Defs>
+                <RadialGradient id="beam" cx={BOX_W / 2} cy={DOT_Y} r={BEAM_R} gradientUnits="userSpaceOnUse">
+                  <Stop offset="0" stopColor={ring} stopOpacity={0.75} />
+                  <Stop offset="1" stopColor={ring} stopOpacity={0} />
+                </RadialGradient>
+              </Defs>
+              <Path d={BEAM_PATH} fill="url(#beam)" />
+            </Svg>
+          </View>
+        )}
         <View style={[styles.tail, { backgroundColor: ring }]} />
         <View style={styles.dot}>
           <View style={[styles.dotCore, { backgroundColor: ring }]} />
@@ -195,7 +227,7 @@ const styles = StyleSheet.create({
     ...shadow,
   },
   emojiBadge: {
-    left: 4,
+    left: BX - 7,
     top: 0,
     width: 26,
     height: 26,
@@ -206,14 +238,14 @@ const styles = StyleSheet.create({
   },
   emoji: { fontSize: 14 },
   batteryBadge: {
-    right: 0,
+    right: BX - 11,
     top: 0,
     paddingHorizontal: 5,
     paddingVertical: 1,
     backgroundColor: colors.dangerFill,
   },
   speedBadge: {
-    left: 0,
+    left: BX - 11,
     top: 44,
     paddingHorizontal: 6,
     paddingVertical: 1,

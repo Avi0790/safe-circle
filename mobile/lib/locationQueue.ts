@@ -12,6 +12,7 @@ export interface QueuedPing {
   battery_level: number | null;
   speed: number | null;
   recorded_at: string;
+  heading?: number | null;
 }
 
 // Serializes every read-modify-write below. Needed because the foreground

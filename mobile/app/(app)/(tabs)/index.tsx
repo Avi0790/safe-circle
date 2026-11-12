@@ -133,13 +133,15 @@ export default function MapTab() {
   // last report to the server, so the two never sit apart. Watched straight
   // from the phone while the Map tab is open (the map's own user-location
   // event didn't fire on device); moves under 5 m are ignored.
-  const [myLive, setMyLive] = useState<{ latitude: number; longitude: number } | null>(null);
-  const takeLive = (c: { latitude: number; longitude: number } | undefined) => {
+  const [myLive, setMyLive] = useState<{ latitude: number; longitude: number; heading: number | null } | null>(null);
+  const takeLive = (c: { latitude: number; longitude: number; heading?: number | null } | undefined) => {
     if (!c) return;
+    // the GPS course, only while moving (-1 when still)
+    const heading = c.heading != null && c.heading >= 0 && c.heading < 360 ? c.heading : null;
     setMyLive((prev) =>
       prev && haversineMeters(prev.latitude, prev.longitude, c.latitude, c.longitude) < 5
         ? prev
-        : { latitude: c.latitude, longitude: c.longitude },
+        : { latitude: c.latitude, longitude: c.longitude, heading },
     );
   };
   const onUserLocationChange = (e: { nativeEvent: { coordinate?: { latitude: number; longitude: number } } }) =>
@@ -321,7 +323,8 @@ export default function MapTab() {
               member={member}
               name={member.full_name}
               onPress={() => setSelectedId(member.id)}
-              coordinate={member.id === session?.user.id ? myLive : null}
+              coordinate={member.id === session?.user.id && myLive ? { latitude: myLive.latitude, longitude: myLive.longitude } : null}
+              heading={member.id === session?.user.id ? myLive?.heading ?? null : null}
             />
           ))}
           {pins.map((pin) => (

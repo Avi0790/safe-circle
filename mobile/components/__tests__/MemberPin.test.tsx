@@ -21,7 +21,7 @@ const member = (loc: Partial<NonNullable<MemberWithLocation['location']>> | null
 
 describe('a member pin on the map', () => {
   it('a fresh, parked phone with a good battery: no badges', () => {
-    expect(pinBadges(member({}))).toEqual({ stale: false, mph: null, battery: null, emoji: null });
+    expect(pinBadges(member({}))).toEqual({ stale: false, mph: null, battery: null, emoji: null, heading: null });
   });
 
   it('driving shows the speed; a low battery shows its percent', () => {
@@ -39,6 +39,16 @@ describe('a member pin on the map', () => {
   it('shows a quick status only while it lasts', () => {
     expect(pinBadges(member({}, { status_emoji: '📚', status_expires_at: new Date(now + 60_000).toISOString() })).emoji).toBe('📚');
     expect(pinBadges(member({}, { status_emoji: '📚', status_expires_at: new Date(now - 60_000).toISOString() })).emoji).toBeNull();
+  });
+
+  it('the beam points the way they are heading, to the nearest 10 degrees', () => {
+    expect(pinBadges(member({ heading: 274 })).heading).toBe(270);
+    expect(pinBadges(member({ heading: 356 })).heading).toBe(0);
+    expect(pinBadges(member({ heading: null })).heading).toBeNull();
+  });
+
+  it('no beam from an old position', () => {
+    expect(pinBadges(member({ heading: 90, recorded_at: new Date(now - 60 * 60_000).toISOString() })).heading).toBeNull();
   });
 
   it('the dot is the middle of the drawing, so every map puts it on the spot', () => {

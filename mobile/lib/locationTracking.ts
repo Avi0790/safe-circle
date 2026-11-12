@@ -99,6 +99,9 @@ async function buildLocationPing(loc: Location.LocationObject): Promise<QueuedPi
     // "driving" status (see lib/format.ts's isDriving). Some platforms
     // report a negative sentinel when unavailable rather than null.
     speed: loc.coords.speed != null && loc.coords.speed >= 0 ? loc.coords.speed : null,
+    // Direction of travel (the GPS course), for the beam on the map. Phones
+    // report it only while moving and send -1 otherwise.
+    heading: loc.coords.heading != null && loc.coords.heading >= 0 && loc.coords.heading < 360 ? loc.coords.heading : null,
     recorded_at: new Date(loc.timestamp).toISOString(),
   };
 }
@@ -119,7 +122,13 @@ export async function flushQueueAndSend(newPing?: QueuedPing): Promise<void> {
     return;
   }
 
-  const { error } = await supabase.from('locations').insert(toSend);
+  let { error } = await supabase.from('locations').insert(toSend);
+  // A database without the heading column yet (migration ...000079 not
+  // applied) refuses the whole batch; send it without headings rather than
+  // stop sharing locations.
+  if (error && /heading/i.test(error.message)) {
+    ({ error } = await supabase.from('locations').insert(toSend.map(({ heading: _h, ...rest }) => rest)));
+  }
   if (error) {
     // 42501 = row-level security refused the insert, which for this table
     // only happens once your sharing window has closed. Retrying can never

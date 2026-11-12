@@ -29,6 +29,9 @@ export interface LatestLocation {
   battery_level: number | null;
   speed: number | null;
   recorded_at: string;
+  // direction of travel, degrees from north; null when still or unknown
+  // (and on rows sent before migration ...000079)
+  heading?: number | null;
 }
 
 export interface MemberWithLocation extends Profile {
