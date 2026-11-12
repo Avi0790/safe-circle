@@ -1,0 +1,22 @@
+diff --git a/node_modules/react-native-maps/ios/AirMaps/AIRMapMarker.m b/node_modules/react-native-maps/ios/AirMaps/AIRMapMarker.m
+index 89dfd9a..77593d1 100644
+--- a/node_modules/react-native-maps/ios/AirMaps/AIRMapMarker.m
++++ b/node_modules/react-native-maps/ios/AirMaps/AIRMapMarker.m
+@@ -53,11 +53,12 @@ - (void)reactSetFrame:(CGRect)frame
+     CGSize size = self.image ? self.image.size : frame.size;
+     CGRect bounds = {CGPointZero, size};
+ 
+-    // The MapView is basically in charge of figuring out the center position of the marker view. If the view changed in
+-    // height though, we need to compensate in such a way that the bottom of the marker stays at the same spot on the
+-    // map.
+-    CGFloat dy = (bounds.size.height - self.bounds.size.height) / 2;
+-    CGPoint center = (CGPoint){ self.center.x, self.center.y - dy };
++    // Safe Circle patch: keep the view centred on its coordinate, as MapKit
++    // itself does whenever the map moves. The library shifted it up by half
++    // of any height change ("keep the bottom on the spot"), so a custom marker
++    // sat bottom-anchored after its first layout and centred after the next
++    // pan or zoom: the same marker jumped between two positions.
++    CGPoint center = self.center;
+ 
+     // Avoid crashes due to nan coords
+     if (isnan(center.x) || isnan(center.y) ||

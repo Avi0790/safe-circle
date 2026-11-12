@@ -330,7 +330,10 @@ export default function MapTab() {
         >
           {located.map((member) => (
             <MemberPin
-              key={member.id}
+              // your own pin is re-created when your live position moves: on
+              // this version of react-native-maps a moved marker's coordinate
+              // wasn't applied on iPhone, leaving it at your last report
+              key={member.id === session?.user.id && myLive ? `${member.id}@${myLive.latitude.toFixed(5)},${myLive.longitude.toFixed(5)}` : member.id}
               member={member}
               title={member.full_name}
               description={markerDescription(member.location!, member.share_until, member.status_emoji, member.status_text, member.status_expires_at)}
