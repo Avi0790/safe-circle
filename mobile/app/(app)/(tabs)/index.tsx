@@ -30,6 +30,7 @@ import { useRideRequests } from '@/hooks/useRideRequests';
 import { requestRide } from '@/lib/rides';
 import { supabase } from '@/lib/supabase';
 import { MemberPin } from '@/components/MemberPin';
+import { haversineMeters } from '@/lib/geo';
 import { formatClockTime, formatTimeLeft, getShareStatus, isDriving, isStale, isStatusActive, speedToMph } from '@/lib/format';
 import type { LatestLocation, MapPin, MemberWithLocation } from '@/lib/types';
 import { colors, isDark, radius, spacing, themed, useThemeVersion } from '@/lib/theme';
@@ -146,6 +147,20 @@ export default function MapTab() {
   }
 
   const located = members.filter((m) => m.location);
+
+  // Your own pin follows the phone's live GPS (the map's blue dot), not your
+  // last report to the server, so the two never sit apart. Moves under 5 m
+  // are ignored to keep the map from redrawing on every jitter.
+  const [myLive, setMyLive] = useState<{ latitude: number; longitude: number } | null>(null);
+  const onUserLocationChange = (e: { nativeEvent: { coordinate?: { latitude: number; longitude: number } } }) => {
+    const c = e.nativeEvent.coordinate;
+    if (!c) return;
+    setMyLive((prev) =>
+      prev && haversineMeters(prev.latitude, prev.longitude, c.latitude, c.longitude) < 5
+        ? prev
+        : { latitude: c.latitude, longitude: c.longitude },
+    );
+  };
   const sharingNow = located.filter(
     (m) => !isStale(m.location!.recorded_at) && getShareStatus(m.share_until) !== 'ended',
   ).length;
@@ -284,6 +299,7 @@ export default function MapTab() {
           {...mapViewProps(mapMode, Platform.OS)}
           showsUserLocation
           showsMyLocationButton
+          onUserLocationChange={onUserLocationChange}
         >
           {located.map((member) => (
             <MemberPin
@@ -291,6 +307,7 @@ export default function MapTab() {
               member={member}
               title={member.full_name}
               description={markerDescription(member.location!, member.share_until, member.status_emoji, member.status_text, member.status_expires_at)}
+              coordinate={member.id === session?.user.id ? myLive : null}
             />
           ))}
           {pins.map((pin) => (

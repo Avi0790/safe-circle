@@ -6,17 +6,20 @@ import { isDriving, isLowBattery, isStale, isStatusActive, speedToMph } from '@/
 import { colors } from '@/lib/theme';
 import type { MemberWithLocation } from '@/lib/types';
 
-// A circle member on the map: their photo in a ringed bubble with a tail whose
-// tip sits on where they are, and small badges for what matters at a glance
+// A circle member on the map: their photo in a ringed bubble whose tail points
+// down at a solid location dot, the dot ON where they are, so the exact spot
+// reads even zoomed out; and small badges for what matters at a glance
 // (driving and how fast, a low battery, their quick status). The ring goes
 // grey once the location is stale, so an old position doesn't read as live.
 
-// The marker is drawn into a fixed box so the tail's tip can be the anchor.
+// The marker is drawn into a fixed box so the location dot can be the anchor.
 const BOX_W = 84;
-const BOX_H = 82;
+const BOX_H = 92;
 const BUBBLE = 62;
-const TIP_Y = 73; // where the tail's point lands, in the box
-export const PIN_ANCHOR = { x: 0.5, y: TIP_Y / BOX_H };
+const DOT_Y = 80; // the location dot's centre, in the box: the exact spot
+const TIP_Y = DOT_Y - 7; // the tail points down into the dot
+const DOT = 18;
+export const PIN_ANCHOR = { x: 0.5, y: DOT_Y / BOX_H };
 
 export interface PinBadges {
   stale: boolean;
@@ -41,10 +44,13 @@ export function MemberPin({
   member,
   title,
   description,
+  coordinate,
 }: {
   member: MemberWithLocation;
   title: string;
   description?: string;
+  // where to draw it instead of their last report (your own pin follows your live GPS)
+  coordinate?: { latitude: number; longitude: number } | null;
 }) {
   const badges = pinBadges(member);
   const badgeKey = `${badges.stale}|${badges.mph}|${badges.battery}|${badges.emoji}`;
@@ -74,7 +80,7 @@ export function MemberPin({
 
   return (
     <Marker
-      coordinate={{ latitude: member.location!.latitude, longitude: member.location!.longitude }}
+      coordinate={coordinate ?? { latitude: member.location!.latitude, longitude: member.location!.longitude }}
       title={title}
       description={description}
       tracksViewChanges={!settled}
@@ -82,8 +88,10 @@ export function MemberPin({
       calloutAnchor={{ x: 0.5, y: 0 }}
     >
       <View style={styles.box}>
-        <View style={styles.ground} />
         <View style={[styles.tail, { backgroundColor: ring }]} />
+        <View style={styles.dot}>
+          <View style={[styles.dotCore, { backgroundColor: ring }]} />
+        </View>
         <View style={[styles.ring, { backgroundColor: ring }, badges.stale && styles.faded]}>
           <View style={styles.inner}>
             <Avatar
@@ -126,16 +134,20 @@ const shadow = {
 
 const styles = StyleSheet.create({
   box: { width: BOX_W, height: BOX_H },
-  // a soft spot on the ground under the tip
-  ground: {
+  // the exact spot: a solid dot with a white edge, visible at any zoom
+  dot: {
     position: 'absolute',
-    left: BOX_W / 2 - 7,
-    top: TIP_Y - 3,
-    width: 14,
-    height: 6,
-    borderRadius: 7,
-    backgroundColor: 'rgba(0,0,0,0.3)',
+    left: BOX_W / 2 - DOT / 2,
+    top: DOT_Y - DOT / 2,
+    width: DOT,
+    height: DOT,
+    borderRadius: DOT / 2,
+    backgroundColor: '#ffffff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...shadow,
   },
+  dotCore: { width: DOT - 6, height: DOT - 6, borderRadius: (DOT - 6) / 2 },
   // a square turned 45°, half hidden behind the bubble: its lower corner is the tip
   tail: {
     position: 'absolute',
