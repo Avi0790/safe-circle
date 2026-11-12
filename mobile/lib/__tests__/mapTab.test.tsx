@@ -222,6 +222,23 @@ describe('Map tab', () => {
     expect(allText(r)).toContain('Details');
   });
 
+  it('Show everyone frames the whole circle again and closes the card', async () => {
+    const r = await mount();
+    const sam = markers(r).find((m) => m.props.accessibilityLabel === 'Sam')!;
+    await act(async () => sam.props.onPress());
+    mockFit.mockClear();
+    const button = r.root.findAll((n) => n.props.accessibilityLabel === 'Show everyone' && typeof n.props.onPress === 'function')[0];
+    await act(async () => button.props.onPress());
+    expect(mockFit).toHaveBeenCalledWith(
+      [
+        { latitude: 35.84, longitude: -90.7 },
+        { latitude: 35.85, longitude: -90.69 },
+      ],
+      expect.objectContaining({ animated: true }),
+    );
+    expect(allText(r)).not.toContain('Directions');
+  });
+
   it("also fits when people's locations arrive after the map is up", async () => {
     mockMembers.current = [];
     const r = await mount();

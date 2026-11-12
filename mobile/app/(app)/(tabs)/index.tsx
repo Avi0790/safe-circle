@@ -259,6 +259,19 @@ export default function MapTab() {
     };
   }, []);
 
+  // Frame everyone who has a location (yours from live GPS when there is one).
+  function showEveryone() {
+    if (located.length === 0 || !mapRef.current) return;
+    mapRef.current.fitToCoordinates(
+      located.map((m) =>
+        m.id === session?.user.id && myLive
+          ? { latitude: myLive.latitude, longitude: myLive.longitude }
+          : { latitude: m.location!.latitude, longitude: m.location!.longitude },
+      ),
+      { edgePadding: { top: 160, right: 80, bottom: 120, left: 80 }, animated: true },
+    );
+  }
+
   useEffect(() => {
     if (located.length === 0 || !mapRef.current) return;
     mapRef.current.fitToCoordinates(
@@ -289,6 +302,19 @@ export default function MapTab() {
               {t('{n} of {total} sharing now', { n: sharingNow, total: members.length })}
             </Text>
           </View>
+          {located.length > 0 && (
+            <Pressable
+              accessibilityRole="button"
+              style={styles.mapTypeButton}
+              onPress={() => {
+                setSelectedId(null);
+                showEveryone();
+              }}
+              accessibilityLabel={t('Show everyone')}
+            >
+              <Text allowFontScaling={false} style={styles.mapTypeButtonText}>👥</Text>
+            </Pressable>
+          )}
           <Pressable accessibilityRole="button" style={styles.mapTypeButton} onPress={() => setModesOpen(true)} accessibilityLabel={t('Map modes')}>
             <Text allowFontScaling={false} style={styles.mapTypeButtonText}>
               {mapMode.mode === 'satellite' || mapMode.mode === 'flyover' ? '🛰️' : '🗺️'}

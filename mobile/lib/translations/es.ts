@@ -952,4 +952,5 @@ export const es: Record<string, string> = {
   "Live": "En vivo",
   "Here since {time}": "Aquí desde las {time}",
   "Save place": "Guardar lugar",
+  "Show everyone": "Ver a todos",
 };
