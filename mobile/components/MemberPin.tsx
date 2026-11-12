@@ -91,7 +91,10 @@ export function MemberPin({
       anchor={PIN_ANCHOR}
       calloutAnchor={{ x: 0.5, y: 0 }}
     >
-      <View style={styles.box}>
+      {/* collapsable={false}: a view with only a size is flattened away by the
+          new architecture, and the map then sized and centred the marker on
+          its first child (the tail), putting the dot ~13 pt off the spot */}
+      <View style={styles.box} collapsable={false}>
         <View style={[styles.tail, { backgroundColor: ring }]} />
         <View style={styles.dot}>
           <View style={[styles.dotCore, { backgroundColor: ring }]} />
