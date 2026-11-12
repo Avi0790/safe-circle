@@ -1,5 +1,5 @@
 jest.mock('react-native-maps', () => ({ Marker: () => null }));
-import { pinBadges, PIN_ANCHOR, PIN_CENTER_OFFSET } from '../MemberPin';
+import { pinBadges, PIN_ANCHOR } from '../MemberPin';
 import type { MemberWithLocation } from '@/lib/types';
 
 const now = Date.now();
@@ -41,11 +41,7 @@ describe('a member pin on the map', () => {
     expect(pinBadges(member({}, { status_emoji: '📚', status_expires_at: new Date(now - 60_000).toISOString() })).emoji).toBeNull();
   });
 
-  it('the tail tip, not the middle of the photo, marks the spot', () => {
-    expect(PIN_ANCHOR.x).toBe(0.5);
-    expect(PIN_ANCHOR.y).toBeGreaterThan(0.85);
-    // on iPhone (Apple Maps) the view is centred on the spot, so it is moved
-    // up by the distance from its middle down to the dot
-    expect(PIN_CENTER_OFFSET.y).toBeLessThan(-30);
+  it('the dot is the middle of the drawing, so every map puts it on the spot', () => {
+    expect(PIN_ANCHOR).toEqual({ x: 0.5, y: 0.5 });
   });
 });

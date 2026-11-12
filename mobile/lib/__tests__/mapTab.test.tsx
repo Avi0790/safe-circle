@@ -13,6 +13,7 @@ const mockFromCalls: string[] = [];
 const mockRealtime: { table: string; cb: () => void }[] = [];
 const mockRpc = jest.fn(async (..._a: unknown[]) => ({ data: null, error: null }));
 const mockMembers: { current: unknown[] } = { current: [] };
+const mockWatch: { current: ((p: { coords: { latitude: number; longitude: number } }) => void) | null } = { current: null };
 const mockPermission: { current: 'granted' | 'denied' } = { current: 'granted' };
 const mockFit = jest.fn();
 
@@ -53,7 +54,11 @@ jest.mock('@/lib/supabase', () => {
     },
   };
 });
-jest.mock('expo-router', () => ({ useRouter: () => ({ push: jest.fn(), back: jest.fn() }) }));
+jest.mock('expo-router', () => ({
+  useRouter: () => ({ push: jest.fn(), back: jest.fn() }),
+  // the tab is focused for the whole test
+  useFocusEffect: (cb: () => void | (() => void)) => require('react').useEffect(cb, [cb]),
+}));
 jest.mock('react-native-safe-area-context', () => {
   const { View } = require('react-native');
   return { SafeAreaView: View, useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }) };
@@ -66,7 +71,11 @@ jest.mock('@/contexts/CircleMembersContext', () => ({
   useCircleMembersContext: () => ({ members: mockMembers.current, isLoading: false, error: null, refresh: jest.fn() }),
 }));
 jest.mock('expo-location', () => ({
-  Accuracy: { Balanced: 3 },
+  Accuracy: { Balanced: 3, High: 4 },
+  watchPositionAsync: async (_o: unknown, cb: (p: { coords: { latitude: number; longitude: number } }) => void) => {
+    mockWatch.current = cb;
+    return { remove: () => { mockWatch.current = null; } };
+  },
   getForegroundPermissionsAsync: async () => ({ status: mockPermission.current }),
   requestForegroundPermissionsAsync: async () => ({ status: mockPermission.current }),
   getCurrentPositionAsync: async () => ({ coords: { latitude: 35.8423, longitude: -90.7043 } }),
@@ -155,6 +164,16 @@ describe('Map tab', () => {
       ],
       expect.objectContaining({ animated: true }),
     );
+  });
+
+  it('your own pin follows the live GPS, not your last report', async () => {
+    const r = await mount();
+    const mine = () => markers(r).find((m) => m.props.title === 'Me')!;
+    expect(mine().props.coordinate).toEqual({ latitude: 35.84, longitude: -90.7 }); // the last report, until GPS answers
+    await act(async () => mockWatch.current?.({ coords: { latitude: 35.8423, longitude: -90.7043 } }));
+    expect(mine().props.coordinate).toEqual({ latitude: 35.8423, longitude: -90.7043 });
+    // everyone else stays at their own report
+    expect(markers(r).find((m) => m.props.title === 'Sam')!.props.coordinate).toEqual({ latitude: 35.85, longitude: -90.69 });
   });
 
   it("also fits when people's locations arrive after the map is up", async () => {

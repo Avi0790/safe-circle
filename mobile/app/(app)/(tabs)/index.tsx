@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useFocusEffect } from 'expo-router';
 import MapView, { Marker, PROVIDER_DEFAULT } from 'react-native-maps';
 import type { Region } from 'react-native-maps';
 import * as Location from 'expo-location';
@@ -149,11 +150,11 @@ export default function MapTab() {
   const located = members.filter((m) => m.location);
 
   // Your own pin follows the phone's live GPS (the map's blue dot), not your
-  // last report to the server, so the two never sit apart. Moves under 5 m
-  // are ignored to keep the map from redrawing on every jitter.
+  // last report to the server, so the two never sit apart. Watched straight
+  // from the phone while the Map tab is open (the map's own user-location
+  // event didn't fire on device); moves under 5 m are ignored.
   const [myLive, setMyLive] = useState<{ latitude: number; longitude: number } | null>(null);
-  const onUserLocationChange = (e: { nativeEvent: { coordinate?: { latitude: number; longitude: number } } }) => {
-    const c = e.nativeEvent.coordinate;
+  const takeLive = (c: { latitude: number; longitude: number } | undefined) => {
     if (!c) return;
     setMyLive((prev) =>
       prev && haversineMeters(prev.latitude, prev.longitude, c.latitude, c.longitude) < 5
@@ -161,6 +162,32 @@ export default function MapTab() {
         : { latitude: c.latitude, longitude: c.longitude },
     );
   };
+  const onUserLocationChange = (e: { nativeEvent: { coordinate?: { latitude: number; longitude: number } } }) =>
+    takeLive(e.nativeEvent.coordinate);
+  useFocusEffect(
+    useCallback(() => {
+      let sub: Location.LocationSubscription | null = null;
+      let alive = true;
+      Location.getForegroundPermissionsAsync()
+        .then(({ status }) =>
+          status === 'granted'
+            ? Location.watchPositionAsync({ accuracy: Location.Accuracy.High, distanceInterval: 5 }, (p) =>
+                takeLive(p.coords),
+              )
+            : null,
+        )
+        .then((s) => {
+          if (alive) sub = s;
+          else s?.remove();
+        })
+        .catch(() => {});
+      return () => {
+        alive = false;
+        sub?.remove();
+      };
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []),
+  );
   const sharingNow = located.filter(
     (m) => !isStale(m.location!.recorded_at) && getShareStatus(m.share_until) !== 'ended',
   ).length;

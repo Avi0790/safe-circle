@@ -12,17 +12,18 @@ import type { MemberWithLocation } from '@/lib/types';
 // (driving and how fast, a low battery, their quick status). The ring goes
 // grey once the location is stale, so an old position doesn't read as live.
 
-// The marker is drawn into a fixed box so the location dot can be the anchor.
+// The marker is drawn into a fixed box with the location dot at its exact
+// centre (the lower half is left empty). Every map centres a marker's view on
+// its coordinate by default, so the dot lands on the spot on Apple and Google
+// Maps alike, with no anchor or offset to get wrong (Apple Maps ignores
+// `anchor`, and its `centerOffset` didn't line the dot up on device).
 const BOX_W = 84;
-const BOX_H = 92;
+const DOT_Y = 80; // the location dot's centre: the exact spot
+const BOX_H = DOT_Y * 2;
 const BUBBLE = 62;
-const DOT_Y = 80; // the location dot's centre, in the box: the exact spot
 const TIP_Y = DOT_Y - 7; // the tail points down into the dot
 const DOT = 18;
-export const PIN_ANCHOR = { x: 0.5, y: DOT_Y / BOX_H };
-// Apple Maps ignores `anchor` (Google Maps only) and centres the view on the
-// spot; this shifts it up so the dot, not the middle of the photo, is there.
-export const PIN_CENTER_OFFSET = { x: 0, y: BOX_H / 2 - DOT_Y };
+export const PIN_ANCHOR = { x: 0.5, y: DOT_Y / BOX_H }; // = the middle
 
 export interface PinBadges {
   stale: boolean;
@@ -88,7 +89,6 @@ export function MemberPin({
       description={description}
       tracksViewChanges={!settled}
       anchor={PIN_ANCHOR}
-      centerOffset={PIN_CENTER_OFFSET}
       calloutAnchor={{ x: 0.5, y: 0 }}
     >
       <View style={styles.box}>
