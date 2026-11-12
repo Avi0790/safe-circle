@@ -222,6 +222,21 @@ describe('Map tab', () => {
     expect(allText(r)).toContain('Details');
   });
 
+  it("Notify me offers when they leave, or get to one of the circle's places, and sets it", async () => {
+    mockTables.places = [{ id: 'h', name: 'Home', latitude: 35.80, longitude: -90.60, radius_meters: 150 }];
+    const alert = jest.spyOn(require('react-native').Alert, 'alert').mockImplementation(() => {});
+    const r = await mount();
+    const sam = markers(r).find((m) => m.props.accessibilityLabel === 'Sam')!;
+    await act(async () => sam.props.onPress());
+    const notify = r.root.findAll((n) => n.props.accessibilityLabel === 'Notify me' && typeof n.props.onPress === 'function')[0];
+    await act(async () => notify.props.onPress());
+    const buttons = alert.mock.calls[0][2] as { text: string; onPress: () => void }[];
+    expect(buttons.map((b) => b.text)).toEqual(['When Sam leaves 1815 E Highland Dr', 'When Sam gets to Home', 'Cancel']);
+    await act(async () => buttons[1].onPress());
+    expect(mockRpc).toHaveBeenCalledWith('create_arrival_watch', expect.objectContaining({ p_target: 'sam', p_kind: 'arrive', p_place: 'h' }));
+    alert.mockRestore();
+  });
+
   it('Show everyone frames the whole circle again and closes the card', async () => {
     const r = await mount();
     const sam = markers(r).find((m) => m.props.accessibilityLabel === 'Sam')!;

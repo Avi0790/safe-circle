@@ -58,6 +58,31 @@ function useAddress(lat: number, lng: number): Address | null {
   return address;
 }
 
+// "Tell me when they arrive / leave" alerts you've set on this person
+// (migration ...000081), still waiting to fire.
+interface Watch {
+  id: string;
+  kind: 'arrive' | 'leave';
+  label: string;
+}
+function useWatches(targetId: string) {
+  const [watches, setWatches] = useState<Watch[]>([]);
+  const load = async () => {
+    const { data, error } = await supabase
+      .from('arrival_watches')
+      .select('id, kind, label')
+      .eq('target_id', targetId)
+      .is('fired_at', null)
+      .gt('created_at', new Date(Date.now() - 24 * 3_600_000).toISOString());
+    setWatches(!error && Array.isArray(data) ? (data as Watch[]) : []);
+  };
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [targetId]);
+  return { watches, reload: load };
+}
+
 // When they arrived at this spot (migration ...000080); null if unknown,
 // or on a server without that migration yet.
 function useHereSince(userId: string, recordedAt: string): string | null {
@@ -87,6 +112,7 @@ export function MemberCard({
   member,
   isMe,
   place,
+  places = [],
   circleId,
   onPlaceSaved,
   onClose,
@@ -94,7 +120,9 @@ export function MemberCard({
   member: MemberWithLocation;
   isMe: boolean;
   // the saved place they're in, if any ("At Home")
-  place?: { name: string } | null;
+  place?: { id: string; name: string } | null;
+  // the circle's places, for "tell me when they arrive at …"
+  places?: { id: string; name: string }[];
   circleId: string | null;
   onPlaceSaved?: () => void;
   onClose: () => void;
@@ -104,6 +132,7 @@ export function MemberCard({
   const loc = member.location!;
   const address = useAddress(loc.latitude, loc.longitude);
   const since = useHereSince(member.id, loc.recorded_at);
+  const { watches, reload: reloadWatches } = useWatches(member.id);
   const badges = pinBadges(member);
   const stale = isStale(loc.recorded_at);
   const battery = loc.battery_level != null ? Math.round(loc.battery_level * 100) : null;
@@ -133,6 +162,53 @@ export function MemberCard({
       : address?.street
         ? t('Near {street}', { street: address.street })
         : address?.area ?? t('Finding the address…');
+
+  const firstName = member.full_name.split(' ')[0] || member.full_name;
+
+  async function setWatch(args: { kind: 'arrive' | 'leave'; place?: string; label?: string }, said: string) {
+    const { error } = await supabase.rpc('create_arrival_watch', {
+      p_target: member.id,
+      p_kind: args.kind,
+      p_place: args.place ?? null,
+      p_latitude: args.place ? null : loc.latitude,
+      p_longitude: args.place ? null : loc.longitude,
+      p_label: args.label ?? null,
+    });
+    if (error) {
+      Alert.alert(t("Couldn't set the alert"), t(error.message));
+      return;
+    }
+    announce(said);
+    reloadWatches();
+  }
+
+  // Choose: when they leave where they are, or when they reach one of the places.
+  function notifyMe() {
+    const here = place?.name ?? address?.street ?? t('here');
+    const options: { text: string; onPress: () => void }[] = [
+      {
+        text: t('When {name} leaves {place}', { name: firstName, place: here }),
+        onPress: () =>
+          setWatch(
+            place ? { kind: 'leave', place: place.id } : { kind: 'leave', label: here },
+            t("You'll be told when {name} leaves {place}", { name: firstName, place: here }),
+          ),
+      },
+      ...places
+        .filter((p) => p.id !== place?.id)
+        .slice(0, 5)
+        .map((p) => ({
+          text: t('When {name} gets to {place}', { name: firstName, place: p.name }),
+          onPress: () =>
+            setWatch({ kind: 'arrive', place: p.id }, t("You'll be told when {name} gets to {place}", { name: firstName, place: p.name })),
+        })),
+    ];
+    Alert.alert(t('Notify me'), t('Once, in the next 24 hours.'), [...options, { text: t('Cancel'), style: 'cancel' as const, onPress: () => {} }]);
+  }
+
+  function cancelWatch(w: Watch) {
+    supabase.rpc('cancel_arrival_watch', { p_id: w.id }).then(() => reloadWatches());
+  }
 
   function savePlace() {
     if (!circleId) return;
@@ -199,6 +275,20 @@ export function MemberCard({
         </Text>
       </View>
 
+      {watches.map((w) => (
+        <View key={w.id} style={styles.watch}>
+          <Text style={styles.watchText} numberOfLines={1}>
+            🔔{' '}
+            {w.kind === 'arrive'
+              ? t("You'll be told when {name} gets to {place}", { name: firstName, place: w.label })
+              : t("You'll be told when {name} leaves {place}", { name: firstName, place: w.label })}
+          </Text>
+          <Pressable accessibilityRole="button" onPress={() => cancelWatch(w)} hitSlop={8}>
+            <Text style={styles.watchCancel}>{t('Cancel')}</Text>
+          </Pressable>
+        </View>
+      ))}
+
       <View style={styles.chips}>
         {since ? (
           <Chip icon="🕒" label={t('Here since {time}', { time: formatClockTime(since) })} sub={stayLength(since)} />
@@ -238,6 +328,7 @@ export function MemberCard({
         {!isMe && member.phone_number && (
           <Action icon="📞" label={t('Call')} onPress={() => Linking.openURL(`tel:${member.phone_number}`)} />
         )}
+        {!isMe && <Action icon="🔔" label={t('Notify me')} onPress={notifyMe} />}
         {!place && circleId && <Action icon="📌" label={t('Save place')} onPress={savePlace} />}
         <Action
           icon="👤"
@@ -317,6 +408,17 @@ const styles = themed(() => StyleSheet.create({
   whereBlock: { gap: 2 },
   where: { fontSize: 19, fontWeight: '800', color: colors.textHeading },
   area: { fontSize: 14, color: colors.text },
+  watch: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    borderRadius: 14,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: colors.tint,
+  },
+  watchText: { flex: 1, fontSize: 13, fontWeight: '600', color: colors.textHeading },
+  watchCancel: { fontSize: 13, fontWeight: '700', color: colors.accent },
   chips: { flexDirection: 'row', gap: spacing.sm },
   chip: {
     flex: 1,

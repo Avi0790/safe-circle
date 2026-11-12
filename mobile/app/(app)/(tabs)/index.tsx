@@ -401,6 +401,7 @@ export default function MapTab() {
           member={selected}
           isMe={selected.id === session?.user.id}
           place={selectedPlace}
+          places={places}
           circleId={selectedCircleId}
           onPlaceSaved={reloadPlaces}
           onClose={() => setSelectedId(null)}

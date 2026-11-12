@@ -15,7 +15,7 @@ type Data = Record<string, unknown> | null | undefined;
 const str = (v: unknown) => (typeof v === 'string' && v.length > 0 ? v : null);
 
 // Family and travel alerts are about where someone is: the map.
-const MAP = new Set(['sos', 'walk', 'safety_timer', 'shared_trip', 'pin', 'curfew', 'ride', 'nearby', 'arrived', 'low_battery', 'ownership', 'join_decision']);
+const MAP = new Set(['arrival_watch', 'sos', 'walk', 'safety_timer', 'shared_trip', 'pin', 'curfew', 'ride', 'nearby', 'arrived', 'low_battery', 'ownership', 'join_decision']);
 
 export function routeForNotification(data: Data, orgName?: (orgId: string) => string | undefined): NotificationRoute | null {
   const type = str(data?.type);
