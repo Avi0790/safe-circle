@@ -2,11 +2,12 @@ import { useCallback, useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Circle, Marker } from 'react-native-maps';
 import { useFocusEffect } from 'expo-router';
+import { haversineMeters } from '@/lib/geo';
 import { placeIcon } from '@/lib/places';
 import { supabase } from '@/lib/supabase';
 import { colors, isDark } from '@/lib/theme';
 
-interface Place {
+export interface Place {
   id: string;
   name: string;
   latitude: number;
@@ -15,11 +16,22 @@ interface Place {
 }
 
 // The circle's saved places on the Map tab: a faint ring the size of each
-// place's arrive/leave area (the geofence that sends "arrived at Home"), and
-// a small label in the middle, so a feature that otherwise works unseen is
-// visible at a glance. Reloaded whenever the Map tab comes back into view,
-// so a place added on the Places screen shows up.
-export function PlaceAreas({ circleId }: { circleId: string | null }) {
+// place's arrive/leave area (the geofence that sends "arrived at Home"). The
+// name label stays hidden so it never covers anyone's pin, and appears only
+// for the place the person you've tapped is in.
+
+// The place a position is inside, if any (the smallest, when areas overlap).
+export function placeAt(places: Place[], at: { latitude: number; longitude: number } | null): Place | null {
+  if (!at) return null;
+  const inside = places.filter(
+    (p) => haversineMeters(p.latitude, p.longitude, at.latitude, at.longitude) <= p.radius_meters,
+  );
+  return inside.sort((a, b) => a.radius_meters - b.radius_meters)[0] ?? null;
+}
+
+// Reloaded whenever the Map tab comes back into view, so a place added on the
+// Places screen shows up.
+export function usePlaceAreas(circleId: string | null): Place[] {
   const [places, setPlaces] = useState<Place[]>([]);
 
   const load = useCallback(async () => {
@@ -43,6 +55,10 @@ export function PlaceAreas({ circleId }: { circleId: string | null }) {
     }, [load]),
   );
 
+  return places;
+}
+
+export function PlaceAreas({ places, focus }: { places: Place[]; focus: Place | null }) {
   return (
     <>
       {places.map((p) => (
@@ -55,7 +71,7 @@ export function PlaceAreas({ circleId }: { circleId: string | null }) {
           fillColor="rgba(124,58,237,0.12)"
         />
       ))}
-      {places.map((p) => (
+      {focus && [focus].map((p) => (
         <Marker
           key={`label-${p.id}`}
           coordinate={{ latitude: p.latitude, longitude: p.longitude }}

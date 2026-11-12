@@ -938,4 +938,5 @@ export const es: Record<string, string> = {
   "driving": "manejando",
   "Message": "Mensaje",
   "Call": "Llamar",
+  "At {place}": "En {place}",
 };

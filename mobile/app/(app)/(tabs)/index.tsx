@@ -32,7 +32,7 @@ import { requestRide } from '@/lib/rides';
 import { supabase } from '@/lib/supabase';
 import { MemberCard } from '@/components/MemberCard';
 import { MemberPin } from '@/components/MemberPin';
-import { PlaceAreas } from '@/components/PlaceAreas';
+import { PlaceAreas, placeAt, usePlaceAreas } from '@/components/PlaceAreas';
 import { haversineMeters } from '@/lib/geo';
 import { formatClockTime, formatTimeLeft, getShareStatus, isDriving, isStale, isStatusActive, speedToMph } from '@/lib/format';
 import type { LatestLocation, MapPin, MemberWithLocation } from '@/lib/types';
@@ -129,6 +129,8 @@ export default function MapTab() {
 
   const located = members.filter((m) => m.location);
   const selected = located.find((m) => m.id === selectedId) ?? null;
+  const places = usePlaceAreas(selectedCircleId);
+  const selectedPlace = placeAt(places, selected?.location ?? null);
 
   // Your own pin follows the phone's live GPS (the map's blue dot), not your
   // last report to the server, so the two never sit apart. Watched straight
@@ -315,7 +317,7 @@ export default function MapTab() {
             if (e.nativeEvent.action !== 'marker-press') setSelectedId(null);
           }}
         >
-          <PlaceAreas circleId={selectedCircleId} />
+          <PlaceAreas places={places} focus={selectedPlace} />
           {located.map((member) => (
             <MemberPin
               // your own pin is re-created when your live position moves: on
@@ -353,7 +355,12 @@ export default function MapTab() {
       <QuickActions onRideRequested={refreshRides} />
       <SosButton onSent={refreshSos} />
       {selected && (
-        <MemberCard member={selected} isMe={selected.id === session?.user.id} onClose={() => setSelectedId(null)} />
+        <MemberCard
+          member={selected}
+          isMe={selected.id === session?.user.id}
+          place={selectedPlace}
+          onClose={() => setSelectedId(null)}
+        />
       )}
       {modesOpen && (
         <MapModesSheet value={mapMode} onChange={chooseMapMode} onClose={() => setModesOpen(false)} bottomInset={insets.bottom} />

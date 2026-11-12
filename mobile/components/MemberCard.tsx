@@ -57,11 +57,14 @@ function useAddress(lat: number, lng: number): string | null {
 export function MemberCard({
   member,
   isMe,
+  place,
   onClose,
   bottomInset = 0,
 }: {
   member: MemberWithLocation;
   isMe: boolean;
+  // the saved place they're in, if any ("At Home")
+  place?: { name: string } | null;
   onClose: () => void;
   bottomInset?: number;
 }) {
@@ -105,6 +108,11 @@ export function MemberCard({
             {isMe ? t('You') : member.full_name}
           </Text>
           {status && <Text style={styles.status} numberOfLines={1}>{status}</Text>}
+          {place && (
+            <Text style={styles.place} numberOfLines={1}>
+              📍 {t('At {place}', { place: place.name })}
+            </Text>
+          )}
           <Text style={styles.address} numberOfLines={2}>
             {address ?? t('Finding the address…')}
           </Text>
@@ -177,6 +185,7 @@ const styles = themed(() => StyleSheet.create({
   headText: { flex: 1, gap: 2 },
   name: { fontSize: 20, fontWeight: '800', color: colors.textHeading },
   status: { fontSize: 14, color: colors.textHeading },
+  place: { fontSize: 14, fontWeight: '700', color: colors.accent },
   address: { fontSize: 14, color: colors.text, lineHeight: 19 },
   close: { width: 32, height: 32, borderRadius: 16, backgroundColor: colors.chip, alignItems: 'center', justifyContent: 'center' },
   closeText: { fontSize: 15, fontWeight: '700', color: colors.text },
