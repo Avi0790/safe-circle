@@ -29,7 +29,7 @@ import { useActiveSafetyTimers } from '@/hooks/useActiveSafetyTimers';
 import { useRideRequests } from '@/hooks/useRideRequests';
 import { requestRide } from '@/lib/rides';
 import { supabase } from '@/lib/supabase';
-import { Avatar } from '@/components/Avatar';
+import { MemberPin } from '@/components/MemberPin';
 import { formatClockTime, formatTimeLeft, getShareStatus, isDriving, isStale, isStatusActive, speedToMph } from '@/lib/format';
 import type { LatestLocation, MapPin, MemberWithLocation } from '@/lib/types';
 import { colors, isDark, radius, spacing, themed, useThemeVersion } from '@/lib/theme';
@@ -64,45 +64,6 @@ function markerDescription(
     parts.push(t('sharing until {time}', { time: formatClockTime(shareUntil) }));
   }
   return parts.length > 0 ? parts.join(' · ') : undefined;
-}
-
-// A marker's view is snapshotted into a bitmap, so it has to keep tracking
-// changes until whatever it shows has actually drawn — a profile photo
-// arrives asynchronously, and freezing before then would pin an empty
-// circle to the map. Once the avatar reports settled it's frozen (avoids
-// re-rendering the bitmap every frame); the timeout is a safety net so a
-// hung image download can't leave a marker tracking forever.
-function MemberMarker({ member }: { member: MemberWithLocation }) {
-  const [settled, setSettled] = useState(false);
-
-  useEffect(() => {
-    setSettled(false);
-    const timer = setTimeout(() => setSettled(true), 4000);
-    return () => clearTimeout(timer);
-  }, [member.avatar_url]);
-
-  return (
-    <Marker
-      coordinate={{
-        latitude: member.location!.latitude,
-        longitude: member.location!.longitude,
-      }}
-      title={member.full_name}
-      description={markerDescription(member.location!, member.share_until, member.status_emoji, member.status_text, member.status_expires_at)}
-      tracksViewChanges={!settled}
-      anchor={{ x: 0.5, y: 0.5 }}
-    >
-      <View style={styles.markerAvatar}>
-        <Avatar
-          id={member.id}
-          name={member.full_name}
-          url={member.avatar_url}
-          size={36}
-          onSettled={() => setSettled(true)}
-        />
-      </View>
-    </Marker>
-  );
 }
 
 // A meetup pin's marker — its own icon (rather than the default red pin)
@@ -325,7 +286,12 @@ export default function MapTab() {
           showsMyLocationButton
         >
           {located.map((member) => (
-            <MemberMarker key={member.id} member={member} />
+            <MemberPin
+              key={member.id}
+              member={member}
+              title={member.full_name}
+              description={markerDescription(member.location!, member.share_until, member.status_emoji, member.status_text, member.status_expires_at)}
+            />
           ))}
           {pins.map((pin) => (
             <PinMarker key={pin.id} pin={pin} isMine={pin.created_by === session?.user.id} onRemoved={refreshPins} />
@@ -360,16 +326,6 @@ export default function MapTab() {
 const styles = themed(() => StyleSheet.create({
   safeArea: { flex: 1 },
   map: { flex: 1 },
-  markerAvatar: {
-    padding: 3,
-    backgroundColor: colors.accentFill,
-    borderRadius: radius.full,
-    shadowColor: '#000',
-    shadowOpacity: 0.25,
-    shadowRadius: 3,
-    shadowOffset: { width: 0, height: 1 },
-    elevation: 3,
-  },
   pinMarker: {
     width: 34,
     height: 34,
