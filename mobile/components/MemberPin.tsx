@@ -20,6 +20,9 @@ const DOT_Y = 80; // the location dot's centre, in the box: the exact spot
 const TIP_Y = DOT_Y - 7; // the tail points down into the dot
 const DOT = 18;
 export const PIN_ANCHOR = { x: 0.5, y: DOT_Y / BOX_H };
+// Apple Maps ignores `anchor` (Google Maps only) and centres the view on the
+// spot; this shifts it up so the dot, not the middle of the photo, is there.
+export const PIN_CENTER_OFFSET = { x: 0, y: BOX_H / 2 - DOT_Y };
 
 export interface PinBadges {
   stale: boolean;
@@ -85,6 +88,7 @@ export function MemberPin({
       description={description}
       tracksViewChanges={!settled}
       anchor={PIN_ANCHOR}
+      centerOffset={PIN_CENTER_OFFSET}
       calloutAnchor={{ x: 0.5, y: 0 }}
     >
       <View style={styles.box}>
