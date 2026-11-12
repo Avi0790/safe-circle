@@ -89,7 +89,8 @@ jest.mock('react-native-maps', () => {
     return R.createElement(View, { testID: 'map', ...p });
   });
   const Marker = (p: any) => R.createElement(View, { ...p, testID: 'marker' });
-  return { __esModule: true, default: MapView, Marker, PROVIDER_DEFAULT: 'default' };
+  const Circle = (p: any) => R.createElement(View, { ...p, testID: 'area' });
+  return { __esModule: true, default: MapView, Marker, Circle, PROVIDER_DEFAULT: 'default' };
 });
 
 import MapTab from '../../app/(app)/(tabs)/index';
@@ -175,6 +176,15 @@ describe('Map tab', () => {
     expect(mine().props.coordinate).toEqual({ latitude: 35.8423, longitude: -90.7043 });
     // everyone else stays at their own report
     expect(markers(r).find((m) => m.props.accessibilityLabel === 'Sam')!.props.coordinate).toEqual({ latitude: 35.85, longitude: -90.69 });
+  });
+
+  it("shows the circle's saved places as their arrive/leave areas", async () => {
+    mockTables.places = [{ id: 'h', name: 'Home', latitude: 35.83, longitude: -90.71, radius_meters: 150 }];
+    const r = await mount();
+    const area = r.root.findAll((n) => n.props.testID === 'area' && typeof n.type !== 'string')[0];
+    expect(area.props.radius).toBe(150);
+    expect(area.props.center).toEqual({ latitude: 35.83, longitude: -90.71 });
+    expect(allText(r)).toContain('🏠Home');
   });
 
   it("tapping someone's pin opens their card; tapping the map closes it", async () => {

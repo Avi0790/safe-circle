@@ -32,6 +32,7 @@ import { requestRide } from '@/lib/rides';
 import { supabase } from '@/lib/supabase';
 import { MemberCard } from '@/components/MemberCard';
 import { MemberPin } from '@/components/MemberPin';
+import { PlaceAreas } from '@/components/PlaceAreas';
 import { haversineMeters } from '@/lib/geo';
 import { formatClockTime, formatTimeLeft, getShareStatus, isDriving, isStale, isStatusActive, speedToMph } from '@/lib/format';
 import type { LatestLocation, MapPin, MemberWithLocation } from '@/lib/types';
@@ -314,6 +315,7 @@ export default function MapTab() {
             if (e.nativeEvent.action !== 'marker-press') setSelectedId(null);
           }}
         >
+          <PlaceAreas circleId={selectedCircleId} />
           {located.map((member) => (
             <MemberPin
               // your own pin is re-created when your live position moves: on
