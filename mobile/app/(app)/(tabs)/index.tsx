@@ -30,6 +30,7 @@ import { useActiveSafetyTimers } from '@/hooks/useActiveSafetyTimers';
 import { useRideRequests } from '@/hooks/useRideRequests';
 import { requestRide } from '@/lib/rides';
 import { supabase } from '@/lib/supabase';
+import { MemberCard } from '@/components/MemberCard';
 import { MemberPin } from '@/components/MemberPin';
 import { haversineMeters } from '@/lib/geo';
 import { formatClockTime, formatTimeLeft, getShareStatus, isDriving, isStale, isStatusActive, speedToMph } from '@/lib/format';
@@ -43,30 +44,6 @@ const DEFAULT_REGION = {
   latitudeDelta: 0.2,
   longitudeDelta: 0.2,
 };
-
-function markerDescription(
-  location: LatestLocation,
-  shareUntil: string | null,
-  statusEmoji: string | null,
-  statusText: string | null,
-  statusExpiresAt: string | null,
-): string | undefined {
-  const parts: string[] = [];
-  if (isStatusActive(statusExpiresAt) && statusEmoji) {
-    parts.push(`${statusEmoji}${statusText ? ` ${t(statusText)}` : ''}`);
-  }
-  if (isDriving(location.speed)) {
-    const mph = speedToMph(location.speed);
-    parts.push(mph != null ? t('🚗 Driving {mph} mph', { mph: Math.round(mph) }) : t('🚗 Driving'));
-  }
-  if (location.battery_level != null) {
-    parts.push(t('{pct}% battery', { pct: Math.round(location.battery_level * 100) }));
-  }
-  if (getShareStatus(shareUntil) === 'window' && shareUntil) {
-    parts.push(t('sharing until {time}', { time: formatClockTime(shareUntil) }));
-  }
-  return parts.length > 0 ? parts.join(' · ') : undefined;
-}
 
 // A meetup pin's marker — its own icon (rather than the default red pin)
 // and a tap brings up its label, when it expires, and a Remove option for
@@ -131,6 +108,8 @@ export default function MapTab() {
   // Explore / Driving / Satellite / 3D Flyover (lib/mapMode.ts).
   const [mapMode, setMapModeState] = useState<MapModePreference>(DEFAULT_MAP_MODE);
   const [modesOpen, setModesOpen] = useState(false);
+  // the person whose card is open (components/MemberCard.tsx)
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   useEffect(() => {
     getMapMode().then(setMapModeState);
@@ -148,6 +127,7 @@ export default function MapTab() {
   }
 
   const located = members.filter((m) => m.location);
+  const selected = located.find((m) => m.id === selectedId) ?? null;
 
   // Your own pin follows the phone's live GPS (the map's blue dot), not your
   // last report to the server, so the two never sit apart. Watched straight
@@ -327,6 +307,10 @@ export default function MapTab() {
           showsUserLocation
           showsMyLocationButton
           onUserLocationChange={onUserLocationChange}
+          // a tap on the map itself closes the card (a tap on a pin opens it)
+          onPress={(e) => {
+            if (e.nativeEvent.action !== 'marker-press') setSelectedId(null);
+          }}
         >
           {located.map((member) => (
             <MemberPin
@@ -335,8 +319,8 @@ export default function MapTab() {
               // wasn't applied on iPhone, leaving it at your last report
               key={member.id === session?.user.id && myLive ? `${member.id}@${myLive.latitude.toFixed(5)},${myLive.longitude.toFixed(5)}` : member.id}
               member={member}
-              title={member.full_name}
-              description={markerDescription(member.location!, member.share_until, member.status_emoji, member.status_text, member.status_expires_at)}
+              name={member.full_name}
+              onPress={() => setSelectedId(member.id)}
               coordinate={member.id === session?.user.id ? myLive : null}
             />
           ))}
@@ -363,6 +347,9 @@ export default function MapTab() {
 
       <QuickActions onRideRequested={refreshRides} />
       <SosButton onSent={refreshSos} />
+      {selected && (
+        <MemberCard member={selected} isMe={selected.id === session?.user.id} onClose={() => setSelectedId(null)} />
+      )}
       {modesOpen && (
         <MapModesSheet value={mapMode} onChange={chooseMapMode} onClose={() => setModesOpen(false)} bottomInset={insets.bottom} />
       )}

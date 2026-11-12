@@ -933,4 +933,9 @@ export const es: Record<string, string> = {
   "Hide from one person with ghost mode, choose how long history is kept, and download or delete everything from Settings.": "Ocúltate de una persona con el modo fantasma, elige cuánto tiempo se guarda el historial y descarga o borra todo desde Ajustes.",
   "That's six roll calls this hour. Wait a little before starting another.": "Ya van seis pases de lista en esta hora. Espera un poco antes de iniciar otro.",
   "You have 10 requests waiting already. Wait for an answer first.": "Ya tienes 10 solicitudes esperando. Espera una respuesta primero.",
+  "Finding the address…": "Buscando la dirección…",
+  "battery": "batería",
+  "driving": "manejando",
+  "Message": "Mensaje",
+  "Call": "Llamar",
 };

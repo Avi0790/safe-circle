@@ -79,6 +79,7 @@ jest.mock('expo-location', () => ({
   getForegroundPermissionsAsync: async () => ({ status: mockPermission.current }),
   requestForegroundPermissionsAsync: async () => ({ status: mockPermission.current }),
   getCurrentPositionAsync: async () => ({ coords: { latitude: 35.8423, longitude: -90.7043 } }),
+  reverseGeocodeAsync: async () => [{ streetNumber: '1815', street: 'E Highland Dr', city: 'Jonesboro' }],
 }));
 jest.mock('react-native-maps', () => {
   const R = require('react');
@@ -100,7 +101,7 @@ function text(node: any): string {
 }
 const allText = (r: ReactTestRenderer) => text(r.toJSON());
 const markers = (r: ReactTestRenderer) => r.root.findAll((n) => n.props.testID === 'marker' && typeof n.type !== 'string');
-const markerTitles = (r: ReactTestRenderer) => markers(r).map((m) => m.props.title as string);
+const markerTitles = (r: ReactTestRenderer) => markers(r).map((m) => (m.props.title ?? m.props.accessibilityLabel) as string);
 const map = (r: ReactTestRenderer) => r.root.findAll((n) => n.props.testID === 'map' && n.props.initialRegion)[0];
 
 async function flush() {
@@ -168,12 +169,34 @@ describe('Map tab', () => {
 
   it('your own pin follows the live GPS, not your last report', async () => {
     const r = await mount();
-    const mine = () => markers(r).find((m) => m.props.title === 'Me')!;
+    const mine = () => markers(r).find((m) => m.props.accessibilityLabel === 'Me')!;
     expect(mine().props.coordinate).toEqual({ latitude: 35.84, longitude: -90.7 }); // the last report, until GPS answers
     await act(async () => mockWatch.current?.({ coords: { latitude: 35.8423, longitude: -90.7043 } }));
     expect(mine().props.coordinate).toEqual({ latitude: 35.8423, longitude: -90.7043 });
     // everyone else stays at their own report
-    expect(markers(r).find((m) => m.props.title === 'Sam')!.props.coordinate).toEqual({ latitude: 35.85, longitude: -90.69 });
+    expect(markers(r).find((m) => m.props.accessibilityLabel === 'Sam')!.props.coordinate).toEqual({ latitude: 35.85, longitude: -90.69 });
+  });
+
+  it("tapping someone's pin opens their card; tapping the map closes it", async () => {
+    const r = await mount();
+    expect(allText(r)).not.toContain('Directions');
+    const sam = markers(r).find((m) => m.props.accessibilityLabel === 'Sam')!;
+    await act(async () => sam.props.onPress());
+    expect(allText(r)).toContain('Sam');
+    expect(allText(r)).toContain('Directions');
+    expect(allText(r)).toContain('80%');
+    expect(allText(r)).toContain('1815 E Highland Dr, Jonesboro');
+    await act(async () => map(r).props.onPress({ nativeEvent: { action: 'press' } }));
+    expect(allText(r)).not.toContain('Directions');
+  });
+
+  it('your own card says You and offers no directions to yourself', async () => {
+    const r = await mount();
+    const me = markers(r).find((m) => m.props.accessibilityLabel === 'Me')!;
+    await act(async () => me.props.onPress());
+    expect(allText(r)).toContain('You');
+    expect(allText(r)).not.toContain('Directions');
+    expect(allText(r)).toContain('Details');
   });
 
   it("also fits when people's locations arrive after the map is up", async () => {

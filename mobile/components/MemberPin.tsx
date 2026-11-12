@@ -46,13 +46,13 @@ export function pinBadges(member: MemberWithLocation): PinBadges {
 
 export function MemberPin({
   member,
-  title,
-  description,
+  name,
+  onPress,
   coordinate,
 }: {
   member: MemberWithLocation;
-  title: string;
-  description?: string;
+  name: string;
+  onPress?: () => void;
   // where to draw it instead of their last report (your own pin follows your live GPS)
   coordinate?: { latitude: number; longitude: number } | null;
 }) {
@@ -85,8 +85,10 @@ export function MemberPin({
   return (
     <Marker
       coordinate={coordinate ?? { latitude: member.location!.latitude, longitude: member.location!.longitude }}
-      title={title}
-      description={description}
+      // no title: a tap opens the person card (components/MemberCard.tsx)
+      // instead of the map's own callout bubble
+      accessibilityLabel={name}
+      onPress={onPress}
       tracksViewChanges={!settled}
       anchor={PIN_ANCHOR}
       calloutAnchor={{ x: 0.5, y: 0 }}
