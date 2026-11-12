@@ -26,7 +26,7 @@ const literals = ['app', 'components', 'lib'].flatMap((dir) =>
 );
 // Names and addresses that read the same in every language.
 const SAME_IN_SPANISH = new Set([
-  'Safe Circle', 'github.com/surendr7a/SafeCircle', 'Chat', 'Plan', 'SOS', 'mph', 'OK', 'Audio', 'Color', '{name} · {ago}', '− 30 min', '+ 30 min', '{n} h',
+  'Safe Circle', 'github.com/surendr7a/SafeCircle', 'Chat', 'Plan', 'SOS', 'mph', 'OK', 'Audio', 'Color', '{name} · {ago}', '− 30 min', '+ 30 min', '{n} h', '{n} min', '{h} h', '{h} h {m} min',
   // example values in placeholders
   'AB12CD', '1815 E Highland Dr, Jonesboro', 'Riverside Utilities',
 ]);

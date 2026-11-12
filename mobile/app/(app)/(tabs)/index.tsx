@@ -129,7 +129,22 @@ export default function MapTab() {
 
   const located = members.filter((m) => m.location);
   const selected = located.find((m) => m.id === selectedId) ?? null;
-  const places = usePlaceAreas(selectedCircleId);
+  const { places, reload: reloadPlaces } = usePlaceAreas(selectedCircleId);
+
+  // Picking someone glides the map in on them, placed in the top part of the
+  // screen so the card below doesn't cover them.
+  useEffect(() => {
+    if (!selectedId || !mapRef.current) return;
+    const who = located.find((m) => m.id === selectedId);
+    const at = who?.id === session?.user.id && myLive ? myLive : who?.location;
+    if (!at) return;
+    const span = 0.008;
+    mapRef.current.animateToRegion(
+      { latitude: at.latitude - span * 0.22, longitude: at.longitude, latitudeDelta: span, longitudeDelta: span },
+      600,
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedId]);
   const selectedPlace = placeAt(places, selected?.location ?? null);
 
   // Your own pin follows the phone's live GPS (the map's blue dot), not your
@@ -327,6 +342,7 @@ export default function MapTab() {
               member={member}
               name={member.full_name}
               onPress={() => setSelectedId(member.id)}
+              selected={member.id === selectedId}
               coordinate={member.id === session?.user.id && myLive ? { latitude: myLive.latitude, longitude: myLive.longitude } : null}
               heading={member.id === session?.user.id ? myLive?.heading ?? null : null}
             />
@@ -359,6 +375,8 @@ export default function MapTab() {
           member={selected}
           isMe={selected.id === session?.user.id}
           place={selectedPlace}
+          circleId={selectedCircleId}
+          onPlaceSaved={reloadPlaces}
           onClose={() => setSelectedId(null)}
         />
       )}

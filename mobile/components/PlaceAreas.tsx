@@ -31,7 +31,7 @@ export function placeAt(places: Place[], at: { latitude: number; longitude: numb
 
 // Reloaded whenever the Map tab comes back into view, so a place added on the
 // Places screen shows up.
-export function usePlaceAreas(circleId: string | null): Place[] {
+export function usePlaceAreas(circleId: string | null): { places: Place[]; reload: () => void } {
   const [places, setPlaces] = useState<Place[]>([]);
 
   const load = useCallback(async () => {
@@ -55,7 +55,7 @@ export function usePlaceAreas(circleId: string | null): Place[] {
     }, [load]),
   );
 
-  return places;
+  return { places, reload: load };
 }
 
 export function PlaceAreas({ places, focus }: { places: Place[]; focus: Place | null }) {

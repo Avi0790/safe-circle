@@ -1,36 +1,42 @@
 import { useEffect, useRef, useState } from 'react';
-import { Animated, Linking, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Animated, Linking, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
 import { Avatar } from '@/components/Avatar';
+import { pinBadges } from '@/components/MemberPin';
+import { announce } from '@/lib/announce';
 import { externalMapsUrl } from '@/lib/externalMaps';
 import { formatClockTime, getShareStatus, isLowBattery, isStale, isStatusActive, timeAgo } from '@/lib/format';
 import { t } from '@/lib/i18n';
-import { pinBadges } from '@/components/MemberPin';
+import { supabase } from '@/lib/supabase';
 import { colors, isDark, radius, spacing, themed, useThemeVersion } from '@/lib/theme';
 import type { MemberWithLocation } from '@/lib/types';
 
-// Tap someone's pin on the Map tab: this card slides up with who they are,
-// where they are (a street address), how fresh that is, their battery and
-// whether they're driving, and what you can do: directions there, a message,
-// a call, or their full details.
+// Tap someone's pin on the Map tab: this card slides up with where they are
+// ("At Home", or the street they're near), how long they've been there, how
+// fresh the position is, their battery and driving speed, and what you can
+// do: directions, a message, a call, save their spot as a place, or open
+// their details.
 
-// "1815 E Highland Dr, Jonesboro" from the phone's own geocoder (Apple or
-// Google), cached per spot so reopening a card doesn't look it up again.
-const addressCache = new Map<string, string | null>();
+// The phone's own geocoder (Apple or Google), cached per spot.
+interface Address {
+  street: string | null; // "1815 E Highland Dr"
+  area: string | null; // "Jonesboro, AR"
+}
+const addressCache = new Map<string, Address | null>();
 const spotKey = (lat: number, lng: number) => `${lat.toFixed(4)},${lng.toFixed(4)}`;
 
-export function formatAddress(a: Partial<Location.LocationGeocodedAddress> | undefined): string | null {
+export function formatAddress(a: Partial<Location.LocationGeocodedAddress> | undefined): Address | null {
   if (!a) return null;
   const street = [a.streetNumber, a.street].filter(Boolean).join(' ') || a.name || null;
-  const place = a.city ?? a.subregion ?? a.region ?? null;
-  const parts = [street, place].filter((p, i, all) => p && all.indexOf(p) === i);
-  return parts.length > 0 ? parts.join(', ') : null;
+  const city = a.city ?? a.subregion ?? null;
+  const area = [city, a.region && a.region !== city ? a.region : null].filter(Boolean).join(', ') || null;
+  return street || area ? { street, area } : null;
 }
 
-function useAddress(lat: number, lng: number): string | null {
+function useAddress(lat: number, lng: number): Address | null {
   const key = spotKey(lat, lng);
-  const [address, setAddress] = useState<string | null>(addressCache.get(key) ?? null);
+  const [address, setAddress] = useState<Address | null>(addressCache.get(key) ?? null);
   useEffect(() => {
     if (addressCache.has(key)) {
       setAddress(addressCache.get(key) ?? null);
@@ -40,13 +46,11 @@ function useAddress(lat: number, lng: number): string | null {
     setAddress(null);
     Location.reverseGeocodeAsync({ latitude: lat, longitude: lng })
       .then((results) => {
-        const text = formatAddress(results[0]);
-        addressCache.set(key, text);
-        if (alive) setAddress(text);
+        const found = formatAddress(results[0]);
+        addressCache.set(key, found);
+        if (alive) setAddress(found);
       })
-      .catch(() => {
-        // no address is fine: the card still shows everything else
-      });
+      .catch(() => {});
     return () => {
       alive = false;
     };
@@ -54,78 +58,162 @@ function useAddress(lat: number, lng: number): string | null {
   return address;
 }
 
+// When they arrived at this spot (migration ...000080); null if unknown,
+// or on a server without that migration yet.
+function useHereSince(userId: string, recordedAt: string): string | null {
+  const [since, setSince] = useState<string | null>(null);
+  useEffect(() => {
+    let alive = true;
+    supabase.rpc('here_since', { p_user: userId }).then(({ data, error }) => {
+      if (alive) setSince(!error && typeof data === 'string' ? data : null);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [userId, recordedAt]);
+  return since;
+}
+
+// "48 min", "2 h 5 min", "3 h"
+export function stayLength(sinceIso: string, now = Date.now()): string {
+  const mins = Math.max(1, Math.round((now - new Date(sinceIso).getTime()) / 60_000));
+  if (mins < 60) return t('{n} min', { n: mins });
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  return m === 0 ? t('{h} h', { h }) : t('{h} h {m} min', { h, m });
+}
+
 export function MemberCard({
   member,
   isMe,
   place,
+  circleId,
+  onPlaceSaved,
   onClose,
-  bottomInset = 0,
 }: {
   member: MemberWithLocation;
   isMe: boolean;
   // the saved place they're in, if any ("At Home")
   place?: { name: string } | null;
+  circleId: string | null;
+  onPlaceSaved?: () => void;
   onClose: () => void;
-  bottomInset?: number;
 }) {
   useThemeVersion(); // redraw on a theme or language switch (lib/theme.ts)
   const router = useRouter();
   const loc = member.location!;
   const address = useAddress(loc.latitude, loc.longitude);
+  const since = useHereSince(member.id, loc.recorded_at);
   const badges = pinBadges(member);
   const stale = isStale(loc.recorded_at);
   const battery = loc.battery_level != null ? Math.round(loc.battery_level * 100) : null;
   const status = [
-    member.status_emoji && isStatusActive(member.status_expires_at) ? `${member.status_emoji} ${member.status_text ? t(member.status_text) : ''}`.trim() : null,
+    member.status_emoji && isStatusActive(member.status_expires_at)
+      ? `${member.status_emoji} ${member.status_text ? t(member.status_text) : ''}`.trim()
+      : null,
     getShareStatus(member.share_until) === 'window' && member.share_until
       ? t('sharing until {time}', { time: formatClockTime(member.share_until) })
       : null,
-  ].filter(Boolean).join(' · ') || null;
+  ]
+    .filter(Boolean)
+    .join(' · ') || null;
 
-  // slide up when opened, or when another person is picked
+  // slides up when opened, or when another person is picked
   const rise = useRef(new Animated.Value(0)).current;
   useEffect(() => {
     rise.setValue(0);
-    Animated.spring(rise, { toValue: 1, useNativeDriver: true, bounciness: 6 }).start();
+    Animated.spring(rise, { toValue: 1, useNativeDriver: true, bounciness: 5 }).start();
   }, [member.id, rise]);
-  const translateY = rise.interpolate({ inputRange: [0, 1], outputRange: [240, 0] });
+  const translateY = rise.interpolate({ inputRange: [0, 1], outputRange: [280, 0] });
 
-  const freshness = stale
-    ? t('Last seen {ago}', { ago: timeAgo(loc.recorded_at) })
-    : t('Updated {ago}', { ago: timeAgo(loc.recorded_at) });
+  const where = place
+    ? t('At {place}', { place: place.name })
+    : badges.mph != null
+      ? t('Driving near {street}', { street: address?.street ?? address?.area ?? '…' })
+      : address?.street
+        ? t('Near {street}', { street: address.street })
+        : address?.area ?? t('Finding the address…');
+
+  function savePlace() {
+    if (!circleId) return;
+    const save = async (name: string) => {
+      const { error } = await supabase.from('places').insert({
+        circle_id: circleId,
+        name: name.trim() || t('Saved place'),
+        latitude: loc.latitude,
+        longitude: loc.longitude,
+        radius_meters: 150,
+      });
+      if (error) {
+        Alert.alert(t("Couldn't save the place"), error.message);
+        return;
+      }
+      announce(t('Place saved'));
+      onPlaceSaved?.();
+    };
+    const suggested = address?.street ?? '';
+    if (Platform.OS === 'ios') {
+      Alert.prompt(
+        t('Save this place'),
+        t('Your circle is told when people arrive or leave.'),
+        [
+          { text: t('Cancel'), style: 'cancel' },
+          { text: t('Save'), onPress: (name?: string) => save(name ?? suggested) },
+        ],
+        'plain-text',
+        suggested,
+      );
+    } else {
+      save(suggested);
+    }
+  }
 
   return (
-    <Animated.View
-      style={[styles.card, { bottom: bottomInset + spacing.md, transform: [{ translateY }] }]}
-      accessibilityViewIsModal
-    >
+    <Animated.View style={[styles.card, { transform: [{ translateY }] }]} accessibilityViewIsModal>
+      <View style={styles.grabber} />
       <View style={styles.head}>
         <View style={[styles.photoRing, stale && styles.photoRingStale]}>
-          <Avatar id={member.id} name={member.full_name} url={member.avatar_url} size={56} />
+          <Avatar id={member.id} name={member.full_name} url={member.avatar_url} size={58} />
         </View>
         <View style={styles.headText}>
-          <Text style={styles.name} numberOfLines={1} accessibilityRole="header">
-            {isMe ? t('You') : member.full_name}
-          </Text>
-          {status && <Text style={styles.status} numberOfLines={1}>{status}</Text>}
-          {place && (
-            <Text style={styles.place} numberOfLines={1}>
-              📍 {t('At {place}', { place: place.name })}
+          <View style={styles.nameRow}>
+            <Text style={styles.name} numberOfLines={1} accessibilityRole="header">
+              {isMe ? t('You') : member.full_name}
             </Text>
-          )}
-          <Text style={styles.address} numberOfLines={2}>
-            {address ?? t('Finding the address…')}
-          </Text>
+            <View style={[styles.liveDot, stale && styles.liveDotOff]} />
+            <Text style={[styles.liveText, stale && styles.liveTextOff]} numberOfLines={1}>
+              {stale ? t('Last seen {ago}', { ago: timeAgo(loc.recorded_at) }) : t('Live')}
+            </Text>
+          </View>
+          {status && <Text style={styles.status} numberOfLines={1}>{status}</Text>}
         </View>
         <Pressable accessibilityRole="button" accessibilityLabel={t('Close')} onPress={onClose} hitSlop={12} style={styles.close}>
           <Text style={styles.closeText}>✕</Text>
         </Pressable>
       </View>
 
-      <View style={styles.facts}>
-        <Fact label={freshness} sub={formatClockTime(loc.recorded_at)} warn={stale} />
-        {battery != null && <Fact label={`${isLowBattery(loc.battery_level) ? '🪫' : '🔋'} ${battery}%`} sub={t('battery')} warn={isLowBattery(loc.battery_level)} />}
-        {badges.mph != null && <Fact label={`🚗 ${badges.mph} mph`} sub={t('driving')} />}
+      <View style={styles.whereBlock}>
+        <Text style={styles.where} numberOfLines={1}>{where}</Text>
+        <Text style={styles.area} numberOfLines={1}>
+          {[place ? address?.street : null, address?.area].filter(Boolean).join(' · ') || ' '}
+        </Text>
+      </View>
+
+      <View style={styles.chips}>
+        {since ? (
+          <Chip icon="🕒" label={t('Here since {time}', { time: formatClockTime(since) })} sub={stayLength(since)} />
+        ) : (
+          <Chip icon="🕒" label={t('Updated {ago}', { ago: timeAgo(loc.recorded_at) })} sub={formatClockTime(loc.recorded_at)} />
+        )}
+        {battery != null && (
+          <Chip
+            icon={isLowBattery(loc.battery_level) ? '🪫' : '🔋'}
+            label={`${battery}%`}
+            sub={t('battery')}
+            warn={isLowBattery(loc.battery_level)}
+          />
+        )}
+        {badges.mph != null && <Chip icon="🚗" label={`${badges.mph} mph`} sub={t('driving')} />}
       </View>
 
       <View style={styles.actions}>
@@ -133,32 +221,60 @@ export function MemberCard({
           <Action
             icon="🧭"
             label={t('Directions')}
+            primary
             onPress={() => Linking.openURL(externalMapsUrl({ latitude: loc.latitude, longitude: loc.longitude }, Platform.OS))}
           />
         )}
-        {!isMe && <Action icon="💬" label={t('Message')} onPress={() => { onClose(); router.push('/chat'); }} />}
+        {!isMe && (
+          <Action
+            icon="💬"
+            label={t('Message')}
+            onPress={() => {
+              onClose();
+              router.push('/chat');
+            }}
+          />
+        )}
         {!isMe && member.phone_number && (
           <Action icon="📞" label={t('Call')} onPress={() => Linking.openURL(`tel:${member.phone_number}`)} />
         )}
-        <Action icon="ℹ️" label={t('Details')} onPress={() => { onClose(); router.push(`/member/${member.id}`); }} />
+        {!place && circleId && <Action icon="📌" label={t('Save place')} onPress={savePlace} />}
+        <Action
+          icon="👤"
+          label={t('Details')}
+          onPress={() => {
+            onClose();
+            router.push(`/member/${member.id}`);
+          }}
+        />
       </View>
     </Animated.View>
   );
 }
 
-function Fact({ label, sub, warn }: { label: string; sub: string; warn?: boolean }) {
+function Chip({ icon, label, sub, warn }: { icon: string; label: string; sub: string; warn?: boolean }) {
   return (
-    <View style={styles.fact}>
-      <Text style={[styles.factLabel, warn && { color: colors.danger }]} numberOfLines={1}>{label}</Text>
-      <Text style={styles.factSub} numberOfLines={1}>{sub}</Text>
+    <View style={[styles.chip, warn && styles.chipWarn]}>
+      <Text allowFontScaling={false} style={styles.chipIcon}>{icon}</Text>
+      <View style={styles.chipText}>
+        <Text style={[styles.chipLabel, warn && { color: colors.danger }]} numberOfLines={1}>{label}</Text>
+        <Text style={styles.chipSub} numberOfLines={1}>{sub}</Text>
+      </View>
     </View>
   );
 }
 
-function Action({ icon, label, onPress }: { icon: string; label: string; onPress: () => void }) {
+function Action({ icon, label, onPress, primary }: { icon: string; label: string; onPress: () => void; primary?: boolean }) {
   return (
-    <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} style={({ pressed }) => [styles.action, pressed && { opacity: 0.7 }]}>
-      <Text allowFontScaling={false} style={styles.actionIcon}>{icon}</Text>
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      onPress={onPress}
+      style={({ pressed }) => [styles.action, pressed && { opacity: 0.7 }]}
+    >
+      <View style={[styles.actionCircle, primary && styles.actionCirclePrimary]}>
+        <Text allowFontScaling={false} style={styles.actionIcon}>{icon}</Text>
+      </View>
       <Text style={styles.actionLabel} numberOfLines={1}>{label}</Text>
     </Pressable>
   );
@@ -167,34 +283,67 @@ function Action({ icon, label, onPress }: { icon: string; label: string; onPress
 const styles = themed(() => StyleSheet.create({
   card: {
     position: 'absolute',
-    left: spacing.md,
-    right: spacing.md,
-    borderRadius: 24,
-    padding: spacing.md,
+    left: spacing.sm,
+    right: spacing.sm,
+    bottom: spacing.sm,
+    borderRadius: 28,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.md,
     gap: spacing.md,
-    backgroundColor: isDark ? 'rgba(23,26,33,0.98)' : 'rgba(255,255,255,0.98)',
+    backgroundColor: isDark ? 'rgba(20,22,30,0.98)' : 'rgba(255,255,255,0.98)',
+    borderWidth: isDark ? 1 : 0,
+    borderColor: 'rgba(255,255,255,0.08)',
     shadowColor: '#000',
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 10,
+    shadowOpacity: 0.35,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 12,
   },
+  grabber: { alignSelf: 'center', width: 40, height: 5, borderRadius: 3, backgroundColor: colors.border },
   head: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   photoRing: { padding: 3, borderRadius: radius.full, backgroundColor: colors.accentFill },
   photoRingStale: { backgroundColor: colors.offline },
-  headText: { flex: 1, gap: 2 },
-  name: { fontSize: 20, fontWeight: '800', color: colors.textHeading },
+  headText: { flex: 1, gap: 4 },
+  nameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  name: { fontSize: 24, fontWeight: '800', color: colors.textHeading, flexShrink: 1, letterSpacing: -0.3 },
+  liveDot: { width: 9, height: 9, borderRadius: 5, backgroundColor: colors.online },
+  liveDotOff: { backgroundColor: colors.offline },
+  liveText: { fontSize: 12, fontWeight: '700', color: colors.online, flexShrink: 1 },
+  liveTextOff: { color: colors.text, fontWeight: '600' },
   status: { fontSize: 14, color: colors.textHeading },
-  place: { fontSize: 14, fontWeight: '700', color: colors.accent },
-  address: { fontSize: 14, color: colors.text, lineHeight: 19 },
   close: { width: 32, height: 32, borderRadius: 16, backgroundColor: colors.chip, alignItems: 'center', justifyContent: 'center' },
   closeText: { fontSize: 15, fontWeight: '700', color: colors.text },
-  facts: { flexDirection: 'row', gap: spacing.sm },
-  fact: { flex: 1, borderRadius: radius.md, backgroundColor: colors.chip, paddingVertical: spacing.sm, paddingHorizontal: spacing.sm, gap: 2 },
-  factLabel: { fontSize: 14, fontWeight: '700', color: colors.textHeading },
-  factSub: { fontSize: 12, color: colors.text },
-  actions: { flexDirection: 'row', gap: spacing.sm },
-  action: { flex: 1, alignItems: 'center', gap: 4, paddingVertical: spacing.sm, borderRadius: radius.md, backgroundColor: colors.tint },
-  actionIcon: { fontSize: 20 },
-  actionLabel: { fontSize: 12, fontWeight: '700', color: colors.accent },
+  whereBlock: { gap: 2 },
+  where: { fontSize: 19, fontWeight: '800', color: colors.textHeading },
+  area: { fontSize: 14, color: colors.text },
+  chips: { flexDirection: 'row', gap: spacing.sm },
+  chip: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    borderRadius: 16,
+    backgroundColor: colors.chip,
+    paddingVertical: 10,
+    paddingHorizontal: 10,
+  },
+  chipWarn: { backgroundColor: isDark ? 'rgba(220,38,38,0.18)' : '#fef2f2' },
+  chipIcon: { fontSize: 18 },
+  chipText: { flexShrink: 1 },
+  chipLabel: { fontSize: 13, fontWeight: '800', color: colors.textHeading },
+  chipSub: { fontSize: 11.5, color: colors.text },
+  actions: { flexDirection: 'row', justifyContent: 'space-around' },
+  action: { alignItems: 'center', gap: 6, minWidth: 60 },
+  actionCircle: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: colors.tint,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  actionCirclePrimary: { backgroundColor: colors.accentFill },
+  actionIcon: { fontSize: 21 },
+  actionLabel: { fontSize: 12, fontWeight: '700', color: colors.textHeading },
 }));

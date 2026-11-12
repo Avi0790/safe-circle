@@ -16,6 +16,7 @@ const mockMembers: { current: unknown[] } = { current: [] };
 const mockWatch: { current: ((p: { coords: { latitude: number; longitude: number } }) => void) | null } = { current: null };
 const mockPermission: { current: 'granted' | 'denied' } = { current: 'granted' };
 const mockFit = jest.fn();
+const mockZoom = jest.fn();
 
 jest.mock('@/lib/supabase', () => {
   const query = (table: string) => {
@@ -85,7 +86,7 @@ jest.mock('react-native-maps', () => {
   const R = require('react');
   const { View } = require('react-native');
   const MapView = R.forwardRef((p: any, ref: any) => {
-    R.useImperativeHandle(ref, () => ({ fitToCoordinates: mockFit }));
+    R.useImperativeHandle(ref, () => ({ fitToCoordinates: mockFit, animateToRegion: mockZoom }));
     return R.createElement(View, { testID: 'map', ...p });
   });
   const Marker = (p: any) => R.createElement(View, { ...p, testID: 'marker' });
@@ -205,7 +206,9 @@ describe('Map tab', () => {
     expect(allText(r)).toContain('Sam');
     expect(allText(r)).toContain('Directions');
     expect(allText(r)).toContain('80%');
-    expect(allText(r)).toContain('1815 E Highland Dr, Jonesboro');
+    expect(allText(r)).toContain('Near 1815 E Highland Dr');
+    // the map glides in on Sam, placed above the card
+    expect(mockZoom).toHaveBeenCalledWith(expect.objectContaining({ longitude: -90.69, latitudeDelta: 0.008 }), 600);
     await act(async () => map(r).props.onPress({ nativeEvent: { action: 'press' } }));
     expect(allText(r)).not.toContain('Directions');
   });

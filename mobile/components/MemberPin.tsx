@@ -65,6 +65,7 @@ export function MemberPin({
   onPress,
   coordinate,
   heading,
+  selected = false,
 }: {
   member: MemberWithLocation;
   name: string;
@@ -73,10 +74,12 @@ export function MemberPin({
   coordinate?: { latitude: number; longitude: number } | null;
   // and which way you're heading, from the same live GPS
   heading?: number | null;
+  // the person whose card is open: a glow and a little bigger
+  selected?: boolean;
 }) {
   const badges = pinBadges(member);
   const beam = heading != null ? (Math.round(heading / 10) * 10) % 360 : badges.heading;
-  const badgeKey = `${badges.stale}|${badges.mph}|${badges.battery}|${badges.emoji}|${beam}`;
+  const badgeKey = `${badges.stale}|${badges.mph}|${badges.battery}|${badges.emoji}|${beam}|${selected}`;
 
   // A marker's view is snapshotted into a bitmap, so it keeps tracking changes
   // until the photo has drawn (it arrives asynchronously), then freezes. A
@@ -133,7 +136,8 @@ export function MemberPin({
         <View style={styles.dot}>
           <View style={[styles.dotCore, { backgroundColor: ring }]} />
         </View>
-        <View style={[styles.ring, { backgroundColor: ring }, badges.stale && styles.faded]}>
+        {selected && <View style={[styles.glow, { backgroundColor: ring }]} />}
+        <View style={[styles.ring, { backgroundColor: ring }, badges.stale && styles.faded, selected && styles.ringSelected]}>
           <View style={styles.inner}>
             <Avatar
               id={member.id}
@@ -211,6 +215,16 @@ const styles = StyleSheet.create({
     ...shadow,
   },
   faded: { opacity: 0.85 },
+  ringSelected: { transform: [{ scale: 1.12 }] },
+  glow: {
+    position: 'absolute',
+    left: (BOX_W - BUBBLE) / 2 - 9,
+    top: 2 - 9,
+    width: BUBBLE + 18,
+    height: BUBBLE + 18,
+    borderRadius: (BUBBLE + 18) / 2,
+    opacity: 0.25,
+  },
   inner: {
     flex: 1,
     borderRadius: BUBBLE / 2,
