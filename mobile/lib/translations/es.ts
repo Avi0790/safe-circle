@@ -968,4 +968,9 @@ export const es: Record<string, string> = {
   "Choose a place.": "Elige un lugar.",
   "Choose arrive or leave.": "Elige llegar o salir.",
   "Place not found.": "No se encontró el lugar.",
+  "No locations shared today yet.": "Todavía no hay ubicaciones compartidas hoy.",
+  "A stop": "Una parada",
+  "Drove {time}": "Manejó {time}",
+  "Moved {time}": "Se movió {time}",
+  "top {mph} mph": "máx. {mph} mph",
 };

@@ -4,6 +4,8 @@ import { Stack, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import MapView, { Marker, Polyline, PROVIDER_DEFAULT } from 'react-native-maps';
 import { Button } from '@/components/Button';
+import { DayTimeline } from '@/components/DayTimeline';
+import { useCircles } from '@/contexts/CircleContext';
 import { supabase } from '@/lib/supabase';
 import { isDriving, speedToMph, timeAgo } from '@/lib/format';
 import { formatDistanceMiles } from '@/lib/geo';
@@ -29,6 +31,7 @@ const HISTORY_LIMIT = 100;
 export default function MemberHistoryScreen() {
   useThemeVersion(); // redraw on a theme switch (lib/theme.ts)
   const { userId } = useLocalSearchParams<{ userId: string }>();
+  const { selectedCircleId } = useCircles();
   const [fullName, setFullName] = useState('');
   const [pings, setPings] = useState<HistoryPing[]>([]);
   const [trips, setTrips] = useState<Trip[]>([]);
@@ -145,6 +148,7 @@ export default function MemberHistoryScreen() {
                 {weather.emoji} {weather.tempF}°F, {weather.description} where they are
               </Text>
             )}
+            {userId && <DayTimeline userId={String(userId)} circleId={selectedCircleId} />}
             {trips.length > 0 && (
               <View style={styles.trips}>
                 <Text style={styles.sectionLabel} accessibilityRole="header">{t('🚗 Recent drives')}</Text>
